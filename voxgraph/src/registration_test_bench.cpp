@@ -44,6 +44,7 @@ int main(int argc, char** argv) {
     reference_submap_id = fixed_submap_id_tmp;
     reading_submap_id = reading_submap_id_tmp;
   }
+  bool visualize_residuals;
   std::vector<double> range_x, range_y, range_z;
   std::vector<double> range_yaw, range_pitch, range_roll;
   nh_private.param("range_x", range_x, {0});
@@ -52,6 +53,7 @@ int main(int argc, char** argv) {
   nh_private.param("range_yaw", range_yaw, {0});
   nh_private.param("range_pitch", range_pitch, {0});
   nh_private.param("range_roll", range_roll, {0});
+  nh_private.param("visualize_residuals", visualize_residuals, false);
 
   // Announce ROS topics for Rviz debug visuals
   ros::Publisher reference_mesh_pub =
@@ -198,7 +200,7 @@ int main(int argc, char** argv) {
   registerer_options.cost.min_voxel_weight = 1e-6;
   registerer_options.cost.max_voxel_distance = 0.6;
   registerer_options.cost.no_correspondence_cost = 0;
-  registerer_options.cost.visualize_residuals = true;
+  registerer_options.cost.visualize_residuals = visualize_residuals;
   registerer_options.solver.max_num_iterations = 40;
   // Corresponds to moving less than 1mm:
   registerer_options.solver.parameter_tolerance = 3e-2;
@@ -275,14 +277,15 @@ int main(int argc, char** argv) {
   // TODO(victorr): Check if log_folder_path exists and create it if it doesn't
   std::ofstream log_file;
   log_file.open(log_file_path.string());
-  log_file << "reference_submap_id, reading_submap_id\n"
+  log_file << "reference_submap_id, reading_submap_id, visuals_enabled\n"
            << reference_submap_id << ",";
   if (reading_submap_id == INT32_MAX) {
     log_file << reference_submap_id;
   } else {
     log_file << reading_submap_id;
   }
-  log_file << "\nx_true, y_true, z_true, yaw_true, pitch_true, roll_true\n"
+  log_file << "," << visualize_residuals << "\n"
+           << "x_true, y_true, z_true, yaw_true, pitch_true, roll_true\n"
            << ground_truth_position.x() << "," << ground_truth_position.y()
            << "," << ground_truth_position.z() << ","
            << "0,0,0\n";
