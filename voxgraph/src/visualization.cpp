@@ -67,4 +67,8 @@ namespace voxgraph {
       transform_broadcaster.sendTransform(tf_stamped);
     }
   }
+
+  // TODO(victorr): Implement TSDF visualization
+  // TODO(victorr): Move gradient visualization here
+
   }  // namespace voxgraph

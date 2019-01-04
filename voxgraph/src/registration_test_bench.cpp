@@ -66,15 +66,15 @@ int main(int argc, char** argv) {
   ros::Publisher perturbed_reading_mesh_pub =
       nh_private.advertise<visualization_msgs::Marker>(
           "perturbed_reading_mesh_pub", 1, true);
-  ros::Publisher perturbed_tsdf_pub =
-      nh_private.advertise<pcl::PointCloud<pcl::PointXYZI>>(
-          "perturbed_tsdf_pointcloud", 1, true);
+  //  ros::Publisher perturbed_tsdf_pub =
+  //      nh_private.advertise<pcl::PointCloud<pcl::PointXYZI>>(
+  //          "perturbed_tsdf_pointcloud", 1, true);
   ros::Publisher optimized_reading_mesh_pub =
       nh_private.advertise<visualization_msgs::Marker>(
           "optimized_reading_mesh_pub", 1, true);
-  ros::Publisher optimized_tsdf_pub =
-      nh_private.advertise<pcl::PointCloud<pcl::PointXYZI>>(
-          "optimized_tsdf_pointcloud", 1, true);
+  //  ros::Publisher optimized_tsdf_pub =
+  //      nh_private.advertise<pcl::PointCloud<pcl::PointXYZI>>(
+  //          "optimized_tsdf_pointcloud", 1, true);
 
   // NOTE(victorr): The code below comes from cblox,
   // but has been modified to selectively load submaps.

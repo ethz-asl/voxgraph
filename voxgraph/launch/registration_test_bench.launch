@@ -4,16 +4,16 @@
     <rosparam>
       submap_collection_file_path: "/home/victor/catkin_ws/voxgraph/submap_collections/burning_house_gt_truncdist2_maxraylength15_antigrazing1"
       log_folder_path: "/home/victor/catkin_ws/voxgraph/test_bench_stats"
-      reference_submap_id: 1
-      reading_submap_id: 1
+      reference_submap_id: 8
+      reading_submap_id: 8
       visualize_residuals: true
       visualize_gradients: true
-      <!--range_x: [-1]-->
-      <!--range_y: [-1]-->
-      range_x: [-1, 0, 1]
-      range_y: [-1, 0, 1]
-      range_z: [-1, 0, 1]
-      <!--range_z: [-0.1, 0, 0.1]-->
+      <!--range_x: [0.4]-->
+      <!--range_y: [0.4]-->
+      <!--range_z: [0.4]-->
+      range_x: [-1, 0, 0.4]
+      range_y: [-1, 0, 0.4]
+      range_z: [-1, 0, 0.4]
       <!--range_yaw: [-0.17, 0, 0.17]-->
       <!--range_pitch: [-0.17, 0, 0.17]-->
       <!--range_roll: [-0.17, 0, 0.17]-->

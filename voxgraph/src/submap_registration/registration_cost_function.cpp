@@ -170,8 +170,8 @@ RegistrationCostFunction::RegistrationCostFunction(
           }
           const double reading_distance =
               q_vector * (interp_table_ * distances.transpose());
-          const double reading_weight = voxblox::probabilityFromLogOdds(
-              q_vector * (interp_table_ * weights.transpose()));
+          const double reading_weight =
+              q_vector * (interp_table_ * weights.transpose());
 
           residuals[residual_idx] =
               (reference_distance - reading_distance) * reference_weight;
@@ -266,6 +266,7 @@ RegistrationCostFunction::RegistrationCostFunction(
           double dResidual_dx_scaled = jacobians[0][i * num_params + 0];
           double dResidual_dy_scaled = jacobians[0][i * num_params + 1];
           double dResidual_dz_scaled = jacobians[0][i * num_params + 2];
+          // TODO(victorr): Transform the gradients from local to world frame
           gradient_vectors.points[1 + i * 2].x += 0.05 * dResidual_dx_scaled;
           gradient_vectors.points[1 + i * 2].y += 0.05 * dResidual_dy_scaled;
           gradient_vectors.points[1 + i * 2].z += 0.05 * dResidual_dz_scaled;
