@@ -21,6 +21,7 @@ class SubmapRegisterer {
       // Cost to assign for voxels that can't be interpolated
       double no_correspondence_cost = 0;
       bool visualize_residuals = false;
+      bool visualize_gradients = false;
     } cost;
   };
 

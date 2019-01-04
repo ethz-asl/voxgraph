@@ -50,7 +50,8 @@ class RegistrationCostFunction : public ceres::CostFunction {
   unsigned int num_relevant_reference_voxels_ = 0;
 
   // Residuals can be visualized as a pointcloud in Rviz
-  ros::Publisher residual_pointcloud_pub_;
+  ros::Publisher residual_pcloud_pub_;
+  ros::Publisher gradients_pub_;
 
   // Visualization tool
   cblox::TsdfMap::Config tsdf_map_config_;

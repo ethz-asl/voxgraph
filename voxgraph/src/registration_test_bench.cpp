@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     reference_submap_id = fixed_submap_id_tmp;
     reading_submap_id = reading_submap_id_tmp;
   }
-  bool visualize_residuals;
+  bool visualize_residuals, visualize_gradients;
   std::vector<double> range_x, range_y, range_z;
   std::vector<double> range_yaw, range_pitch, range_roll;
   nh_private.param("range_x", range_x, {0});
@@ -54,6 +54,7 @@ int main(int argc, char** argv) {
   nh_private.param("range_pitch", range_pitch, {0});
   nh_private.param("range_roll", range_roll, {0});
   nh_private.param("visualize_residuals", visualize_residuals, false);
+  nh_private.param("visualize_gradients", visualize_gradients, false);
 
   // Announce ROS topics for Rviz debug visuals
   ros::Publisher reference_mesh_pub =
@@ -201,6 +202,7 @@ int main(int argc, char** argv) {
   registerer_options.cost.max_voxel_distance = 0.6;
   registerer_options.cost.no_correspondence_cost = 0;
   registerer_options.cost.visualize_residuals = visualize_residuals;
+  registerer_options.cost.visualize_gradients = visualize_gradients;
   registerer_options.solver.max_num_iterations = 40;
   // Corresponds to moving less than 1mm:
   registerer_options.solver.parameter_tolerance = 3e-2;
@@ -229,7 +231,7 @@ int main(int argc, char** argv) {
     ros::Rate wait_rate(1);
     while (reference_mesh_pub.getNumSubscribers() == 0) {
       std::cout << "Waiting for Rviz to launch "
-                << "and subscribe to topic 'reference_mesh_pub'";
+                << "and subscribe to topic 'reference_mesh_pub'" << std::endl;
       wait_rate.sleep();
     }
 

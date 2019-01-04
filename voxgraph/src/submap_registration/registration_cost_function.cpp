@@ -51,11 +51,12 @@ RegistrationCostFunction::RegistrationCostFunction(
     }
   }
 
-  // Advertise the residual visualization pointcloud
+  // Advertise the residual visualization pointcloud and gradient vector field
   ros::NodeHandle nh_private("~");
-  residual_pointcloud_pub_ =
-      nh_private.advertise<pcl::PointCloud<pcl::PointXYZI>>(
-          "residual_pointcloud", 1, true);
+  residual_pcloud_pub_ = nh_private.advertise<pcl::PointCloud<pcl::PointXYZI>>(
+      "cost_residuals", 1, true);
+  gradients_pub_ = nh_private.advertise<visualization_msgs::MarkerArray>(
+      "cost_gradients", 1, true);
 
   // Set number of parameters
   mutable_parameter_block_sizes()->clear();
@@ -88,9 +89,46 @@ RegistrationCostFunction::RegistrationCostFunction(
     visualization_.publishTransform(T_world__reading, "world",
                                     "optimized_submap");
 
-    // Create pointcloud to visualize the residuals
+    // Create pointcloud to visualize the cost residuals
     pcl::PointCloud<pcl::PointXYZI> residual_pcloud;
+    // TODO(victorr): Use "optimized_submap" as frame_id and get rid of coord
+    // transforms
     residual_pcloud.header.frame_id = "world";
+
+    // Create marker array to visualize the cost gradients
+    visualization_msgs::MarkerArray gradient_marker_array;
+    visualization_msgs::Marker gradient_vectors;
+    visualization_msgs::Marker gradient_origins;
+    if (options_.visualize_gradients) {
+      gradient_vectors.header.stamp = ros::Time::now();
+      // TODO(victorr): Use "optimized_submap" as frame_id and get rid of coord
+      // transforms
+      gradient_vectors.header.frame_id = "world";
+      gradient_vectors.ns = "gradient_vectors";
+      gradient_vectors.id = 1;
+      gradient_vectors.type = visualization_msgs::Marker::LINE_LIST;
+      gradient_vectors.action = visualization_msgs::Marker::ADD;
+      gradient_vectors.pose.orientation.w = 1.0;  // Set to unit quaternion
+      gradient_vectors.scale.x = 0.02;
+      gradient_vectors.color.r = 1.0;
+      gradient_vectors.color.g = 0.0;
+      gradient_vectors.color.b = 0.0;
+      gradient_vectors.color.a = 1.0;
+
+      gradient_origins.header = gradient_vectors.header;
+      gradient_origins.ns = "gradient_origins";
+      gradient_origins.id = 2;
+      gradient_origins.type = visualization_msgs::Marker::SPHERE_LIST;
+      gradient_origins.action = visualization_msgs::Marker::ADD;
+      gradient_origins.pose.orientation.w = 1.0;  // Set to unit quaternion
+      gradient_origins.scale.x = 0.05;
+      gradient_origins.scale.y = 0.05;
+      gradient_origins.scale.z = 0.05;
+      gradient_origins.color.r = 0.0;
+      gradient_origins.color.g = 0.0;
+      gradient_origins.color.b = 0.0;
+      gradient_origins.color.a = 1.0;
+    }
 
     // Iterate over all reference submap blocks that contain relevant voxels
     for (const std::pair<voxblox::BlockIndex, voxblox::VoxelIndexList> &kv :
@@ -105,8 +143,9 @@ RegistrationCostFunction::RegistrationCostFunction(
         const voxblox::TsdfVoxel &reference_voxel =
             reference_block.getVoxelByVoxelIndex(voxel_index);
         const double reference_distance = reference_voxel.distance;
-        const double reference_weight =
-            voxblox::probabilityFromLogOdds(reference_voxel.weight);
+        const double reference_weight = reference_voxel.weight;
+        //            voxblox::probabilityFromLogOdds(reference_voxel.weight);
+        // TODO(victorr): Check why this improved performance so much
         summed_reference_weight += reference_weight;
         voxblox::Point reference_coordinate =
             reference_block.computeCoordinatesFromVoxelIndex(voxel_index);
@@ -184,7 +223,23 @@ RegistrationCostFunction::RegistrationCostFunction(
           } else {
             dResidual_dx = dResidual_dy = dResidual_dz = 0;
           }
-          // Set Jacobians
+          // Add gradient to visualization marker array
+          if (options_.visualize_gradients) {
+            voxblox::Point absolute_reading_coordinate =
+                T_world__reading * reading_pos;
+            geometry_msgs::Point absolute_reading_point;
+            absolute_reading_point.x = absolute_reading_coordinate.x();
+            absolute_reading_point.y = absolute_reading_coordinate.y();
+            absolute_reading_point.z = absolute_reading_coordinate.z();
+            gradient_origins.points.push_back(absolute_reading_point);
+            // NOTE: The point is added to gradient_vectors twice, once for the
+            // arrow's start and once for its endpoint. The endpoints will be
+            // moved by factor*gradient once all gradients are known,
+            // such that it can be normalized.
+            gradient_vectors.points.push_back(absolute_reading_point);
+            gradient_vectors.points.push_back(absolute_reading_point);
+          }
+          // Store Jacobians for Ceres
           jacobians[0][residual_idx*num_params + 0] = dResidual_dx;
           jacobians[0][residual_idx*num_params + 1] = dResidual_dy;
           jacobians[0][residual_idx*num_params + 2] = dResidual_dz;
@@ -199,16 +254,33 @@ RegistrationCostFunction::RegistrationCostFunction(
     double factor = (num_relevant_reference_voxels_/summed_reference_weight);
     for (int i = 0; i < residual_idx; i++) {
       residuals[i] *= factor;
-      if (options_.visualize_residuals) residual_pcloud[i].intensity *= factor;
+      if (options_.visualize_residuals) {
+        residual_pcloud[i].intensity *= factor;
+      }
       if (jacobians != nullptr && jacobians[0] != nullptr) {
         jacobians[0][i*num_params + 0] *= factor;
         jacobians[0][i*num_params + 1] *= factor;
         jacobians[0][i*num_params + 2] *= factor;
+        if (options_.visualize_gradients) {
+          // Move the arrow endpoints to show the gradients
+          double dResidual_dx_scaled = jacobians[0][i * num_params + 0];
+          double dResidual_dy_scaled = jacobians[0][i * num_params + 1];
+          double dResidual_dz_scaled = jacobians[0][i * num_params + 2];
+          gradient_vectors.points[1 + i * 2].x += 0.05 * dResidual_dx_scaled;
+          gradient_vectors.points[1 + i * 2].y += 0.05 * dResidual_dy_scaled;
+          gradient_vectors.points[1 + i * 2].z += 0.05 * dResidual_dz_scaled;
+        }
       }
     }
 
     if (options_.visualize_residuals) {
-      residual_pointcloud_pub_.publish(residual_pcloud);
+      residual_pcloud_pub_.publish(residual_pcloud);
+    }
+
+    if (options_.visualize_gradients && gradient_origins.points.size() != 0) {
+      gradient_marker_array.markers.emplace_back(gradient_vectors);
+      gradient_marker_array.markers.emplace_back(gradient_origins);
+      gradients_pub_.publish(gradient_marker_array);
     }
 
     return true;
