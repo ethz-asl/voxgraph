@@ -4,11 +4,8 @@
 
 #include "voxgraph/submap_registration/registration_cost_function.h"
 #include <minkindr_conversions/kindr_tf.h>
-#include <voxblox/interpolator/interpolator.h>
 #include <utility>
-
-// For visualization only
-#include <voxblox_ros/ptcloud_vis.h>
+#include "voxgraph/visualization/tf_helper.h"
 
 namespace voxgraph {
 RegistrationCostFunction::RegistrationCostFunction(
@@ -19,7 +16,6 @@ RegistrationCostFunction::RegistrationCostFunction(
       reading_submap_ptr_(reading_submap_ptr),
       reference_layer_(reference_submap_ptr->getTsdfMap().getTsdfLayer()),
       reading_layer_(reading_submap_ptr->getTsdfMap().getTsdfLayer()),
-      visualization_(tsdf_map_config_),
       options_(options) {
   // Get list of all allocated voxel blocks in the reference submap
   voxblox::BlockIndexList ref_block_list;
@@ -51,17 +47,10 @@ RegistrationCostFunction::RegistrationCostFunction(
     }
   }
 
-  // Advertise the residual visualization pointcloud and gradient vector field
-  ros::NodeHandle nh_private("~");
-  residual_pcloud_pub_ = nh_private.advertise<pcl::PointCloud<pcl::PointXYZI>>(
-      "cost_residuals", 1, true);
-  gradients_pub_ = nh_private.advertise<visualization_msgs::MarkerArray>(
-      "cost_gradients", 1, true);
-
   // Set number of parameters
   mutable_parameter_block_sizes()->clear();
-  mutable_parameter_block_sizes()->push_back(
-      3);  // 3 params (translation around x, y and z)
+  mutable_parameter_block_sizes()->push_back(3);
+  // 3 params (translation around x, y and z)
 
   // Set number of residuals (one per reference submap voxel)
   set_num_residuals(num_relevant_reference_voxels_);
@@ -86,49 +75,8 @@ RegistrationCostFunction::RegistrationCostFunction(
     // Publish the TF corresponding to the current optimized submap pose
     voxblox::Transformation T_world__reading =
         ref_submap_ptr_->getPose() * T_reference__reading;
-    visualization_.publishTransform(T_world__reading, "world",
-                                    "optimized_submap");
-
-    // Create pointcloud to visualize the cost residuals
-    pcl::PointCloud<pcl::PointXYZI> residual_pcloud;
-    // TODO(victorr): Use "optimized_submap" as frame_id and get rid of coord
-    // transforms
-    residual_pcloud.header.frame_id = "world";
-
-    // Create marker array to visualize the cost gradients
-    visualization_msgs::MarkerArray gradient_marker_array;
-    visualization_msgs::Marker gradient_vectors;
-    visualization_msgs::Marker gradient_origins;
-    if (options_.visualize_gradients) {
-      gradient_vectors.header.stamp = ros::Time::now();
-      // TODO(victorr): Use "optimized_submap" as frame_id and get rid of coord
-      // transforms
-      gradient_vectors.header.frame_id = "world";
-      gradient_vectors.ns = "gradient_vectors";
-      gradient_vectors.id = 1;
-      gradient_vectors.type = visualization_msgs::Marker::LINE_LIST;
-      gradient_vectors.action = visualization_msgs::Marker::ADD;
-      gradient_vectors.pose.orientation.w = 1.0;  // Set to unit quaternion
-      gradient_vectors.scale.x = 0.02;
-      gradient_vectors.color.r = 1.0;
-      gradient_vectors.color.g = 0.0;
-      gradient_vectors.color.b = 0.0;
-      gradient_vectors.color.a = 1.0;
-
-      gradient_origins.header = gradient_vectors.header;
-      gradient_origins.ns = "gradient_origins";
-      gradient_origins.id = 2;
-      gradient_origins.type = visualization_msgs::Marker::SPHERE_LIST;
-      gradient_origins.action = visualization_msgs::Marker::ADD;
-      gradient_origins.pose.orientation.w = 1.0;  // Set to unit quaternion
-      gradient_origins.scale.x = 0.05;
-      gradient_origins.scale.y = 0.05;
-      gradient_origins.scale.z = 0.05;
-      gradient_origins.color.r = 0.0;
-      gradient_origins.color.g = 0.0;
-      gradient_origins.color.b = 0.0;
-      gradient_origins.color.a = 1.0;
-    }
+    TfHelper::publishTransform(T_world__reading, "world", "optimized_submap",
+                               true);
 
     // Iterate over all reference submap blocks that contain relevant voxels
     for (const std::pair<voxblox::BlockIndex, voxblox::VoxelIndexList> &kv :
@@ -144,8 +92,6 @@ RegistrationCostFunction::RegistrationCostFunction(
             reference_block.getVoxelByVoxelIndex(voxel_index);
         const double reference_distance = reference_voxel.distance;
         const double reference_weight = reference_voxel.weight;
-        //            voxblox::probabilityFromLogOdds(reference_voxel.weight);
-        // TODO(victorr): Check why this improved performance so much
         summed_reference_weight += reference_weight;
         voxblox::Point reference_coordinate =
             reference_block.computeCoordinatesFromVoxelIndex(voxel_index);
@@ -182,18 +128,14 @@ RegistrationCostFunction::RegistrationCostFunction(
 
         // Add residual to visualization pointcloud
         if (options_.visualize_residuals) {
-          voxblox::Point absolute_reading_coordinate =
-              T_world__reading * reading_pos;
-          pcl::PointXYZI point;
-          point.x = absolute_reading_coordinate.x();
-          point.y = absolute_reading_coordinate.y();
-          point.z = absolute_reading_coordinate.z();
-          point.intensity = static_cast<float>(residuals[residual_idx]);
-          residual_pcloud.push_back(point);
+          // Transform the current point into the world frame
+          voxblox::Point world_t_world__point = T_world__reading * reading_pos;
+          cost_function_visuals_.addResidual(world_t_world__point,
+                                             residuals[residual_idx]);
         }
 
         // Calculate Jacobians if requested
-        double dResidual_dx, dResidual_dy, dResidual_dz;
+        voxblox::Point dResidual;
         if (jacobians != nullptr && jacobians[0] != nullptr) {
           if (interp_possible) {
             // Calculate q_vector derivatives
@@ -213,76 +155,52 @@ RegistrationCostFunction::RegistrationCostFunction(
                 inv * delta_x * delta_z;
             q_vector_dz << 0, 0, 0, inv, 0, inv * delta_y, inv * delta_x,
                 inv * delta_x * delta_y;
-
-            dResidual_dx = reference_weight * q_vector_dx *
-                           (interp_table_ * distances.transpose());
-            dResidual_dy = reference_weight * q_vector_dy *
-                           (interp_table_ * distances.transpose());
-            dResidual_dz = reference_weight * q_vector_dz *
-                           (interp_table_ * distances.transpose());
+            // Compute the Jacobian in the reading submap's frame of reference,
+            // then transform it into the reference submap frame
+            dResidual.x() = reference_weight * q_vector_dx *
+                            (interp_table_ * distances.transpose());
+            dResidual.y() = reference_weight * q_vector_dy *
+                            (interp_table_ * distances.transpose());
+            dResidual.z() = reference_weight * q_vector_dz *
+                            (interp_table_ * distances.transpose());
+            dResidual = T_reference__reading * dResidual;
           } else {
-            dResidual_dx = dResidual_dy = dResidual_dz = 0;
+            dResidual = {0, 0, 0};
           }
-          // Add gradient to visualization marker array
+          // Add Jacobian to visualization
           if (options_.visualize_gradients) {
-            voxblox::Point absolute_reading_coordinate =
+            // Transform the current point and Jacobian into the world frame
+            voxblox::Point world_t_world__point =
                 T_world__reading * reading_pos;
-            geometry_msgs::Point absolute_reading_point;
-            absolute_reading_point.x = absolute_reading_coordinate.x();
-            absolute_reading_point.y = absolute_reading_coordinate.y();
-            absolute_reading_point.z = absolute_reading_coordinate.z();
-            gradient_origins.points.push_back(absolute_reading_point);
-            // NOTE: The point is added to gradient_vectors twice, once for the
-            // arrow's start and once for its endpoint. The endpoints will be
-            // moved by factor*gradient once all gradients are known,
-            // such that it can be normalized.
-            gradient_vectors.points.push_back(absolute_reading_point);
-            gradient_vectors.points.push_back(absolute_reading_point);
+            voxblox::Point world_jacobian =
+                ref_submap_ptr_->getPose() * dResidual;
+            cost_function_visuals_.addJacobian(world_t_world__point,
+                                               world_jacobian);
           }
-          // Store Jacobians for Ceres
-          jacobians[0][residual_idx*num_params + 0] = dResidual_dx;
-          jacobians[0][residual_idx*num_params + 1] = dResidual_dy;
-          jacobians[0][residual_idx*num_params + 2] = dResidual_dz;
+          // Store the Jacobians for Ceres
+          jacobians[0][residual_idx * num_params + 0] = dResidual.x();
+          jacobians[0][residual_idx * num_params + 1] = dResidual.y();
+          jacobians[0][residual_idx * num_params + 2] = dResidual.z();
         }
         residual_idx++;
       }
     }
 
-    // Scale residuals by sum of reference voxel weights,
-    // to avoid encouraging overlap or divergence
+    // Scale residuals by sum of reference voxel weights
     if (summed_reference_weight == 0) return false;
     double factor = (num_relevant_reference_voxels_/summed_reference_weight);
-    for (int i = 0; i < residual_idx; i++) {
+    for (int i = 0; i < num_relevant_reference_voxels_; i++) {
       residuals[i] *= factor;
-      if (options_.visualize_residuals) {
-        residual_pcloud[i].intensity *= factor;
-      }
       if (jacobians != nullptr && jacobians[0] != nullptr) {
         jacobians[0][i*num_params + 0] *= factor;
         jacobians[0][i*num_params + 1] *= factor;
         jacobians[0][i*num_params + 2] *= factor;
-        if (options_.visualize_gradients) {
-          // Move the arrow endpoints to show the gradients
-          double dResidual_dx_scaled = jacobians[0][i * num_params + 0];
-          double dResidual_dy_scaled = jacobians[0][i * num_params + 1];
-          double dResidual_dz_scaled = jacobians[0][i * num_params + 2];
-          // TODO(victorr): Transform the gradients from local to world frame
-          gradient_vectors.points[1 + i * 2].x += 0.05 * dResidual_dx_scaled;
-          gradient_vectors.points[1 + i * 2].y += 0.05 * dResidual_dy_scaled;
-          gradient_vectors.points[1 + i * 2].z += 0.05 * dResidual_dz_scaled;
-        }
       }
     }
 
-    if (options_.visualize_residuals) {
-      residual_pcloud_pub_.publish(residual_pcloud);
-    }
-
-    if (options_.visualize_gradients && gradient_origins.points.size() != 0) {
-      gradient_marker_array.markers.emplace_back(gradient_vectors);
-      gradient_marker_array.markers.emplace_back(gradient_origins);
-      gradients_pub_.publish(gradient_marker_array);
-    }
+    // Scale and publish the visuals, then reset it for the next iteration
+    cost_function_visuals_.scaleAndPublish(factor);
+    cost_function_visuals_.reset();
 
     return true;
   }

@@ -10,10 +10,10 @@
 #include <ceres/ceres.h>
 #include <voxblox/interpolator/interpolator.h>
 #include "voxgraph/submap_registration/submap_registerer.h"
-#include "voxgraph/visualization.h"
 
 // For visualization only
 #include <ros/ros.h>
+#include "voxgraph/visualization/cost_function_visuals.h"
 
 namespace voxgraph {
 class RegistrationCostFunction : public ceres::CostFunction {
@@ -49,13 +49,8 @@ class RegistrationCostFunction : public ceres::CostFunction {
   voxblox::HierarchicalIndexMap reference_block_voxel_list_;
   unsigned int num_relevant_reference_voxels_ = 0;
 
-  // Residuals can be visualized as a pointcloud in Rviz
-  ros::Publisher residual_pcloud_pub_;
-  ros::Publisher gradients_pub_;
-
-  // Visualization tool
-  cblox::TsdfMap::Config tsdf_map_config_;
-  Visualization visualization_;
+  // Used for residual and Jacobian visualization
+  mutable CostFunctionVisuals cost_function_visuals_;
 
   // This matrix is used to interpolate voxels
   // It corresponds to matrix B_1 from paper: http://spie.org/samples/PM159.pdf

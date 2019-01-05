@@ -10,11 +10,12 @@
 #include <time.h>
 #include <voxblox/io/layer_io.h>
 #include <voxblox_ros/ptcloud_vis.h>
-#include <voxgraph/visualization.h>
 #include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
 #include "voxgraph/submap_registration/submap_registerer.h"
+#include "voxgraph/visualization/submap_visuals.h"
+#include "voxgraph/visualization/tf_helper.h"
 
 int main(int argc, char** argv) {
   // Start logging
@@ -210,21 +211,25 @@ int main(int argc, char** argv) {
                                                registerer_options);
 
   // Setup visualization tools
-  voxgraph::Visualization visualization(tsdf_map_config);
+  voxgraph::SubmapVisuals submap_vis(tsdf_map_config);
 
   // Publish TFs for all submaps
   {
     cblox::Transformation reference_submap_pose, reading_submap_pose;
     CHECK(tsdf_submap_collection_ptr->getSubMapPose(reference_submap_id,
                                                     reference_submap_pose));
-    visualization.publishTransform(reference_submap_pose, "world",
-                                   "reference_submap", true);
+    voxgraph::TfHelper::publishTransform(reference_submap_pose, "world",
+                                         "reference_submap", true);
     CHECK(tsdf_submap_collection_ptr->getSubMapPose(reading_submap_id,
                                                     reading_submap_pose));
-    visualization.publishTransform(reading_submap_pose, "world",
-                                   "perturbed_submap", true);
-    visualization.publishTransform(reading_submap_pose, "world",
-                                   "optimized_submap", true);
+    voxgraph::TfHelper::publishTransform(reading_submap_pose, "world",
+                                         "reading_submap", true);
+    // Publish temporary TFs as placeholder frames for the moving meshes,
+    // otherwise Rviz would discard the meshes due to lacking position info
+    voxgraph::TfHelper::publishTransform(reading_submap_pose, "world",
+                                         "perturbed_submap", true);
+    voxgraph::TfHelper::publishTransform(reading_submap_pose, "world",
+                                         "optimized_submap", true);
 
     // Wait for Rviz to launch so that it receives the meshes
     // before the TFs expire
@@ -236,19 +241,19 @@ int main(int argc, char** argv) {
     }
 
     // Publish reference submap Mesh
-    visualization.publishMesh(tsdf_submap_collection_ptr, reference_submap_id,
-                              cblox::Color::Green(), "reference_submap",
-                              reference_mesh_pub);
+    submap_vis.publishMesh(tsdf_submap_collection_ptr, reference_submap_id,
+                           cblox::Color::Green(), "reference_submap",
+                           reference_mesh_pub);
 
     // Publish reading submap meshes, which will
     // indicate its perturbed and optimized poses
     ROS_INFO("Publishing perturbed submap mesh");
-    visualization.publishMesh(tsdf_submap_collection_ptr, reading_submap_id,
-                              cblox::Color::Red(), "perturbed_submap",
-                              perturbed_reading_mesh_pub);
-    visualization.publishMesh(tsdf_submap_collection_ptr, reading_submap_id,
-                              cblox::Color::Blue(), "optimized_submap",
-                              optimized_reading_mesh_pub);
+    submap_vis.publishMesh(tsdf_submap_collection_ptr, reading_submap_id,
+                           cblox::Color::Red(), "perturbed_submap",
+                           perturbed_reading_mesh_pub);
+    submap_vis.publishMesh(tsdf_submap_collection_ptr, reading_submap_id,
+                           cblox::Color::Blue(), "optimized_submap",
+                           optimized_reading_mesh_pub);
   }
 
   // Format log file path containing current time stamp
@@ -270,9 +275,9 @@ int main(int argc, char** argv) {
   const cblox::Transformation T_world__ref_submap = transform_getter;
   CHECK(tsdf_submap_collection_ptr->getSubMapPose(reading_submap_id,
                                                   transform_getter));
-  const cblox::Transformation original_T_world__reading = transform_getter;
+  const cblox::Transformation T_world__reading_original = transform_getter;
   const Eigen::Vector3f &ground_truth_position =
-      original_T_world__reading.getPosition();
+      T_world__reading_original.getPosition();
 
   // Create log file and write header
   // TODO(victorr): Write Git ID into log file
@@ -286,7 +291,7 @@ int main(int argc, char** argv) {
   } else {
     log_file << reading_submap_id;
   }
-  log_file << "," << visualize_residuals << "\n"
+  log_file << "," << (visualize_residuals || visualize_gradients) << "\n"
            << "x_true, y_true, z_true, yaw_true, pitch_true, roll_true\n"
            << ground_truth_position.x() << "," << ground_truth_position.y()
            << "," << ground_truth_position.z() << ","
@@ -318,14 +323,14 @@ int main(int argc, char** argv) {
               cblox::Transformation perturbation(
                   position.cast<cblox::FloatingPoint>(),
                   orientation.cast<cblox::FloatingPoint>());
-              const cblox::Transformation perturbed_T_world__reading =
-                  perturbation * original_T_world__reading;
+              const cblox::Transformation T_world__reading_perturbed =
+                  perturbation * T_world__reading_original;
               tsdf_submap_collection_ptr->setSubMapPose(
-                  reading_submap_id, perturbed_T_world__reading);
+                  reading_submap_id, T_world__reading_perturbed);
 
               // Announce progress
               const Eigen::Vector3f &perturbed_position =
-                  perturbed_T_world__reading.getPosition();
+                  T_world__reading_perturbed.getPosition();
               printf(
                   "-- % 2i disturbance:        "
                   "x % 4.6f    y % 4.6f    z % 4.6f    "
@@ -336,13 +341,14 @@ int main(int argc, char** argv) {
                   pitch, roll);
 
               // Publish the TF of perturbed mesh
-              visualization.publishTransform(perturbed_T_world__reading,
-                                             "world", "perturbed_submap");
+              voxgraph::TfHelper::publishTransform(T_world__reading_perturbed,
+                                                   "world", "perturbed_submap",
+                                                   true);
 
               // Set initial conditions
               ceres::Solver::Summary summary;
               voxblox::Transformation T_reference__reading =
-                  T_world__ref_submap.inverse() * perturbed_T_world__reading;
+                  T_world__ref_submap.inverse() * T_world__reading_perturbed;
               voxblox::Transformation::Vector6 T_vec =
                   T_reference__reading.log();
               double ref_t_ref_reading[3] = {T_vec[0], T_vec[1], T_vec[2]};

@@ -17,6 +17,8 @@ cs_add_executable(registration_test_bench
     src/registration_test_bench.cpp
     src/submap_registration/submap_registerer.cpp
     src/submap_registration/registration_cost_function.cpp
-    src/visualization.cpp
+    src/visualization/submap_visuals.cpp
+    src/visualization/cost_function_visuals.cpp
+    src/visualization/tf_helper.cpp
 )
 target_link_libraries(registration_test_bench ${catkin_LIBRARIES})
