@@ -216,10 +216,10 @@ int main(int argc, char** argv) {
   // Save the reference submap pose and the original reading submap pose
   cblox::Transformation transform_getter;
   CHECK(tsdf_submap_collection_ptr->getSubMapPose(reference_submap_id,
-                                                  transform_getter));
+                                                  &transform_getter));
   const cblox::Transformation T_world__ref_submap = transform_getter;
   CHECK(tsdf_submap_collection_ptr->getSubMapPose(reading_submap_id,
-                                                  transform_getter));
+                                                  &transform_getter));
   const cblox::Transformation T_world__reading_original = transform_getter;
   const Eigen::Vector3f &ground_truth_position =
       T_world__reading_original.getPosition();

@@ -19,11 +19,13 @@ bool SubmapRegisterer::testRegistration(
     const cblox::SubmapID &reading_submap_id, double *ref_t_ref_reading,
     ceres::Solver::Summary *summary) {
   // Get shared pointers to the reference and reading submaps
-  cblox::TsdfSubmap::ConstPtr reference_submap_ptr, reading_submap_ptr;
-  CHECK(tsdf_submap_collection_ptr_->getTsdfSubmapConstPtrById(
-      reference_submap_id, reference_submap_ptr));
-  CHECK(tsdf_submap_collection_ptr_->getTsdfSubmapConstPtrById(
-      reading_submap_id, reading_submap_ptr));
+  cblox::TsdfSubmap::ConstPtr reference_submap_ptr =
+      tsdf_submap_collection_ptr_->getTsdfSubmapConstPtrById(
+          reference_submap_id);
+  cblox::TsdfSubmap::ConstPtr reading_submap_ptr =
+      tsdf_submap_collection_ptr_->getTsdfSubmapConstPtrById(reading_submap_id);
+  CHECK_NOTNULL(reference_submap_ptr);
+  CHECK_NOTNULL(reading_submap_ptr);
 
   // Create problem and initial conditions
   ceres::Problem problem;

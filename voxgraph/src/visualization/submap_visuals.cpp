@@ -17,9 +17,9 @@ void SubmapVisuals::publishMesh(
     const cblox::SubmapID &submap_id, const cblox::Color &submap_color,
     const std::string &submap_frame, const ros::Publisher &publisher) const {
   // Get a pointer to the submap
-  cblox::TsdfSubmap::ConstPtr submap_ptr;
-  CHECK(
-      submap_collection_ptr->getTsdfSubmapConstPtrById(submap_id, submap_ptr));
+  cblox::TsdfSubmap::ConstPtr submap_ptr =
+      submap_collection_ptr->getTsdfSubmapConstPtrById(submap_id);
+  CHECK_NOTNULL(submap_ptr);
 
   // Generate the mesh
   cblox::MeshLayer::Ptr mesh_layer_ptr(
