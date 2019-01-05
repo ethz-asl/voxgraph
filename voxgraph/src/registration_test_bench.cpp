@@ -213,44 +213,47 @@ int main(int argc, char** argv) {
   // Setup visualization tools
   voxgraph::SubmapVisuals submap_vis(tsdf_map_config);
 
-  // Publish TFs for all submaps
-  {
-    cblox::Transformation reference_submap_pose, reading_submap_pose;
-    CHECK(tsdf_submap_collection_ptr->getSubMapPose(reference_submap_id,
-                                                    reference_submap_pose));
-    voxgraph::TfHelper::publishTransform(reference_submap_pose, "world",
-                                         "reference_submap", true);
-    CHECK(tsdf_submap_collection_ptr->getSubMapPose(reading_submap_id,
-                                                    reading_submap_pose));
-    voxgraph::TfHelper::publishTransform(reading_submap_pose, "world",
-                                         "reading_submap", true);
-    // Publish temporary TFs as placeholder frames for the moving meshes,
-    // otherwise Rviz would discard the meshes due to lacking position info
-    voxgraph::TfHelper::publishTransform(reading_submap_pose, "world",
-                                         "perturbed_submap", true);
-    voxgraph::TfHelper::publishTransform(reading_submap_pose, "world",
-                                         "optimized_submap", true);
+  // Save the reference submap pose and the original reading submap pose
+  cblox::Transformation transform_getter;
+  CHECK(tsdf_submap_collection_ptr->getSubMapPose(reference_submap_id,
+                                                  transform_getter));
+  const cblox::Transformation T_world__ref_submap = transform_getter;
+  CHECK(tsdf_submap_collection_ptr->getSubMapPose(reading_submap_id,
+                                                  transform_getter));
+  const cblox::Transformation T_world__reading_original = transform_getter;
+  const Eigen::Vector3f &ground_truth_position =
+      T_world__reading_original.getPosition();
 
+  // Publish TFs for the reference and reading submap
+  voxgraph::TfHelper::publishTransform(T_world__ref_submap, "world",
+                                       "reference_submap", true);
+  voxgraph::TfHelper::publishTransform(T_world__reading_original, "world",
+                                       "reading_submap", true);
+
+  // Publish the meshes used to visualize the submaps
+  {
     // Wait for Rviz to launch so that it receives the meshes
-    // before the TFs expire
     ros::Rate wait_rate(1);
     while (reference_mesh_pub.getNumSubscribers() == 0) {
       std::cout << "Waiting for Rviz to launch "
                 << "and subscribe to topic 'reference_mesh_pub'" << std::endl;
       wait_rate.sleep();
     }
-
     // Publish reference submap Mesh
     submap_vis.publishMesh(tsdf_submap_collection_ptr, reference_submap_id,
                            cblox::Color::Green(), "reference_submap",
                            reference_mesh_pub);
-
-    // Publish reading submap meshes, which will
-    // indicate its perturbed and optimized poses
-    ROS_INFO("Publishing perturbed submap mesh");
+    // Publish temporary TFs for the moving meshes, such that Rviz
+    // doesn't discard them due to missing frame position information
+    voxgraph::TfHelper::publishTransform(T_world__reading_original, "world",
+                                         "perturbed_submap", true);
+    voxgraph::TfHelper::publishTransform(T_world__reading_original, "world",
+                                         "optimized_submap", true);
+    // Publish the reading submap mesh used to indicate its perturbed pose
     submap_vis.publishMesh(tsdf_submap_collection_ptr, reading_submap_id,
                            cblox::Color::Red(), "perturbed_submap",
                            perturbed_reading_mesh_pub);
+    // Publish the reading submap mesh used to indicate its optimized pose
     submap_vis.publishMesh(tsdf_submap_collection_ptr, reading_submap_id,
                            cblox::Color::Blue(), "optimized_submap",
                            optimized_reading_mesh_pub);
@@ -267,17 +270,6 @@ int main(int argc, char** argv) {
   log_file_path /= time_char_buffer;
   log_file_path += ".csv";
   std::cout << "Log file will be saved as: " << log_file_path << std::endl;
-
-  // Save the reference submap pose and the original reading submap pose
-  cblox::Transformation transform_getter;
-  CHECK(tsdf_submap_collection_ptr->getSubMapPose(reference_submap_id,
-                                                  transform_getter));
-  const cblox::Transformation T_world__ref_submap = transform_getter;
-  CHECK(tsdf_submap_collection_ptr->getSubMapPose(reading_submap_id,
-                                                  transform_getter));
-  const cblox::Transformation T_world__reading_original = transform_getter;
-  const Eigen::Vector3f &ground_truth_position =
-      T_world__reading_original.getPosition();
 
   // Create log file and write header
   // TODO(victorr): Write Git ID into log file
