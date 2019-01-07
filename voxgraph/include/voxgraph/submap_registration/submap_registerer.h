@@ -7,7 +7,9 @@
 
 #include <ceres/ceres.h>
 #include <cblox/core/common.h>
-#include <cblox/core/tsdf_submap_collection.h>
+#include <cblox/core/submap_collection.h>
+#include <cblox/core/tsdf_submap.h>
+#include <cblox/core/tsdf_esdf_submap.h>
 
 namespace voxgraph {
 class SubmapRegisterer {
@@ -26,7 +28,8 @@ class SubmapRegisterer {
   };
 
   SubmapRegisterer(
-      cblox::TsdfSubmapCollection::ConstPtr tsdf_submap_collection_ptr,
+      cblox::SubmapCollection<cblox::TsdfSubmap>
+          ::ConstPtr submap_collection_ptr,
       const Options &options);
 
   ~SubmapRegisterer() = default;
@@ -37,7 +40,7 @@ class SubmapRegisterer {
                         ceres::Solver::Summary *summary);
 
  private:
-  cblox::TsdfSubmapCollection::ConstPtr tsdf_submap_collection_ptr_;
+  cblox::SubmapCollection<cblox::TsdfSubmap>::ConstPtr submap_collection_ptr_;
   Options options_;
 };
 }  // namespace voxgraph

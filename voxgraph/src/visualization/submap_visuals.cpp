@@ -3,17 +3,18 @@
 //
 
 #include "voxgraph/visualization/submap_visuals.h"
-#include <cblox/mesh/tsdf_submap_mesher.h>
+#include <cblox/mesh/submap_mesher.h>
 #include <voxblox_ros/mesh_vis.h>
 #include <voxblox_ros/ptcloud_vis.h>
 #include <string>
 
 namespace voxgraph {
 SubmapVisuals::SubmapVisuals(const cblox::TsdfMap::Config &tsdf_map_config)
-    : tsdf_submap_mesher_(tsdf_map_config, mesh_config_) {}
+    : submap_mesher_(tsdf_map_config, mesh_config_) {}
 
 void SubmapVisuals::publishMesh(
-    const cblox::TsdfSubmapCollection::Ptr &submap_collection_ptr,
+    const cblox::SubmapCollection<cblox::TsdfSubmap>
+        ::Ptr &submap_collection_ptr,
     const cblox::SubmapID &submap_id, const cblox::Color &submap_color,
     const std::string &submap_frame, const ros::Publisher &publisher) const {
   // Get a pointer to the submap
@@ -28,7 +29,7 @@ void SubmapVisuals::publishMesh(
       mesh_config_, submap_ptr->getTsdfMap().getTsdfLayer(),
       mesh_layer_ptr.get());
   reference_mesh_integrator.generateMesh(false, false);
-  tsdf_submap_mesher_.colorMeshLayer(submap_color, mesh_layer_ptr.get());
+  submap_mesher_.colorMeshLayer(submap_color, mesh_layer_ptr.get());
 
   // Publish mesh
   visualization_msgs::Marker marker;

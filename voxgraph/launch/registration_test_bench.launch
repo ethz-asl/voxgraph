@@ -6,8 +6,8 @@
       log_folder_path: "/home/victor/catkin_ws/voxgraph/test_bench_stats"
       reference_submap_id: 1
       reading_submap_id: 1
-      visualize_residuals: true
-      visualize_gradients: true
+      visualize_residuals: false
+      visualize_gradients: false
       <!--range_x: [0.4]-->
       <!--range_y: [0.4]-->
       <!--range_z: [0.4]-->

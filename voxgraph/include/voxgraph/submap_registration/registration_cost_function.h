@@ -5,10 +5,12 @@
 #ifndef VOXGRAPH_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_H_
 #define VOXGRAPH_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_H_
 
-#include <cblox/core/common.h>
-#include <cblox/core/tsdf_submap_collection.h>
 #include <ceres/ceres.h>
 #include <voxblox/interpolator/interpolator.h>
+#include <cblox/core/common.h>
+#include <cblox/core/submap_collection.h>
+#include <cblox/core/tsdf_submap.h>
+#include <cblox/core/tsdf_esdf_submap.h>
 #include "voxgraph/submap_registration/submap_registerer.h"
 
 // For visualization only

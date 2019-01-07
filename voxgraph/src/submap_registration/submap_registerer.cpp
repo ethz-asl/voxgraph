@@ -9,9 +9,9 @@
 
 namespace voxgraph {
 SubmapRegisterer::SubmapRegisterer(
-    cblox::TsdfSubmapCollection::ConstPtr tsdf_submap_collection_ptr,
+    cblox::SubmapCollection<cblox::TsdfSubmap>::ConstPtr submap_collection_ptr,
     const Options &options)
-    : tsdf_submap_collection_ptr_(std::move(tsdf_submap_collection_ptr)),
+    : submap_collection_ptr_(std::move(submap_collection_ptr)),
       options_(options) {}
 
 bool SubmapRegisterer::testRegistration(
@@ -20,10 +20,10 @@ bool SubmapRegisterer::testRegistration(
     ceres::Solver::Summary *summary) {
   // Get shared pointers to the reference and reading submaps
   cblox::TsdfSubmap::ConstPtr reference_submap_ptr =
-      tsdf_submap_collection_ptr_->getTsdfSubmapConstPtrById(
+      submap_collection_ptr_->getTsdfSubmapConstPtrById(
           reference_submap_id);
   cblox::TsdfSubmap::ConstPtr reading_submap_ptr =
-      tsdf_submap_collection_ptr_->getTsdfSubmapConstPtrById(reading_submap_id);
+      submap_collection_ptr_->getTsdfSubmapConstPtrById(reading_submap_id);
   CHECK_NOTNULL(reference_submap_ptr);
   CHECK_NOTNULL(reading_submap_ptr);
 

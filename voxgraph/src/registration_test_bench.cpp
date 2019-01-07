@@ -2,7 +2,7 @@
 // Created by victor on 29.11.18.
 //
 
-#include <cblox/core/tsdf_submap_collection.h>
+#include <cblox/core/submap_collection.h>
 #include <cblox/io/tsdf_submap_io.h>
 #include <cblox/utils/quat_transformation_protobuf_utils.h>
 #include <glog/logging.h>
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
   // NOTE(victorr): The code below comes from cblox,
   // but has been modified to selectively load submaps.
   // TODO(victorr): Integrate the feature back into cblox.
-  cblox::TsdfSubmapCollection::Ptr tsdf_submap_collection_ptr;
+  cblox::SubmapCollection<cblox::TsdfSubmap>::Ptr tsdf_submap_collection_ptr;
   cblox::TsdfMap::Config tsdf_map_config;
   {
     // Load the protobuf file containing the submap collection
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 
     // Load the protobuf header
     cblox::TsdfSubmapCollectionProto tsdf_submap_collection_proto;
-    if (!cblox::utils::readProtoMsgFromStream(
+    if (!voxblox::utils::readProtoMsgFromStream(
             &proto_file, &tsdf_submap_collection_proto, &tmp_byte_offset)) {
       LOG(FATAL) << "Could not read submap collection protobuf message.";
     }
@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     tsdf_map_config.tsdf_voxels_per_side =
         tsdf_submap_collection_proto.voxels_per_side();
     tsdf_submap_collection_ptr.reset(
-        new cblox::TsdfSubmapCollection(tsdf_map_config));
+        new cblox::SubmapCollection<cblox::TsdfSubmap>(tsdf_map_config));
 
     // Load the two submaps of interest
     std::cout << "Searching for submap IDs " << reference_submap_id << " and "
@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
 
       // Getting the header for the current submap
       cblox::TsdfSubmapProto tsdf_sub_map_proto;
-      if (!cblox::utils::readProtoMsgFromStream(
+      if (!voxblox::utils::readProtoMsgFromStream(
               &proto_file, &tsdf_sub_map_proto, &tmp_byte_offset)) {
         LOG(ERROR) << "Could not read tsdf sub map protobuf message.";
         continue;
@@ -399,5 +399,6 @@ int main(int argc, char** argv) {
 
   // Keep the ROS node alive in order to interact with its topics in Rviz
   ros::spin();
+
   return 0;
 }
