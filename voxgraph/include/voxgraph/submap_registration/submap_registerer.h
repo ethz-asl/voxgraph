@@ -5,11 +5,12 @@
 #ifndef VOXGRAPH_SUBMAP_REGISTRATION_SUBMAP_REGISTERER_H_
 #define VOXGRAPH_SUBMAP_REGISTRATION_SUBMAP_REGISTERER_H_
 
-#include <ceres/ceres.h>
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
-#include <cblox/core/tsdf_submap.h>
 #include <cblox/core/tsdf_esdf_submap.h>
+#include <cblox/core/tsdf_submap.h>
+#include <ceres/ceres.h>
+#include "voxgraph/voxgraph_submap.h"
 
 namespace voxgraph {
 class SubmapRegisterer {
@@ -22,14 +23,14 @@ class SubmapRegisterer {
       double max_voxel_distance = 1;
       // Cost to assign for voxels that can't be interpolated
       double no_correspondence_cost = 0;
+      bool use_esdf_distance = false;
       bool visualize_residuals = false;
       bool visualize_gradients = false;
     } cost;
   };
 
   SubmapRegisterer(
-      cblox::SubmapCollection<cblox::TsdfSubmap>
-          ::ConstPtr submap_collection_ptr,
+      cblox::SubmapCollection<VoxgraphSubmap>::ConstPtr submap_collection_ptr,
       const Options &options);
 
   ~SubmapRegisterer() = default;
@@ -40,7 +41,7 @@ class SubmapRegisterer {
                         ceres::Solver::Summary *summary);
 
  private:
-  cblox::SubmapCollection<cblox::TsdfSubmap>::ConstPtr submap_collection_ptr_;
+  cblox::SubmapCollection<VoxgraphSubmap>::ConstPtr submap_collection_ptr_;
   Options options_;
 };
 }  // namespace voxgraph

@@ -1,6 +1,6 @@
 <launch>
-  <node name="voxgraph_registration_test_bench" pkg="voxgraph" type="registration_test_bench" output="screen">
-    <!--launch-prefix="gdb -ex run &#45;&#45;args">-->
+  <node name="voxgraph_registration_test_bench" pkg="voxgraph" type="registration_test_bench" output="screen"
+    launch-prefix="gdb -ex run --args">
     <rosparam>
       submap_collection_file_path: "/home/victor/catkin_ws/voxgraph/submap_collections/burning_house_gt_truncdist2_maxraylength15_antigrazing1"
       log_folder_path: "/home/victor/catkin_ws/voxgraph/test_bench_stats"
@@ -8,6 +8,7 @@
       reading_submap_id: 1
       visualize_residuals: false
       visualize_gradients: false
+      use_esdf_distance: true
       <!--range_x: [0.4]-->
       <!--range_y: [0.4]-->
       <!--range_z: [0.4]-->

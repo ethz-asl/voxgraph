@@ -9,17 +9,16 @@
 #include <string>
 
 namespace voxgraph {
-SubmapVisuals::SubmapVisuals(const cblox::TsdfMap::Config &tsdf_map_config)
-    : submap_mesher_(tsdf_map_config, mesh_config_) {}
+SubmapVisuals::SubmapVisuals(const VoxgraphSubmap::Config &submap_config)
+    : submap_mesher_(submap_config, mesh_config_) {}
 
 void SubmapVisuals::publishMesh(
-    const cblox::SubmapCollection<cblox::TsdfSubmap>
-        ::Ptr &submap_collection_ptr,
+    const cblox::SubmapCollection<VoxgraphSubmap>::Ptr &submap_collection_ptr,
     const cblox::SubmapID &submap_id, const cblox::Color &submap_color,
     const std::string &submap_frame, const ros::Publisher &publisher) const {
   // Get a pointer to the submap
-  cblox::TsdfSubmap::ConstPtr submap_ptr =
-      submap_collection_ptr->getTsdfSubmapConstPtrById(submap_id);
+  VoxgraphSubmap::ConstPtr submap_ptr =
+      submap_collection_ptr->getSubMapConstPtrById(submap_id);
   CHECK_NOTNULL(submap_ptr);
 
   // Generate the mesh

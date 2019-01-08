@@ -10,6 +10,7 @@
 #include <time.h>
 #include <voxblox/io/layer_io.h>
 #include <voxblox_ros/ptcloud_vis.h>
+#include <voxgraph/voxgraph_submap.h>
 #include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
@@ -45,6 +46,7 @@ int main(int argc, char** argv) {
     reference_submap_id = fixed_submap_id_tmp;
     reading_submap_id = reading_submap_id_tmp;
   }
+  bool use_esdf_distance;
   bool visualize_residuals, visualize_gradients;
   std::vector<double> range_x, range_y, range_z;
   std::vector<double> range_yaw, range_pitch, range_roll;
@@ -54,6 +56,7 @@ int main(int argc, char** argv) {
   nh_private.param("range_yaw", range_yaw, {0});
   nh_private.param("range_pitch", range_pitch, {0});
   nh_private.param("range_roll", range_roll, {0});
+  nh_private.param("use_esdf_distance", use_esdf_distance, true);
   nh_private.param("visualize_residuals", visualize_residuals, false);
   nh_private.param("visualize_gradients", visualize_gradients, false);
 
@@ -67,21 +70,15 @@ int main(int argc, char** argv) {
   ros::Publisher perturbed_reading_mesh_pub =
       nh_private.advertise<visualization_msgs::Marker>(
           "perturbed_reading_mesh_pub", 1, true);
-  //  ros::Publisher perturbed_tsdf_pub =
-  //      nh_private.advertise<pcl::PointCloud<pcl::PointXYZI>>(
-  //          "perturbed_tsdf_pointcloud", 1, true);
   ros::Publisher optimized_reading_mesh_pub =
       nh_private.advertise<visualization_msgs::Marker>(
           "optimized_reading_mesh_pub", 1, true);
-  //  ros::Publisher optimized_tsdf_pub =
-  //      nh_private.advertise<pcl::PointCloud<pcl::PointXYZI>>(
-  //          "optimized_tsdf_pointcloud", 1, true);
 
   // NOTE(victorr): The code below comes from cblox,
   // but has been modified to selectively load submaps.
   // TODO(victorr): Integrate the feature back into cblox.
-  cblox::SubmapCollection<cblox::TsdfSubmap>::Ptr tsdf_submap_collection_ptr;
-  cblox::TsdfMap::Config tsdf_map_config;
+  cblox::SubmapCollection<voxgraph::VoxgraphSubmap>::Ptr submap_collection_ptr;
+  voxgraph::VoxgraphSubmap::Config submap_config;
   {
     // Load the protobuf file containing the submap collection
     std::fstream proto_file;
@@ -108,11 +105,13 @@ int main(int argc, char** argv) {
               << tsdf_submap_collection_proto.num_submaps() << std::endl;
 
     // Creating the new submap collection based on the loaded parameters
-    tsdf_map_config.tsdf_voxel_size = tsdf_submap_collection_proto.voxel_size();
-    tsdf_map_config.tsdf_voxels_per_side =
+    submap_config.tsdf_voxel_size = tsdf_submap_collection_proto.voxel_size();
+    submap_config.tsdf_voxels_per_side =
         tsdf_submap_collection_proto.voxels_per_side();
-    tsdf_submap_collection_ptr.reset(
-        new cblox::SubmapCollection<cblox::TsdfSubmap>(tsdf_map_config));
+    submap_config.esdf_voxel_size = submap_config.tsdf_voxel_size;
+    submap_config.esdf_voxels_per_side = submap_config.tsdf_voxels_per_side;
+    submap_collection_ptr.reset(
+        new cblox::SubmapCollection<voxgraph::VoxgraphSubmap>(submap_config));
 
     // Load the two submaps of interest
     std::cout << "Searching for submap IDs " << reference_submap_id << " and "
@@ -120,7 +119,7 @@ int main(int argc, char** argv) {
     for (size_t sub_map_index = 0;
          sub_map_index < tsdf_submap_collection_proto.num_submaps();
          sub_map_index++) {
-      CHECK(tsdf_submap_collection_ptr);
+      CHECK(submap_collection_ptr);
 
       // Getting the header for the current submap
       cblox::TsdfSubmapProto tsdf_sub_map_proto;
@@ -142,7 +141,7 @@ int main(int argc, char** argv) {
         // Advance byte_offset in protobuf but don't add them to the map
         // TODO(victorr): Advancing the byte_offset directly would be nicer
         // but seems dangerous. Is there a better solution?
-        cblox::TsdfMap tmp_tsdf_map(tsdf_map_config);
+        cblox::TsdfMap tmp_tsdf_map(submap_config);
         voxblox::io::LoadBlocksFromStream(
             tsdf_sub_map_proto.num_blocks(),
             voxblox::Layer<voxblox::TsdfVoxel>::BlockMergingStrategy::kReplace,
@@ -166,16 +165,15 @@ int main(int argc, char** argv) {
                 << std::endl;
 
       // Creating a new submap to hold the data
-      tsdf_submap_collection_ptr->createNewSubMap(T_M_S,
-                                                  tsdf_sub_map_proto.id());
+      submap_collection_ptr->createNewSubMap(T_M_S, tsdf_sub_map_proto.id());
 
       // Getting the blocks for this submap (the tsdf layer)
       if (!voxblox::io::LoadBlocksFromStream(
               tsdf_sub_map_proto.num_blocks(),
               voxblox::Layer<
                   voxblox::TsdfVoxel>::BlockMergingStrategy::kReplace,
-              &proto_file, tsdf_submap_collection_ptr->getActiveTsdfMapPtr()
-                               ->getTsdfLayerPtr(),
+              &proto_file,
+              submap_collection_ptr->getActiveTsdfMapPtr()->getTsdfLayerPtr(),
               &tmp_byte_offset)) {
         LOG(ERROR) << "Could not load the blocks from stream.";
         continue;
@@ -190,8 +188,8 @@ int main(int argc, char** argv) {
     std::cout << "Reference and reading submap IDs are the same, "
               << "duplicating the reference..." << std::endl;
     reading_submap_id = INT32_MAX;
-    CHECK(tsdf_submap_collection_ptr->duplicateSubMap(reference_submap_id,
-                                                      reading_submap_id));
+    CHECK(submap_collection_ptr->duplicateSubMap(reference_submap_id,
+                                                 reading_submap_id));
   }
 
   // Setup the submap to submap registerer
@@ -202,24 +200,25 @@ int main(int argc, char** argv) {
   registerer_options.cost.min_voxel_weight = 1e-6;
   registerer_options.cost.max_voxel_distance = 0.6;
   registerer_options.cost.no_correspondence_cost = 0;
+  registerer_options.cost.use_esdf_distance = use_esdf_distance;
   registerer_options.cost.visualize_residuals = visualize_residuals;
   registerer_options.cost.visualize_gradients = visualize_gradients;
   registerer_options.solver.max_num_iterations = 40;
   // Corresponds to moving less than 1mm:
   registerer_options.solver.parameter_tolerance = 3e-2;
-  voxgraph::SubmapRegisterer submap_registerer(tsdf_submap_collection_ptr,
+  voxgraph::SubmapRegisterer submap_registerer(submap_collection_ptr,
                                                registerer_options);
 
   // Setup visualization tools
-  voxgraph::SubmapVisuals submap_vis(tsdf_map_config);
+  voxgraph::SubmapVisuals submap_vis(submap_config);
 
   // Save the reference submap pose and the original reading submap pose
   cblox::Transformation transform_getter;
-  CHECK(tsdf_submap_collection_ptr->getSubMapPose(reference_submap_id,
-                                                  &transform_getter));
+  CHECK(submap_collection_ptr->getSubMapPose(reference_submap_id,
+                                             &transform_getter));
   const cblox::Transformation T_world__ref_submap = transform_getter;
-  CHECK(tsdf_submap_collection_ptr->getSubMapPose(reading_submap_id,
-                                                  &transform_getter));
+  CHECK(submap_collection_ptr->getSubMapPose(reading_submap_id,
+                                             &transform_getter));
   const cblox::Transformation T_world__reading_original = transform_getter;
   const Eigen::Vector3f &ground_truth_position =
       T_world__reading_original.getPosition();
@@ -240,7 +239,7 @@ int main(int argc, char** argv) {
       wait_rate.sleep();
     }
     // Publish reference submap Mesh
-    submap_vis.publishMesh(tsdf_submap_collection_ptr, reference_submap_id,
+    submap_vis.publishMesh(submap_collection_ptr, reference_submap_id,
                            cblox::Color::Green(), "reference_submap",
                            reference_mesh_pub);
     // Publish temporary TFs for the moving meshes, such that Rviz
@@ -250,13 +249,19 @@ int main(int argc, char** argv) {
     voxgraph::TfHelper::publishTransform(T_world__reading_original, "world",
                                          "optimized_submap", true);
     // Publish the reading submap mesh used to indicate its perturbed pose
-    submap_vis.publishMesh(tsdf_submap_collection_ptr, reading_submap_id,
+    submap_vis.publishMesh(submap_collection_ptr, reading_submap_id,
                            cblox::Color::Red(), "perturbed_submap",
                            perturbed_reading_mesh_pub);
     // Publish the reading submap mesh used to indicate its optimized pose
-    submap_vis.publishMesh(tsdf_submap_collection_ptr, reading_submap_id,
+    submap_vis.publishMesh(submap_collection_ptr, reading_submap_id,
                            cblox::Color::Blue(), "optimized_submap",
                            optimized_reading_mesh_pub);
+  }
+
+  // Generate the ESDFs for the submaps
+  if (use_esdf_distance) {
+    CHECK(submap_collection_ptr->generateEsdfById(reference_submap_id));
+    CHECK(submap_collection_ptr->generateEsdfById(reading_submap_id));
   }
 
   // Format log file path containing current time stamp
@@ -317,8 +322,8 @@ int main(int argc, char** argv) {
                   orientation.cast<cblox::FloatingPoint>());
               const cblox::Transformation T_world__reading_perturbed =
                   perturbation * T_world__reading_original;
-              tsdf_submap_collection_ptr->setSubMapPose(
-                  reading_submap_id, T_world__reading_perturbed);
+              submap_collection_ptr->setSubMapPose(reading_submap_id,
+                                                   T_world__reading_perturbed);
 
               // Announce progress
               const Eigen::Vector3f &perturbed_position =
@@ -356,8 +361,8 @@ int main(int argc, char** argv) {
                 T_reference__reading = voxblox::Transformation::exp(T_vec);
                 voxblox::Transformation T_world__reading =
                     T_world__ref_submap * T_reference__reading;
-                tsdf_submap_collection_ptr->setSubMapPose(reading_submap_id,
-                                                          T_world__reading);
+                submap_collection_ptr->setSubMapPose(reading_submap_id,
+                                                     T_world__reading);
 
                 // Announce results
                 const Eigen::Vector3f optimized_position =
