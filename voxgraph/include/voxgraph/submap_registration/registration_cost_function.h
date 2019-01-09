@@ -48,6 +48,10 @@ class RegistrationCostFunction : public ceres::CostFunction {
   const voxblox::Layer<voxblox::EsdfVoxel> &reference_esdf_layer_;
   const voxblox::Layer<voxblox::EsdfVoxel> &reading_esdf_layer_;
 
+  // Interpolators
+  voxblox::Interpolator<voxblox::TsdfVoxel> tsdf_interpolator_;
+  voxblox::Interpolator<voxblox::EsdfVoxel> esdf_interpolator_;
+
   // Block and voxel index hash map storing
   // only the relevant voxels (observed and within truncation distance)
   voxblox::HierarchicalIndexMap reference_block_voxel_list_;

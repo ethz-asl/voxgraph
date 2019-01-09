@@ -281,14 +281,16 @@ int main(int argc, char** argv) {
   // TODO(victorr): Check if log_folder_path exists and create it if it doesn't
   std::ofstream log_file;
   log_file.open(log_file_path.string());
-  log_file << "reference_submap_id, reading_submap_id, visuals_enabled\n"
+  log_file << "reference_submap_id, reading_submap_id, "
+           << "visuals_enabled, using_esdf_distance\n"
            << reference_submap_id << ",";
   if (reading_submap_id == INT32_MAX) {
     log_file << reference_submap_id;
   } else {
     log_file << reading_submap_id;
   }
-  log_file << "," << (visualize_residuals || visualize_gradients) << "\n"
+  log_file << "," << (visualize_residuals || visualize_gradients) << ","
+           << use_esdf_distance << "\n"
            << "x_true, y_true, z_true, yaw_true, pitch_true, roll_true\n"
            << ground_truth_position.x() << "," << ground_truth_position.y()
            << "," << ground_truth_position.z() << ","
@@ -393,7 +395,7 @@ int main(int argc, char** argv) {
 
               // TODO(victorr): Set report style from params
               std::cout << summary.BriefReport() << std::endl;
-              // std::cout << summary.FullReport() << std::endl;
+              //               std::cout << summary.FullReport() << std::endl;
 
               ros::spinOnce();
             }

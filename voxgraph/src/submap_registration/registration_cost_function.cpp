@@ -20,6 +20,8 @@ RegistrationCostFunction::RegistrationCostFunction(
       reading_tsdf_layer_(reading_submap_ptr->getTsdfMap().getTsdfLayer()),
       reference_esdf_layer_(reference_submap_ptr->getEsdfMap().getEsdfLayer()),
       reading_esdf_layer_(reading_submap_ptr->getEsdfMap().getEsdfLayer()),
+      tsdf_interpolator_(&reading_submap_ptr->getTsdfMap().getTsdfLayer()),
+      esdf_interpolator_(&reading_submap_ptr->getEsdfMap().getEsdfLayer()),
       options_(options) {
   // Get list of all allocated voxel blocks in the reference submap
   voxblox::BlockIndexList ref_block_list;
@@ -85,20 +87,35 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
   // Iterate over all reference submap blocks that contain relevant voxels
   for (const std::pair<voxblox::BlockIndex, voxblox::VoxelIndexList> &kv :
        reference_block_voxel_list_) {
-    const voxblox::Block<voxblox::TsdfVoxel> &reference_block =
+    // Get a const ref to the current reference submap tsdf block
+    const voxblox::Block<voxblox::TsdfVoxel> &reference_tsdf_block =
         reference_tsdf_layer_.getBlockByIndex(kv.first);
+    // Get a const pointer to the current reference submap esdf block, if needed
+    voxblox::Block<voxblox::EsdfVoxel>::ConstPtr reference_esdf_block;
+    if (options_.use_esdf_distance) {
+      reference_esdf_block = reference_esdf_layer_.getBlockPtrByIndex(kv.first);
+    }
 
     // Iterate over all relevant voxels in block
     for (const voxblox::VoxelIndex &voxel_index : kv.second) {
-      CHECK(reference_block.isValidVoxelIndex(voxel_index));
-      // Find distance, weight and current coordinates in reference submap
-      const voxblox::TsdfVoxel &reference_voxel =
-          reference_block.getVoxelByVoxelIndex(voxel_index);
-      const double reference_distance = reference_voxel.distance;
-      const double reference_weight = reference_voxel.weight;
+      CHECK(reference_tsdf_block.isValidVoxelIndex(voxel_index));
+      // Find weight and current coordinates in reference submap
+      const voxblox::TsdfVoxel &reference_tsdf_voxel =
+          reference_tsdf_block.getVoxelByVoxelIndex(voxel_index);
+      const double reference_weight = reference_tsdf_voxel.weight;
       summed_reference_weight += reference_weight;
       voxblox::Point reference_coordinate =
-          reference_block.computeCoordinatesFromVoxelIndex(voxel_index);
+          reference_tsdf_block.computeCoordinatesFromVoxelIndex(voxel_index);
+      // Find distance in reference submap
+      double reference_distance;
+      if (options_.use_esdf_distance) {
+        CHECK(reference_esdf_block->isValidVoxelIndex(voxel_index));
+        const voxblox::EsdfVoxel &reference_esdf_voxel =
+            reference_esdf_block->getVoxelByVoxelIndex(voxel_index);
+        reference_distance = reference_esdf_voxel.distance;
+      } else {
+        reference_distance = reference_tsdf_voxel.distance;
+      }
 
       // Get distances and q_vector in reading submap
       const voxblox::Point reading_pos =
@@ -108,9 +125,7 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
       voxblox::InterpVector q_vector;
       if (options_.use_esdf_distance) {
         const voxblox::EsdfVoxel *neighboring_voxels[8];
-        voxblox::Interpolator<voxblox::EsdfVoxel> interpolator(
-            &reading_esdf_layer_);
-        interp_possible = interpolator.getVoxelsAndQVector(
+        interp_possible = esdf_interpolator_.getVoxelsAndQVector(
             reading_pos, neighboring_voxels, &q_vector);
         if (interp_possible) {
           for (int i = 0; i < distances.size(); ++i) {
@@ -120,9 +135,7 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
         }
       } else {
         const voxblox::TsdfVoxel *neighboring_voxels[8];
-        voxblox::Interpolator<voxblox::TsdfVoxel> interpolator(
-            &reading_tsdf_layer_);
-        interp_possible = interpolator.getVoxelsAndQVector(
+        interp_possible = tsdf_interpolator_.getVoxelsAndQVector(
             reading_pos, neighboring_voxels, &q_vector);
         if (interp_possible) {
           for (int i = 0; i < distances.size(); ++i) {
