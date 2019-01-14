@@ -313,7 +313,7 @@ int main(int argc, char** argv) {
               log_file << x << "," << y << "," << z << "," << yaw << ","
                        << pitch << "," << roll << ",";
 
-              // Move aligned_submap to T(x,y,z,yaw,pitch,roll)
+              // Move reading_submap to T(x,y,z,yaw,pitch,roll)
               Eigen::Vector3d position(x, y, z);
               Eigen::Quaterniond orientation =
                   Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) *
@@ -353,9 +353,10 @@ int main(int argc, char** argv) {
               double ref_t_ref_reading[3] = {T_vec[0], T_vec[1], T_vec[2]};
 
               // Optimize submap registration
-              if (submap_registerer.testRegistration(
-                      reference_submap_id, reading_submap_id, ref_t_ref_reading,
-                      &summary)) {
+              bool registration_successful = submap_registerer.testRegistration(
+                  reference_submap_id, reading_submap_id, ref_t_ref_reading,
+                  &summary);
+              if (registration_successful) {
                 // Update reading submap pose with the optimization result
                 T_vec[0] = ref_t_ref_reading[0];
                 T_vec[1] = ref_t_ref_reading[1];
@@ -372,12 +373,13 @@ int main(int argc, char** argv) {
                 printf(
                     "-- % 2i remaining error:    "
                     "x % 4.6f    y % 4.6f    z % 4.6f    "
-                    "yaw % 4.2f    pitch % 4.2f    roll % 4.2f\n",
+                    "yaw % 4.2f    pitch % 4.2f    roll % 4.2f    "
+                    "time % 4.4f\n",
                     counter++,
                     optimized_position.x() - ground_truth_position.x(),
                     optimized_position.y() - ground_truth_position.y(),
                     optimized_position.z() - ground_truth_position.z(), 0.0,
-                    0.0, 0.0);
+                    0.0, 0.0, summary.total_time_in_seconds);
 
                 // Append stats to log file
                 log_file << optimized_position.x() - ground_truth_position.x()
