@@ -16,7 +16,7 @@ SubmapRegisterer::SubmapRegisterer(
 
 bool SubmapRegisterer::testRegistration(
     const cblox::SubmapID &reference_submap_id,
-    const cblox::SubmapID &reading_submap_id, double *ref_t_ref_reading,
+    const cblox::SubmapID &reading_submap_id, double *world_t_world_reading,
     ceres::Solver::Summary *summary) {
   // Get shared pointers to the reference and reading submaps
   VoxgraphSubmap::ConstPtr reference_submap_ptr =
@@ -47,7 +47,7 @@ bool SubmapRegisterer::testRegistration(
     cost_function = new RegistrationCostFunction(
         reference_submap_ptr, reading_submap_ptr, options_.cost);
   }
-  problem.AddResidualBlock(cost_function, loss_function, ref_t_ref_reading);
+  problem.AddResidualBlock(cost_function, loss_function, world_t_world_reading);
 
   // Run the solver
   ceres::Solver::Options ceres_options = options_.solver;

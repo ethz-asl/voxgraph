@@ -67,22 +67,23 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
                                         double **jacobians) const {
   unsigned int residual_idx = 0;
   double summed_reference_weight = 0;
-  // Set relative transformation
-  double const *ref_t_ref_reading = parameters[0];
+  // Get the reading submap pose from the optimization variables
+  double const *world_t_world_reading = parameters[0];
   int num_params = parameter_block_sizes()[0];
-  voxblox::Transformation T_reference__reading =
-      ref_submap_ptr_->getPose().inverse() * reading_submap_ptr_->getPose();
-  voxblox::Transformation::Vector6 T_vec = T_reference__reading.log();
-  T_vec[0] = ref_t_ref_reading[0];
-  T_vec[1] = ref_t_ref_reading[1];
-  T_vec[2] = ref_t_ref_reading[2];
-  T_reference__reading = voxblox::Transformation::exp(T_vec);
+  voxblox::Transformation::Vector6 T_vec = reading_submap_ptr_->getPose().log();
+  T_vec[0] = world_t_world_reading[0];
+  T_vec[1] = world_t_world_reading[1];
+  T_vec[2] = world_t_world_reading[2];
+  const voxblox::Transformation T_world__reading =
+      voxblox::Transformation::exp(T_vec);
 
   // Publish the TF corresponding to the current optimized submap pose
-  voxblox::Transformation T_world__reading =
-      ref_submap_ptr_->getPose() * T_reference__reading;
   TfHelper::publishTransform(T_world__reading, "world", "optimized_submap",
                              true);
+
+  // Set the relative transform from the reading submap to the reference submap
+  const voxblox::Transformation T_reading__reference =
+      T_world__reading.inverse() * ref_submap_ptr_->getPose();
 
   // Iterate over all reference submap blocks that contain relevant voxels
   for (const std::pair<voxblox::BlockIndex, voxblox::VoxelIndexList> &kv :
@@ -118,15 +119,15 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
       }
 
       // Get distances and q_vector in reading submap
-      const voxblox::Point reading_pos =
-          T_reference__reading.inverse() * reference_coordinate;
+      const voxblox::Point reading_coordinate =
+          T_reading__reference * reference_coordinate;
       bool interp_possible;
       voxblox::InterpVector distances;
       voxblox::InterpVector q_vector;
       if (options_.use_esdf_distance) {
         const voxblox::EsdfVoxel *neighboring_voxels[8];
         interp_possible = esdf_interpolator_.getVoxelsAndQVector(
-            reading_pos, neighboring_voxels, &q_vector);
+            reading_coordinate, neighboring_voxels, &q_vector);
         if (interp_possible) {
           for (int i = 0; i < distances.size(); ++i) {
             distances[i] = static_cast<voxblox::FloatingPoint>(
@@ -136,7 +137,7 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
       } else {
         const voxblox::TsdfVoxel *neighboring_voxels[8];
         interp_possible = tsdf_interpolator_.getVoxelsAndQVector(
-            reading_pos, neighboring_voxels, &q_vector);
+            reading_coordinate, neighboring_voxels, &q_vector);
         if (interp_possible) {
           for (int i = 0; i < distances.size(); ++i) {
             distances[i] = static_cast<voxblox::FloatingPoint>(
@@ -161,7 +162,8 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
       // Add residual to visualization pointcloud
       if (options_.visualize_residuals) {
         // Transform the current point into the world frame
-        voxblox::Point world_t_world__point = T_world__reading * reading_pos;
+        voxblox::Point world_t_world__point =
+            T_world__reading * reading_coordinate;
         cost_function_visuals_.addResidual(world_t_world__point,
                                            residuals[residual_idx]);
       }
@@ -188,23 +190,23 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
           q_vector_dz << 0, 0, 0, inv, 0, inv * delta_y, inv * delta_x,
               inv * delta_x * delta_y;
           // Compute the Jacobian in the reading submap's frame of reference,
-          // then transform it into the reference submap frame
+          // then transform it into the world frame
           dResidual.x() = reference_weight * q_vector_dx *
                           (interp_table_ * distances.transpose());
           dResidual.y() = reference_weight * q_vector_dy *
                           (interp_table_ * distances.transpose());
           dResidual.z() = reference_weight * q_vector_dz *
                           (interp_table_ * distances.transpose());
-          dResidual = T_reference__reading * dResidual;
+          dResidual = T_world__reading * dResidual;
         } else {
           dResidual = {0, 0, 0};
         }
         // Add Jacobian to visualization
         if (options_.visualize_gradients) {
           // Transform the current point and Jacobian into the world frame
-          voxblox::Point world_t_world__point = T_world__reading * reading_pos;
-          voxblox::Point world_jacobian =
-              ref_submap_ptr_->getPose() * dResidual;
+          const voxblox::Point world_t_world__point =
+              T_world__reading * reading_coordinate;
+          const voxblox::Point world_jacobian = dResidual;
           cost_function_visuals_.addJacobian(world_t_world__point,
                                              world_jacobian);
         }

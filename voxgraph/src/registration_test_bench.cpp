@@ -216,7 +216,7 @@ int main(int argc, char** argv) {
   cblox::Transformation transform_getter;
   CHECK(submap_collection_ptr->getSubMapPose(reference_submap_id,
                                              &transform_getter));
-  const cblox::Transformation T_world__ref_submap = transform_getter;
+  const cblox::Transformation T_world__reference = transform_getter;
   CHECK(submap_collection_ptr->getSubMapPose(reading_submap_id,
                                              &transform_getter));
   const cblox::Transformation T_world__reading_original = transform_getter;
@@ -224,7 +224,7 @@ int main(int argc, char** argv) {
       T_world__reading_original.getPosition();
 
   // Publish TFs for the reference and reading submap
-  voxgraph::TfHelper::publishTransform(T_world__ref_submap, "world",
+  voxgraph::TfHelper::publishTransform(T_world__reference, "world",
                                        "reference_submap", true);
   voxgraph::TfHelper::publishTransform(T_world__reading_original, "world",
                                        "reading_submap", true);
@@ -346,30 +346,27 @@ int main(int argc, char** argv) {
 
               // Set initial conditions
               ceres::Solver::Summary summary;
-              voxblox::Transformation T_reference__reading =
-                  T_world__ref_submap.inverse() * T_world__reading_perturbed;
               voxblox::Transformation::Vector6 T_vec =
-                  T_reference__reading.log();
-              double ref_t_ref_reading[3] = {T_vec[0], T_vec[1], T_vec[2]};
+                  T_world__reading_perturbed.log();
+              double world_t_world_reading[3] = {T_vec[0], T_vec[1], T_vec[2]};
 
               // Optimize submap registration
               bool registration_successful = submap_registerer.testRegistration(
-                  reference_submap_id, reading_submap_id, ref_t_ref_reading,
+                  reference_submap_id, reading_submap_id, world_t_world_reading,
                   &summary);
               if (registration_successful) {
                 // Update reading submap pose with the optimization result
-                T_vec[0] = ref_t_ref_reading[0];
-                T_vec[1] = ref_t_ref_reading[1];
-                T_vec[2] = ref_t_ref_reading[2];
-                T_reference__reading = voxblox::Transformation::exp(T_vec);
-                voxblox::Transformation T_world__reading =
-                    T_world__ref_submap * T_reference__reading;
-                submap_collection_ptr->setSubMapPose(reading_submap_id,
-                                                     T_world__reading);
+                T_vec[0] = world_t_world_reading[0];
+                T_vec[1] = world_t_world_reading[1];
+                T_vec[2] = world_t_world_reading[2];
+                const voxblox::Transformation T_world__reading_optimized =
+                    voxblox::Transformation::exp(T_vec);
+                submap_collection_ptr->setSubMapPose(
+                    reading_submap_id, T_world__reading_optimized);
 
                 // Announce results
                 const Eigen::Vector3f optimized_position =
-                    T_world__reading.getPosition();
+                    T_world__reading_optimized.getPosition();
                 printf(
                     "-- % 2i remaining error:    "
                     "x % 4.6f    y % 4.6f    z % 4.6f    "

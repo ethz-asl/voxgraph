@@ -37,7 +37,7 @@ class SubmapRegisterer {
 
   bool testRegistration(const cblox::SubmapID &reference_submap_id,
                         const cblox::SubmapID &reading_submap_id,
-                        double *ref_t_ref_reading,
+                        double *world_t_world_reading,
                         ceres::Solver::Summary *summary);
 
  private:
