@@ -53,10 +53,10 @@ RegistrationCostFunction::RegistrationCostFunction(
     }
   }
 
-  // Set number of parameters
+  // Set number of parameters: namely 2 poses, each having 3 params
   mutable_parameter_block_sizes()->clear();
   mutable_parameter_block_sizes()->push_back(3);
-  // 3 params (translation around x, y and z)
+  mutable_parameter_block_sizes()->push_back(3);
 
   // Set number of residuals (one per reference submap voxel)
   set_num_residuals(num_relevant_reference_voxels_);
@@ -67,15 +67,30 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
                                         double **jacobians) const {
   unsigned int residual_idx = 0;
   double summed_reference_weight = 0;
-  // Get the reading submap pose from the optimization variables
-  double const *world_t_world_reading = parameters[0];
+
+  // Get the number of parameters (used when addressing the jacobians array)
+  CHECK_EQ(parameter_block_sizes()[0], parameter_block_sizes()[1]);
   int num_params = parameter_block_sizes()[0];
-  voxblox::Transformation::Vector6 T_vec = reading_submap_ptr_->getPose().log();
-  T_vec[0] = world_t_world_reading[0];
-  T_vec[1] = world_t_world_reading[1];
-  T_vec[2] = world_t_world_reading[2];
+
+  // Get the reference submap pose from the optimization variables
+  double const *world_t_world__reference = parameters[0];
+  voxblox::Transformation::Vector6 T_vec_reference =
+      ref_submap_ptr_->getPose().log();
+  T_vec_reference[0] = world_t_world__reference[0];
+  T_vec_reference[1] = world_t_world__reference[1];
+  T_vec_reference[2] = world_t_world__reference[2];
+  const voxblox::Transformation T_world__reference =
+      voxblox::Transformation::exp(T_vec_reference);
+
+  // Get the reading submap pose from the optimization variables
+  double const *world_t_world__reading = parameters[1];
+  voxblox::Transformation::Vector6 T_vec_reading =
+      reading_submap_ptr_->getPose().log();
+  T_vec_reading[0] = world_t_world__reading[0];
+  T_vec_reading[1] = world_t_world__reading[1];
+  T_vec_reading[2] = world_t_world__reading[2];
   const voxblox::Transformation T_world__reading =
-      voxblox::Transformation::exp(T_vec);
+      voxblox::Transformation::exp(T_vec_reading);
 
   // Publish the TF corresponding to the current optimized submap pose
   TfHelper::publishTransform(T_world__reading, "world", "optimized_submap",
@@ -83,7 +98,7 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
 
   // Set the relative transform from the reading submap to the reference submap
   const voxblox::Transformation T_reading__reference =
-      T_world__reading.inverse() * ref_submap_ptr_->getPose();
+      T_world__reading.inverse() * T_world__reference;
 
   // Iterate over all reference submap blocks that contain relevant voxels
   for (const std::pair<voxblox::BlockIndex, voxblox::VoxelIndexList> &kv :
@@ -169,8 +184,8 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
       }
 
       // Calculate Jacobians if requested
-      voxblox::Point dResidual;
-      if (jacobians != nullptr && jacobians[0] != nullptr) {
+      if (jacobians != nullptr) {
+        voxblox::Point dResidual;
         if (interp_possible) {
           // Calculate q_vector derivatives
           double inv = reference_tsdf_layer_.voxel_size_inv();
@@ -211,9 +226,18 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
                                              world_jacobian);
         }
         // Store the Jacobians for Ceres
-        jacobians[0][residual_idx * num_params + 0] = dResidual.x();
-        jacobians[0][residual_idx * num_params + 1] = dResidual.y();
-        jacobians[0][residual_idx * num_params + 2] = dResidual.z();
+        if (jacobians[0] != nullptr) {
+          // Jacobians w.r.t. the reference submap pose
+          jacobians[0][residual_idx * num_params + 0] = -dResidual.x();
+          jacobians[0][residual_idx * num_params + 1] = -dResidual.y();
+          jacobians[0][residual_idx * num_params + 2] = -dResidual.z();
+        }
+        if (jacobians[1] != nullptr) {
+          // Jacobians w.r.t. the reading submap pose
+          jacobians[1][residual_idx * num_params + 0] = dResidual.x();
+          jacobians[1][residual_idx * num_params + 1] = dResidual.y();
+          jacobians[1][residual_idx * num_params + 2] = dResidual.z();
+        }
       }
       residual_idx++;
     }
@@ -224,14 +248,21 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
   double factor = (num_relevant_reference_voxels_ / summed_reference_weight);
   for (int i = 0; i < num_relevant_reference_voxels_; i++) {
     residuals[i] *= factor;
-    if (jacobians != nullptr && jacobians[0] != nullptr) {
-      jacobians[0][i * num_params + 0] *= factor;
-      jacobians[0][i * num_params + 1] *= factor;
-      jacobians[0][i * num_params + 2] *= factor;
+    if (jacobians != nullptr) {
+      if (jacobians[0] != nullptr) {
+        jacobians[0][i * num_params + 0] *= factor;
+        jacobians[0][i * num_params + 1] *= factor;
+        jacobians[0][i * num_params + 2] *= factor;
+      }
+      if (jacobians[1] != nullptr) {
+        jacobians[1][i * num_params + 0] *= factor;
+        jacobians[1][i * num_params + 1] *= factor;
+        jacobians[1][i * num_params + 2] *= factor;
+      }
     }
   }
 
-  // Scale and publish the visuals, then reset it for the next iteration
+  // Scale and publish the visuals, then reset them for the next iteration
   cost_function_visuals_.scaleAndPublish(factor);
   cost_function_visuals_.reset();
 

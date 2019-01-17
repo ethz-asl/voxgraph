@@ -2,7 +2,7 @@
     <node name="pose_graph_test_bench" pkg="voxgraph" type="pose_graph_test_bench" output="screen">
         <!--launch-prefix="gdb -ex run &#45;&#45;args">-->
         <rosparam>
-            submap_collection_file_path: "/home/victor/catkin_ws/voxgraph/submap_collections/burning_house_gt_truncdist2_maxraylength15_antigrazing1"
+            submap_collection_file_path: "/home/victor/catkin_ws/voxgraph/submap_collections/burning_house_coverage"
             log_folder_path: "/home/victor/catkin_ws/voxgraph/pose_graph_test_bench_stats"
         </rosparam>
     </node>

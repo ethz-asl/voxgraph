@@ -19,8 +19,14 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
       : cblox::TsdfEsdfSubmap(T_M_S, submap_id, config) {}
 
   bool overlapsWith(VoxgraphSubmap::ConstPtr otherSubmap) const {
-    // TODO(victorr): Implement collision checking and remove this dummy test
-    return (std::abs(submap_id_ - otherSubmap->getID()) < 2);
+    // TODO(victorr): Implement collision checking
+    //                and remove this dummy 'proximity' test
+    unsigned int other_submap_id = otherSubmap->getID();
+    if (submap_id_ > other_submap_id) {
+      return (submap_id_ - other_submap_id) < 2;
+    } else {
+      return (other_submap_id - submap_id_) < 2;
+    }
   }
 
   // TODO(victorr): Move RelevantVoxelList from registration_cost_function here

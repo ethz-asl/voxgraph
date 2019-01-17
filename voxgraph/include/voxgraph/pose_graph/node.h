@@ -5,13 +5,24 @@
 #ifndef VOXGRAPH_POSE_GRAPH_NODE_H_
 #define VOXGRAPH_POSE_GRAPH_NODE_H_
 
-#include <cblox/core/common.h>
+#include <map>
+#include <memory>
 
 namespace voxgraph {
-struct Node {
-  const unsigned int node_id;
-  cblox::SubmapID submap_id;
-  voxblox::Transformation node_pose;
+class Node {
+ public:
+  typedef std::shared_ptr<Node> Ptr;
+  typedef unsigned int NodeId;
+  typedef std::map<Node::NodeId, Node::Ptr> NodeMap;
+  typedef std::array<double, 3> Pose;
+
+  Node() = default;
+  virtual ~Node() = default;
+
+  Pose* getPosePtr() { return &world_t_world__node_pose_; }
+
+ protected:
+  Pose world_t_world__node_pose_;
 };
 }  // namespace voxgraph
 

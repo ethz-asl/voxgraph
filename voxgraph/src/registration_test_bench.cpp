@@ -239,7 +239,7 @@ int main(int argc, char** argv) {
       wait_rate.sleep();
     }
     // Publish reference submap Mesh
-    submap_vis.publishMesh(submap_collection_ptr, reference_submap_id,
+    submap_vis.publishMesh(*submap_collection_ptr, reference_submap_id,
                            cblox::Color::Green(), "reference_submap",
                            reference_mesh_pub);
     // Publish temporary TFs for the moving meshes, such that Rviz
@@ -249,11 +249,11 @@ int main(int argc, char** argv) {
     voxgraph::TfHelper::publishTransform(T_world__reading_original, "world",
                                          "optimized_submap", true);
     // Publish the reading submap mesh used to indicate its perturbed pose
-    submap_vis.publishMesh(submap_collection_ptr, reading_submap_id,
+    submap_vis.publishMesh(*submap_collection_ptr, reading_submap_id,
                            cblox::Color::Red(), "perturbed_submap",
                            perturbed_reading_mesh_pub);
     // Publish the reading submap mesh used to indicate its optimized pose
-    submap_vis.publishMesh(submap_collection_ptr, reading_submap_id,
+    submap_vis.publishMesh(*submap_collection_ptr, reading_submap_id,
                            cblox::Color::Blue(), "optimized_submap",
                            optimized_reading_mesh_pub);
   }
