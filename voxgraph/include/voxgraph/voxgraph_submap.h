@@ -14,9 +14,19 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   typedef std::shared_ptr<VoxgraphSubmap> Ptr;
   typedef std::shared_ptr<const VoxgraphSubmap> ConstPtr;
 
+  struct BoundingBox {
+    voxblox::Point min = {0, 0, 0};
+    voxblox::Point max = {0, 0, 0};
+  };
+
   VoxgraphSubmap(const voxblox::Transformation &T_M_S,
                  cblox::SubmapID submap_id, Config config)
       : cblox::TsdfEsdfSubmap(T_M_S, submap_id, config) {}
+
+  const BoundingBox getSurfaceObb() const;
+  const BoundingBox getMapObb() const;
+  const BoundingBox getSurfaceAabb() const {}
+  const BoundingBox getMapAabb() const {}
 
   bool overlapsWith(VoxgraphSubmap::ConstPtr otherSubmap) const {
     // TODO(victorr): Implement collision checking
@@ -30,6 +40,14 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   }
 
   // TODO(victorr): Move RelevantVoxelList from registration_cost_function here
+
+ private:
+  // Oriented Bounding Boxes in submap frame
+  mutable BoundingBox surface_obb_;  // around the isosurface
+  mutable BoundingBox map_obb_;      // around the entire submap
+  // Axis Aligned Bounding Boxes in world frame
+  mutable BoundingBox surface_aabb_;  // around the isosurface
+  mutable BoundingBox map_aabb_;      // around the entire submap
 };
 }  // namespace voxgraph
 

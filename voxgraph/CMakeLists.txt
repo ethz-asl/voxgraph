@@ -24,6 +24,7 @@ cs_add_executable(registration_test_bench
 
 cs_add_executable(pose_graph_test_bench
     src/pose_graph_test_bench.cpp
+    src/voxgraph_submap.cpp
     src/pose_graph/pose_graph.cpp
     src/pose_graph/submap_node.cpp
     src/pose_graph/registration_constraint.cpp
