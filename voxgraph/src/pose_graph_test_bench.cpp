@@ -92,9 +92,16 @@ int main(int argc, char** argv) {
   // Add all submaps as nodes
   std::cout << "Adding all submaps as nodes" << std::endl;
   for (const cblox::SubmapID& submap_id : submap_ids) {
-    voxblox::Transformation initial_pose;
-    CHECK(submap_collection_ptr->getSubMapPose(submap_id, &initial_pose));
-    SubmapNode::Config node_config = {submap_id, initial_pose};
+    SubmapNode::Config node_config;
+    node_config.submap_id = submap_id;
+    CHECK(submap_collection_ptr->getSubMapPose(
+        submap_id, &node_config.initial_submap_pose));
+    if (submap_id == 0) {
+      std::cout << "Setting pose of submap 0 to constant" << std::endl;
+      node_config.set_constant = true;
+    } else {
+      node_config.set_constant = false;
+    }
     pose_graph.addNode(node_config);
   }
 

@@ -14,6 +14,10 @@ class Node {
   typedef unsigned int NodeId;
   typedef std::array<double, 3> Pose;
 
+  struct Config {
+    bool set_constant;
+  };
+
   explicit Node(NodeId node_id) : node_id_(node_id) {}
   virtual ~Node() = default;
 
