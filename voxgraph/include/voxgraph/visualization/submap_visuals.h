@@ -6,8 +6,6 @@
 #define VOXGRAPH_VISUALIZATION_SUBMAP_VISUALS_H_
 
 #include <cblox/core/submap_collection.h>
-#include <cblox/core/tsdf_esdf_submap.h>
-#include <cblox/core/tsdf_submap.h>
 #include <cblox/mesh/submap_mesher.h>
 #include <minkindr_conversions/kindr_tf.h>
 #include <ros/ros.h>
@@ -25,12 +23,17 @@ class SubmapVisuals {
 
   void publishMesh(
       const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-      const cblox::SubmapID &submap_id, const cblox::Color &submap_color,
+      const cblox::SubmapID &submap_id, const voxblox::Color &submap_color,
       const std::string &submap_frame, const ros::Publisher &publisher) const;
 
   void publishSeparatedMesh(
       const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-      const std::string &submap_frame, const ros::Publisher &publisher);
+      const std::string &world_frame, const ros::Publisher &publisher);
+
+  void publishBox(const VoxgraphSubmap::BoxCornerMatrix &box_corner_matrix,
+                  const voxblox::Color &box_color, const std::string &frame_id,
+                  const std::string &name_space,
+                  const ros::Publisher &publisher) const;
 
  private:
   voxblox::MeshIntegratorConfig mesh_config_;

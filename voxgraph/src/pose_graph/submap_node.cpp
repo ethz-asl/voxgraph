@@ -6,7 +6,8 @@
 #include <utility>
 
 namespace voxgraph {
-SubmapNode::SubmapNode(SubmapNode::Config config) : config_(std::move(config)) {
+SubmapNode::SubmapNode(NodeId node_id, SubmapNode::Config config)
+    : Node(node_id), config_(std::move(config)) {
   // Set the node's pose to the initial submap pose
   voxblox::Transformation::Vector6 T_vec = config.initial_submap_pose.log();
   world_t_world__node_pose_[0] = T_vec[0];

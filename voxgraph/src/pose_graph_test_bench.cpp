@@ -68,10 +68,13 @@ int main(int argc, char** argv) {
   SubmapVisuals submap_vis(submap_config);
   ros::Publisher separated_mesh_original_pub =
       nh_private.advertise<visualization_msgs::Marker>(
-          "separated_mesh_original", 1);
+          "separated_mesh_original", 1, true);
   ros::Publisher separated_mesh_optimized_pub =
       nh_private.advertise<visualization_msgs::Marker>(
-          "separated_mesh_optimized", 1);
+          "separated_mesh_optimized", 1, true);
+  ros::Publisher bounding_boxes_pub =
+      nh_private.advertise<visualization_msgs::Marker>("bounding_boxes", 100,
+                                                       true);
 
   // Show the original submap meshes in Rviz
   {
@@ -108,6 +111,24 @@ int main(int argc, char** argv) {
     VoxgraphSubmap::ConstPtr first_submap_ptr =
         submap_collection_ptr->getSubMapConstPtrById(first_submap_id);
     CHECK_NOTNULL(first_submap_ptr);
+
+    // Publish the submap's bounding boxes
+    submap_vis.publishBox(first_submap_ptr->getWorldFrameSurfaceObbCorners(),
+                          voxblox::Color::Blue(), "world",
+                          "surface_obb" + std::to_string(first_submap_id),
+                          bounding_boxes_pub);
+    submap_vis.publishBox(first_submap_ptr->getWorldFrameSurfaceAabbCorners(),
+                          voxblox::Color::Red(), "world",
+                          "surface_aabb" + std::to_string(first_submap_id),
+                          bounding_boxes_pub);
+    submap_vis.publishBox(first_submap_ptr->getWorldFrameSubmapObbCorners(),
+                          voxblox::Color::Blue(), "world",
+                          "submap_obb" + std::to_string(first_submap_id),
+                          bounding_boxes_pub);
+    submap_vis.publishBox(first_submap_ptr->getWorldFrameSubmapAabbCorners(),
+                          voxblox::Color::Red(), "world",
+                          "submap_aabb" + std::to_string(first_submap_id),
+                          bounding_boxes_pub);
 
     for (unsigned int j = i + 1; j < submap_ids.size(); j++) {
       // Get a pointer to the second submap

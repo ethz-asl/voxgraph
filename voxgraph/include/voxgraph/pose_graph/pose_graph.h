@@ -31,11 +31,13 @@ class PoseGraph {
   getSubmapPoses();
 
  private:
-  Node::NodeId node_id_counter_ = 0;
-  Node::NodeId newNodeId() { return node_id_counter_++; }
-
-  Node::NodeMap node_map_;
+  Constraint::ConstraintId constraint_id_counter_ = 0;
+  const Constraint::ConstraintId newConstraintId() {
+    return constraint_id_counter_++;
+  }
   std::vector<Constraint::Ptr> constraints_;
+
+  NodeCollection node_collection_;
   cblox::SubmapCollection<VoxgraphSubmap>::ConstPtr submap_collection_ptr_;
 };
 }  // namespace voxgraph

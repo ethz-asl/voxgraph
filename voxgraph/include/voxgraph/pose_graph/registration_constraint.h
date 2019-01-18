@@ -19,15 +19,15 @@ class RegistrationConstraint : public Constraint {
     cblox::SubmapID second_submap_id;
   };
 
-  explicit RegistrationConstraint(Config config, Endpoints endpoints,
+  explicit RegistrationConstraint(ConstraintId constraint_id, Config config,
                                   VoxgraphSubmap::ConstPtr first_submap_ptr,
                                   VoxgraphSubmap::ConstPtr second_submap_ptr)
-      : config_(config),
-        Constraint(endpoints),
+      : Constraint(constraint_id),
+        config_(config),
         first_submap_ptr_(std::move(first_submap_ptr)),
         second_submap_ptr_(std::move(second_submap_ptr)) {}
 
-  void addToProblem(const Node::NodeMap& node_map,
+  void addToProblem(const NodeCollection& node_collection,
                     ceres::Problem* problem) final;
 
  private:

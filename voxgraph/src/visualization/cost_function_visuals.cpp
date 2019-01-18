@@ -26,10 +26,7 @@ CostFunctionVisuals::CostFunctionVisuals() {
   jacobian_arrows_.action = visualization_msgs::Marker::ADD;
   jacobian_arrows_.pose.orientation.w = 1.0;  // Set to unit quaternion
   jacobian_arrows_.scale.x = 0.02;
-  jacobian_arrows_.color.r = 1.0;
-  jacobian_arrows_.color.g = 0.0;
-  jacobian_arrows_.color.b = 0.0;
-  jacobian_arrows_.color.a = 1.0;
+  voxblox::colorVoxbloxToMsg(voxblox::Color::Red(), &jacobian_arrows_.color);
   jacobian_arrows_.frame_locked = false;
 
   // To show the direction of the Jacobians, their origins
@@ -43,10 +40,7 @@ CostFunctionVisuals::CostFunctionVisuals() {
   jacobian_origins_.scale.x = 0.05;
   jacobian_origins_.scale.y = 0.05;
   jacobian_origins_.scale.z = 0.05;
-  jacobian_origins_.color.r = 0.0;
-  jacobian_origins_.color.g = 0.0;
-  jacobian_origins_.color.b = 0.0;
-  jacobian_origins_.color.a = 1.0;
+  voxblox::colorVoxbloxToMsg(voxblox::Color::Black(), &jacobian_origins_.color);
   jacobian_origins_.frame_locked = false;
 }
 

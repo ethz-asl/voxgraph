@@ -5,7 +5,6 @@
 #ifndef VOXGRAPH_POSE_GRAPH_NODE_H_
 #define VOXGRAPH_POSE_GRAPH_NODE_H_
 
-#include <map>
 #include <memory>
 
 namespace voxgraph {
@@ -13,16 +12,19 @@ class Node {
  public:
   typedef std::shared_ptr<Node> Ptr;
   typedef unsigned int NodeId;
-  typedef std::map<Node::NodeId, Node::Ptr> NodeMap;
   typedef std::array<double, 3> Pose;
 
-  Node() = default;
+  explicit Node(NodeId node_id) : node_id_(node_id) {}
   virtual ~Node() = default;
 
   Pose* getPosePtr() { return &world_t_world__node_pose_; }
+  void setConstant(bool constant) { constant_ = constant; }
+  bool isConstant() { return constant_; }
 
  protected:
+  const NodeId node_id_;
   Pose world_t_world__node_pose_;
+  bool constant_ = false;
 };
 }  // namespace voxgraph
 

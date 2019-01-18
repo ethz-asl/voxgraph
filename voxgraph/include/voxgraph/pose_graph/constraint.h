@@ -7,7 +7,7 @@
 
 #include <ceres/ceres.h>
 #include <memory>
-#include "voxgraph/pose_graph/node.h"
+#include "voxgraph/pose_graph/node_collection.h"
 
 namespace voxgraph {
 class Constraint {
@@ -15,20 +15,15 @@ class Constraint {
   typedef std::shared_ptr<Constraint> Ptr;
   typedef unsigned int ConstraintId;
 
-  struct Endpoints {
-    Node::NodeId first_node_id;
-    Node::NodeId second_node_id;
-  };
-
-  explicit Constraint(Endpoints internal_config)
-      : endpoints_(internal_config) {}
+  explicit Constraint(ConstraintId constraint_id)
+      : constraint_id_(constraint_id) {}
   virtual ~Constraint() = default;
 
-  virtual void addToProblem(const Node::NodeMap& node_map,
-                            ceres::Problem* problem) = 0;
+  virtual void addToProblem(const NodeCollection &node_collection,
+                            ceres::Problem *problem) = 0;
 
  protected:
-  const Endpoints endpoints_;
+  const ConstraintId constraint_id_;
 };
 }  // namespace voxgraph
 

@@ -14,10 +14,10 @@ class OdometryConstraint : public Constraint {
   typedef std::shared_ptr<OdometryConstraint> Ptr;
   struct Config {};
 
-  explicit OdometryConstraint(Config config, Endpoints endpoints)
-      : config_(config), Constraint(endpoints) {}
+  OdometryConstraint(ConstraintId constraint_id, Config config)
+      : Constraint(constraint_id), config_(config) {}
 
-  void addToProblem(const Node::NodeMap& node_map,
+  void addToProblem(const NodeCollection& node_collection,
                     ceres::Problem* problem) final {}
 
  private:

@@ -240,7 +240,7 @@ int main(int argc, char** argv) {
     }
     // Publish reference submap Mesh
     submap_vis.publishMesh(*submap_collection_ptr, reference_submap_id,
-                           cblox::Color::Green(), "reference_submap",
+                           voxblox::Color::Green(), "reference_submap",
                            reference_mesh_pub);
     // Publish temporary TFs for the moving meshes, such that Rviz
     // doesn't discard them due to missing frame position information
@@ -250,11 +250,11 @@ int main(int argc, char** argv) {
                                          "optimized_submap", true);
     // Publish the reading submap mesh used to indicate its perturbed pose
     submap_vis.publishMesh(*submap_collection_ptr, reading_submap_id,
-                           cblox::Color::Red(), "perturbed_submap",
+                           voxblox::Color::Red(), "perturbed_submap",
                            perturbed_reading_mesh_pub);
     // Publish the reading submap mesh used to indicate its optimized pose
     submap_vis.publishMesh(*submap_collection_ptr, reading_submap_id,
-                           cblox::Color::Blue(), "optimized_submap",
+                           voxblox::Color::Blue(), "optimized_submap",
                            optimized_reading_mesh_pub);
   }
 

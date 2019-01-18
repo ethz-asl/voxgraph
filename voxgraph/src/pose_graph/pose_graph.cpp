@@ -8,20 +8,16 @@
 #include <utility>
 
 namespace voxgraph {
+// TODO(victorr): Once multiple node types are used, template this method
 void PoseGraph::addNode(const SubmapNode::Config &config) {
   // Add to the node set
-  auto ptr = std::make_shared<SubmapNode>(config);
-  node_map_.emplace(newNodeId(), std::static_pointer_cast<Node>(ptr));
+  node_collection_.addNode(config);
 }
 
 void PoseGraph::addConstraint(const OdometryConstraint::Config &config) {
-  // Set the constraint's endpoints
-  Node::NodeId first_node_id, second_node_id;
-  // TODO(victorr): Find node ids corresponding to endpoints
-  Constraint::Endpoints endpoints = {first_node_id, second_node_id};
-
+  // TODO(victorr): Implement this
   // Add to the constraint set
-  auto ptr = std::make_shared<OdometryConstraint>(config, endpoints);
+  auto ptr = std::make_shared<OdometryConstraint>(newConstraintId(), config);
   constraints_.emplace_back(std::static_pointer_cast<Constraint>(ptr));
 }
 
@@ -29,32 +25,11 @@ void PoseGraph::addConstraint(const RegistrationConstraint::Config &config) {
   CHECK_NE(config.first_submap_id, config.second_submap_id)
       << "Cannot constrain submap " << config.first_submap_id << " to itself";
 
-  // Find the node ids corresponding to the given submap ids
-  Node::NodeId first_node_id, second_node_id;
-  std::pair<bool, bool> node_ids_found = {false, false};
-  for (std::pair<const Node::NodeId &, const Node::Ptr &> node_kv : node_map_) {
-    auto submap_node_ptr = dynamic_cast<SubmapNode *>(node_kv.second.get());
-    if (submap_node_ptr) {
-      cblox::SubmapID submap_id = submap_node_ptr->getSubmapId();
-      if (submap_id == config.first_submap_id) {
-        first_node_id = node_kv.first;
-        node_ids_found.first = true;
-      } else if (submap_id == config.second_submap_id) {
-        second_node_id = node_kv.first;
-        node_ids_found.second = true;
-      }
-      if (node_ids_found.first && node_ids_found.second) {
-        break;
-      }
-    }
-  }
-  CHECK(node_ids_found.first) << "Graph contains no node for submap "
-                              << config.first_submap_id;
-  CHECK(node_ids_found.second) << "Graph contains no node for submap "
-                               << config.second_submap_id;
-
-  // Set the constraint's endpoints
-  Constraint::Endpoints endpoints = {first_node_id, second_node_id};
+  // Check if there're submap nodes corresponding to both submap IDs
+  CHECK(node_collection_.getNodePtrById(config.first_submap_id))
+      << "Graph contains no node for submap " << config.first_submap_id;
+  CHECK(node_collection_.getNodePtrById(config.second_submap_id))
+      << "Graph contains no node for submap " << config.second_submap_id;
 
   // Get pointers to both submaps
   VoxgraphSubmap::ConstPtr first_submap_ptr =
@@ -66,7 +41,7 @@ void PoseGraph::addConstraint(const RegistrationConstraint::Config &config) {
 
   // Add to the constraint set
   auto ptr = std::make_shared<RegistrationConstraint>(
-      config, endpoints, first_submap_ptr, second_submap_ptr);
+      newConstraintId(), config, first_submap_ptr, second_submap_ptr);
   constraints_.emplace_back(std::static_pointer_cast<Constraint>(ptr));
 }
 
@@ -76,7 +51,7 @@ void PoseGraph::optimize() {
   ceres::Problem problem(problem_options);
 
   for (const Constraint::Ptr &constraint : constraints_) {
-    constraint->addToProblem(node_map_, &problem);
+    constraint->addToProblem(node_collection_, &problem);
   }
 
   // Run the solver
@@ -90,12 +65,9 @@ void PoseGraph::optimize() {
 std::map<const cblox::SubmapID, const voxblox::Transformation>
 PoseGraph::getSubmapPoses() {
   std::map<const cblox::SubmapID, const voxblox::Transformation> submap_poses;
-  for (std::pair<const Node::NodeId &, const Node::Ptr &> node_kv : node_map_) {
-    auto submap_node_ptr = dynamic_cast<SubmapNode *>(node_kv.second.get());
-    if (submap_node_ptr) {
-      submap_poses.emplace(submap_node_ptr->getSubmapId(),
-                           submap_node_ptr->getSubmapPose());
-    }
+  for (auto submap_node_kv : node_collection_.getSubmapNodes()) {
+    submap_poses.emplace(submap_node_kv.second->getSubmapId(),
+                         submap_node_kv.second->getSubmapPose());
   }
   return submap_poses;
 }

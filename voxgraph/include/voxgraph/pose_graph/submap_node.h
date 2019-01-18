@@ -18,7 +18,7 @@ class SubmapNode : public Node {
     voxblox::Transformation initial_submap_pose;
   };
 
-  explicit SubmapNode(Config config);
+  SubmapNode(NodeId node_id, Config config);
 
   const cblox::SubmapID getSubmapId() const { return config_.submap_id; }
 

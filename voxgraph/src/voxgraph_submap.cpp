@@ -5,10 +5,13 @@
 #include "voxgraph/voxgraph_submap.h"
 
 namespace voxgraph {
-const VoxgraphSubmap::BoundingBox VoxgraphSubmap::getSurfaceObb() const {
+const VoxgraphSubmap::BoundingBox VoxgraphSubmap::getSubmapFrameSurfaceObb()
+    const {
   // Check if the OBB has yet been measured
-  if (surface_obb_.min == surface_obb_.max) {
-    // Since its extremities are equal, we assume they still has to be found
+  if ((surface_obb_.min.array() > surface_obb_.max.array()).any()) {
+    // After any update, the min point coefficients should be smaller or equal
+    // to their max point counterparts. Because this was not the case, we assume
+    // that they have not yet been updated since their +/- Inf initialization.
     // Get list of all allocated voxel blocks
     voxblox::BlockIndexList block_list;
     tsdf_map_->getTsdfLayer().getAllAllocatedBlocks(&block_list);
@@ -47,10 +50,13 @@ const VoxgraphSubmap::BoundingBox VoxgraphSubmap::getSurfaceObb() const {
   return surface_obb_;
 }
 
-const VoxgraphSubmap::BoundingBox VoxgraphSubmap::getMapObb() const {
+const VoxgraphSubmap::BoundingBox VoxgraphSubmap::getSubmapFrameSubmapObb()
+    const {
   // Check if the OBB has yet been measured
-  if (map_obb_.min == map_obb_.max) {
-    // Since its extremities are equal, we assume they still has to be found
+  if ((map_obb_.min.array() > map_obb_.max.array()).any()) {
+    // After any update, the min point coefficients should be smaller or equal
+    // to their max point counterparts. Because this was not the case, we assume
+    // that they have not yet been updated since their +/- Inf initialization.
     // Get list of all allocated voxel blocks
     voxblox::BlockIndexList block_list;
     tsdf_map_->getTsdfLayer().getAllAllocatedBlocks(&block_list);
@@ -69,6 +75,56 @@ const VoxgraphSubmap::BoundingBox VoxgraphSubmap::getMapObb() const {
     }
   }
   return map_obb_;
+}
+
+const VoxgraphSubmap::BoxCornerMatrix
+VoxgraphSubmap::getWorldFrameSurfaceObbCorners() const {
+  // Create a matrix whose columns are the box corners' homogeneous coordinates
+  HomogBoxCornerMatrix box_corner_matrix = HomogBoxCornerMatrix::Constant(1);
+  box_corner_matrix.topLeftCorner(3, 8) =
+      getSubmapFrameSurfaceObb().getCornerCoordinates();
+  // Transform the box corner coordinates to world frame
+  box_corner_matrix = getPose().getTransformationMatrix() * box_corner_matrix;
+  return box_corner_matrix.topLeftCorner(3, 8);
+}
+
+const VoxgraphSubmap::BoxCornerMatrix
+VoxgraphSubmap::getWorldFrameSubmapObbCorners() const {
+  // Create a matrix whose columns are the box corners' homogeneous coordinates
+  HomogBoxCornerMatrix box_corner_matrix = HomogBoxCornerMatrix::Constant(1);
+  box_corner_matrix.topLeftCorner(3, 8) =
+      getSubmapFrameSubmapObb().getCornerCoordinates();
+  // Transform the box corner coordinates to world frame
+  box_corner_matrix = getPose().getTransformationMatrix() * box_corner_matrix;
+  return box_corner_matrix.topLeftCorner(3, 8);
+}
+
+const VoxgraphSubmap::BoundingBox VoxgraphSubmap::getWorldFrameSurfaceAabb()
+    const {
+  // Return the Axis Aligned Bounding Box around the isosurface in world frame
+  return BoundingBox::getAabbFromObbAndPose(getSubmapFrameSurfaceObb(),
+                                            getPose());
+}
+
+const VoxgraphSubmap::BoundingBox VoxgraphSubmap::getWorldFrameSubmapAabb()
+    const {
+  // Return the Axis Aligned Bounding Box around the full submap in world frame
+  return BoundingBox::getAabbFromObbAndPose(getSubmapFrameSubmapObb(),
+                                            getPose());
+}
+
+const VoxgraphSubmap::BoxCornerMatrix
+VoxgraphSubmap::getWorldFrameSurfaceAabbCorners() const {
+  // Return a matrix whose columns are the corner points
+  // of the submap's surface AABB
+  return getWorldFrameSurfaceAabb().getCornerCoordinates();
+}
+
+const VoxgraphSubmap::BoxCornerMatrix
+VoxgraphSubmap::getWorldFrameSubmapAabbCorners() const {
+  // Return a matrix whose columns are the corner points
+  // of the full submap's AABB
+  return getWorldFrameSubmapAabb().getCornerCoordinates();
 }
 
 }  // namespace voxgraph
