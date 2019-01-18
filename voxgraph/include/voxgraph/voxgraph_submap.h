@@ -64,16 +64,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   const BoxCornerMatrix getWorldFrameSurfaceAabbCorners() const;
   const BoxCornerMatrix getWorldFrameSubmapAabbCorners() const;
 
-  bool overlapsWith(VoxgraphSubmap::ConstPtr otherSubmap) const {
-    // TODO(victorr): Implement collision checking
-    //                and remove this dummy 'proximity' test
-    unsigned int other_submap_id = otherSubmap->getID();
-    if (submap_id_ > other_submap_id) {
-      return (submap_id_ - other_submap_id) < 2;
-    } else {
-      return (other_submap_id - submap_id_) < 2;
-    }
-  }
+  bool overlapsWith(VoxgraphSubmap::ConstPtr otherSubmap) const;
 
   // TODO(victorr): Move RelevantVoxelList from registration_cost_function here
 

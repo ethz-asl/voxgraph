@@ -127,4 +127,19 @@ VoxgraphSubmap::getWorldFrameSubmapAabbCorners() const {
   return getWorldFrameSubmapAabb().getCornerCoordinates();
 }
 
+bool VoxgraphSubmap::overlapsWith(VoxgraphSubmap::ConstPtr otherSubmap) const {
+  // TODO(victorr): Implement improved overlap test
+  const BoundingBox aabb = getWorldFrameSurfaceAabb();
+  const BoundingBox other_aabb = otherSubmap->getWorldFrameSubmapAabb();
+  // If there's a separation along any of the 3 axes, the AABBs don't intersect
+  if (aabb.max[0] < other_aabb.min[0] || aabb.min[0] > other_aabb.max[0])
+    return false;
+  if (aabb.max[1] < other_aabb.min[1] || aabb.min[1] > other_aabb.max[1])
+    return false;
+  if (aabb.max[2] < other_aabb.min[2] || aabb.min[2] > other_aabb.max[2])
+    return false;
+  // The AABBs overlapping on all axes: therefore they must be intersecting
+  return true;
+}
+
 }  // namespace voxgraph
