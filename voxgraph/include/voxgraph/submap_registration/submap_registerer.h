@@ -19,11 +19,11 @@ class SubmapRegisterer {
     ceres::Solver::Options solver;
     struct CostFunction {
       enum Type { kAnalytic = 0, kNumeric } cost_function_type;
-      double min_voxel_weight = 0;
-      double max_voxel_distance = 1;
+      double min_voxel_weight = 1e-6;
+      double max_voxel_distance = 0.3;
       // Cost to assign for voxels that can't be interpolated
       double no_correspondence_cost = 0;
-      bool use_esdf_distance = false;
+      bool use_esdf_distance = true;
       bool visualize_residuals = false;
       bool visualize_gradients = false;
     } cost;
