@@ -46,10 +46,24 @@ int main(int argc, char** argv) {
   // Create the pose graph
   PoseGraph pose_graph(submap_collection_ptr);
 
+  // TODO(victorr): This is temporary
+  voxblox::Point disturbance;
+  std::default_random_engine random_engine;
+  std::normal_distribution<double> linear_noise_distrib(0.0, 0.1);
+
   // Generate the ESDFs for the submaps
   std::vector<cblox::SubmapID> submap_ids = submap_collection_ptr->getIDs();
   for (const cblox::SubmapID& submap_id : submap_ids) {
     CHECK(submap_collection_ptr->generateEsdfById(submap_id));
+
+    // TODO(victorr): This is temporary
+    disturbance.x() += linear_noise_distrib(random_engine);
+    disturbance.y() += linear_noise_distrib(random_engine);
+    disturbance.z() += 3 * linear_noise_distrib(random_engine);
+    voxblox::Transformation pose;
+    CHECK(submap_collection_ptr->getSubMapPose(submap_id, &pose));
+    pose.getPosition() = pose.getPosition() + disturbance;
+    submap_collection_ptr->setSubMapPose(submap_id, pose);
   }
 
   // Setup Rviz visualizations
@@ -146,8 +160,9 @@ int main(int argc, char** argv) {
 
       // Check whether the first and second submap overlap
       if (first_submap_ptr->overlapsWith(second_submap_ptr)) {
-        std::cout << "--  " << first_submap_id << " to " << second_submap_id
-                  << std::endl;
+        //        std::cout << "--  " << first_submap_id << " to " <<
+        //        second_submap_id
+        //                  << std::endl;
         // Add the constraint
         RegistrationConstraint::Config constraint_config = {first_submap_id,
                                                             second_submap_id};
@@ -164,9 +179,9 @@ int main(int argc, char** argv) {
   for (const auto& submap_pose_kv : pose_graph.getSubmapPoses()) {
     voxblox::Transformation original_pose;
     submap_collection_ptr->getSubMapPose(submap_pose_kv.first, &original_pose);
-    std::cout << "Updating submap " << submap_pose_kv.first << " from \n"
-              << original_pose.getPosition() << "\n to \n"
-              << submap_pose_kv.second.getPosition() << std::endl;
+    //    std::cout << "Updating submap " << submap_pose_kv.first << " from \n"
+    //              << original_pose.getPosition() << "\n to \n"
+    //              << submap_pose_kv.second.getPosition() << std::endl;
     submap_collection_ptr->setSubMapPose(submap_pose_kv.first,
                                          submap_pose_kv.second);
   }
