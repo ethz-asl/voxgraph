@@ -30,6 +30,17 @@ bool SubmapRegisterer::testRegistration(
   ceres::Problem problem;
   ceres::LossFunction *loss_function = nullptr;
 
+  // Get initial pose of reference submap (not touched by the optimization)
+  // TODO(victorr): Clean this up
+  voxblox::Point ref_pose = reference_submap_ptr->getPose().getPosition();
+  double world_t_world_ref[3];
+  world_t_world_ref[0] = ref_pose.x();
+  world_t_world_ref[1] = ref_pose.y();
+  world_t_world_ref[2] = ref_pose.z();
+  problem.AddParameterBlock(world_t_world_ref, 3);
+  problem.SetParameterBlockConstant(world_t_world_ref);
+  problem.AddParameterBlock(world_t_world_reading, 3);
+
   // Create and add submap alignment cost function
   ceres::CostFunction *cost_function;
   if (options_.cost.cost_function_type ==
@@ -47,7 +58,8 @@ bool SubmapRegisterer::testRegistration(
     cost_function = new RegistrationCostFunction(
         reference_submap_ptr, reading_submap_ptr, options_.cost);
   }
-  problem.AddResidualBlock(cost_function, loss_function, world_t_world_reading);
+  problem.AddResidualBlock(cost_function, loss_function, world_t_world_ref,
+                           world_t_world_reading);
 
   // Run the solver
   ceres::Solver::Options ceres_options = options_.solver;

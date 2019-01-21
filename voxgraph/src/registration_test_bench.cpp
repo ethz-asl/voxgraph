@@ -204,8 +204,7 @@ int main(int argc, char** argv) {
   registerer_options.cost.visualize_residuals = visualize_residuals;
   registerer_options.cost.visualize_gradients = visualize_gradients;
   registerer_options.solver.max_num_iterations = 40;
-  // Corresponds to moving less than 1mm:
-  registerer_options.solver.parameter_tolerance = 3e-2;
+  registerer_options.solver.parameter_tolerance = 3e-3;
   voxgraph::SubmapRegisterer submap_registerer(submap_collection_ptr,
                                                registerer_options);
 
@@ -394,7 +393,7 @@ int main(int argc, char** argv) {
 
               // TODO(victorr): Set report style from params
               std::cout << summary.BriefReport() << std::endl;
-              //               std::cout << summary.FullReport() << std::endl;
+              //  std::cout << summary.FullReport() << std::endl;
 
               ros::spinOnce();
             }
