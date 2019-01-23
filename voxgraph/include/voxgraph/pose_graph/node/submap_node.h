@@ -2,12 +2,12 @@
 // Created by victor on 16.01.19.
 //
 
-#ifndef VOXGRAPH_POSE_GRAPH_SUBMAP_NODE_H_
-#define VOXGRAPH_POSE_GRAPH_SUBMAP_NODE_H_
+#ifndef VOXGRAPH_POSE_GRAPH_NODE_SUBMAP_NODE_H_
+#define VOXGRAPH_POSE_GRAPH_NODE_SUBMAP_NODE_H_
 
 #include <cblox/core/common.h>
 #include <memory>
-#include "voxgraph/pose_graph/node.h"
+#include "voxgraph/pose_graph/node/node.h"
 
 namespace voxgraph {
 class SubmapNode : public Node {
@@ -29,4 +29,4 @@ class SubmapNode : public Node {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_POSE_GRAPH_SUBMAP_NODE_H_
+#endif  // VOXGRAPH_POSE_GRAPH_NODE_SUBMAP_NODE_H_

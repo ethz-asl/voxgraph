@@ -2,12 +2,12 @@
 // Created by victor on 16.01.19.
 //
 
-#ifndef VOXGRAPH_POSE_GRAPH_REGISTRATION_CONSTRAINT_H_
-#define VOXGRAPH_POSE_GRAPH_REGISTRATION_CONSTRAINT_H_
+#ifndef VOXGRAPH_POSE_GRAPH_CONSTRAINT_REGISTRATION_CONSTRAINT_H_
+#define VOXGRAPH_POSE_GRAPH_CONSTRAINT_REGISTRATION_CONSTRAINT_H_
 
 #include <memory>
 #include <utility>
-#include "voxgraph/pose_graph/constraint.h"
+#include "voxgraph/pose_graph/constraint/constraint.h"
 #include "voxgraph/submap_registration/registration_cost_function.h"
 
 namespace voxgraph {
@@ -37,4 +37,4 @@ class RegistrationConstraint : public Constraint {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_POSE_GRAPH_REGISTRATION_CONSTRAINT_H_
+#endif  // VOXGRAPH_POSE_GRAPH_CONSTRAINT_REGISTRATION_CONSTRAINT_H_

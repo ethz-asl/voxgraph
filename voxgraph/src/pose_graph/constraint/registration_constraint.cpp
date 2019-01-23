@@ -2,7 +2,7 @@
 // Created by victor on 17.01.19.
 //
 
-#include "voxgraph/pose_graph/registration_constraint.h"
+#include "voxgraph/pose_graph/constraint/registration_constraint.h"
 
 namespace voxgraph {
 void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
@@ -47,9 +47,9 @@ void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
         first_submap_ptr_, second_submap_ptr_, cost_options);
   }
 
-  // Add the constraint to the optimization
-  problem->AddResidualBlock(cost_function, loss_function,
-                            first_submap_node_ptr->getPosePtr()->data(),
-                            second_submap_node_ptr->getPosePtr()->data());
+  // Add the constraint to the optimization and keep track of it
+  residual_block_id_ = problem->AddResidualBlock(
+      cost_function, loss_function, first_submap_node_ptr->getPosePtr()->data(),
+      second_submap_node_ptr->getPosePtr()->data());
 }
 }  // namespace voxgraph

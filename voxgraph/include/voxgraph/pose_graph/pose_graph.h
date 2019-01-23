@@ -6,15 +6,18 @@
 #define VOXGRAPH_POSE_GRAPH_POSE_GRAPH_H_
 
 #include <map>
+#include <memory>
 #include <utility>
 #include <vector>
-#include "voxgraph/pose_graph/odometry_constraint.h"
-#include "voxgraph/pose_graph/registration_constraint.h"
-#include "voxgraph/pose_graph/submap_node.h"
+#include "voxgraph/pose_graph/constraint/odometry_constraint.h"
+#include "voxgraph/pose_graph/constraint/registration_constraint.h"
+#include "voxgraph/pose_graph/node/submap_node.h"
 
 namespace voxgraph {
 class PoseGraph {
  public:
+  typedef std::shared_ptr<const PoseGraph> ConstPtr;
+
   explicit PoseGraph(
       cblox::SubmapCollection<VoxgraphSubmap>::ConstPtr submap_collection_ptr)
       : submap_collection_ptr_(std::move(submap_collection_ptr)) {}
@@ -25,10 +28,19 @@ class PoseGraph {
 
   void addConstraint(const RegistrationConstraint::Config &config);
 
+  void initialize();
+
   void optimize();
 
   std::map<const cblox::SubmapID, const voxblox::Transformation>
   getSubmapPoses();
+
+  struct Edge {
+    voxblox::Transformation::Position first_node_position;
+    voxblox::Transformation::Position second_node_position;
+    double residual;
+  };
+  std::vector<Edge> getEdges() const;
 
  private:
   Constraint::ConstraintId constraint_id_counter_ = 0;
@@ -39,6 +51,10 @@ class PoseGraph {
 
   NodeCollection node_collection_;
   cblox::SubmapCollection<VoxgraphSubmap>::ConstPtr submap_collection_ptr_;
+
+  // Ceres problem
+  ceres::Problem::Options problem_options_;
+  std::shared_ptr<ceres::Problem> problem_ptr_;
 };
 }  // namespace voxgraph
 

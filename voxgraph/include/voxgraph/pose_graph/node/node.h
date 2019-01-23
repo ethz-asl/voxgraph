@@ -2,8 +2,8 @@
 // Created by victor on 15.01.19.
 //
 
-#ifndef VOXGRAPH_POSE_GRAPH_NODE_H_
-#define VOXGRAPH_POSE_GRAPH_NODE_H_
+#ifndef VOXGRAPH_POSE_GRAPH_NODE_NODE_H_
+#define VOXGRAPH_POSE_GRAPH_NODE_NODE_H_
 
 #include <memory>
 
@@ -32,4 +32,4 @@ class Node {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_POSE_GRAPH_NODE_H_
+#endif  // VOXGRAPH_POSE_GRAPH_NODE_NODE_H_

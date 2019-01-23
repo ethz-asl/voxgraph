@@ -2,7 +2,7 @@
 // Created by victor on 17.01.19.
 //
 
-#include "voxgraph/pose_graph/submap_node.h"
+#include "voxgraph/pose_graph/node/submap_node.h"
 #include <utility>
 
 namespace voxgraph {

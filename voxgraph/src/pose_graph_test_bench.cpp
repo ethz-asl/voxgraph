@@ -10,6 +10,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "voxgraph/visualization/pose_graph_visuals.h"
 #include "voxgraph/visualization/submap_visuals.h"
 #include "voxgraph/voxgraph_submap.h"
 
@@ -46,24 +47,30 @@ int main(int argc, char** argv) {
   // Create the pose graph
   PoseGraph pose_graph(submap_collection_ptr);
 
-  // TODO(victorr): This is temporary
-  voxblox::Point disturbance;
+  // Add noise to the submap collection
+  // TODO(victorr): This is a poor approximation of drift, since it doesn't
+  //                distort the submaps themselves. Update the noisy odometer
+  //                from voxgraph_mapper and use that instead.
   std::default_random_engine random_engine;
-  std::normal_distribution<double> linear_noise_distrib(0.0, 0.1);
-
-  // Generate the ESDFs for the submaps
+  std::normal_distribution<double> linear_noise_distrib(0.0, 1.0);
   std::vector<cblox::SubmapID> submap_ids = submap_collection_ptr->getIDs();
   for (const cblox::SubmapID& submap_id : submap_ids) {
-    CHECK(submap_collection_ptr->generateEsdfById(submap_id));
+    // NOTE: Submap 0 should not be perturbed,
+    //       since its pose is not being optimized
+    if (submap_id != 0) {
+      // Get the submap pose; perturb it; then write it back to the collection
+      voxblox::Transformation pose;
+      CHECK(submap_collection_ptr->getSubMapPose(submap_id, &pose));
+      pose.getPosition().x() += linear_noise_distrib(random_engine);
+      pose.getPosition().y() += linear_noise_distrib(random_engine);
+      pose.getPosition().z() += linear_noise_distrib(random_engine);
+      submap_collection_ptr->setSubMapPose(submap_id, pose);
+    }
+  }
 
-    // TODO(victorr): This is temporary
-    disturbance.x() += linear_noise_distrib(random_engine);
-    disturbance.y() += linear_noise_distrib(random_engine);
-    disturbance.z() += 3 * linear_noise_distrib(random_engine);
-    voxblox::Transformation pose;
-    CHECK(submap_collection_ptr->getSubMapPose(submap_id, &pose));
-    pose.getPosition() = pose.getPosition() + disturbance;
-    submap_collection_ptr->setSubMapPose(submap_id, pose);
+  // Generate the ESDFs for the submaps
+  for (const cblox::SubmapID& submap_id : submap_ids) {
+    CHECK(submap_collection_ptr->generateEsdfById(submap_id));
   }
 
   // Setup Rviz visualizations
@@ -89,17 +96,14 @@ int main(int argc, char** argv) {
   ros::Publisher bounding_boxes_pub =
       nh_private.advertise<visualization_msgs::Marker>("bounding_boxes", 100,
                                                        true);
+  ros::Publisher pose_graph_edge_original_pub =
+      nh_private.advertise<visualization_msgs::Marker>(
+          "pose_graph_original_edges", 100, true);
+  ros::Publisher pose_graph_edge_optimized_pub =
+      nh_private.advertise<visualization_msgs::Marker>(
+          "pose_graph_optimized_edges", 100, true);
 
   // Show the original submap meshes in Rviz
-  {
-    // Wait for Rviz to launch so that it receives the meshes
-    ros::Rate wait_rate(1);
-    while (separated_mesh_original_pub.getNumSubscribers() == 0) {
-      std::cout << "Waiting for Rviz to launch and subscribe "
-                << "to topic 'separated_mesh_original'" << std::endl;
-      wait_rate.sleep();
-    }
-  }
   submap_vis.publishSeparatedMesh(*submap_collection_ptr, "world",
                                   separated_mesh_original_pub);
 
@@ -160,9 +164,6 @@ int main(int argc, char** argv) {
 
       // Check whether the first and second submap overlap
       if (first_submap_ptr->overlapsWith(second_submap_ptr)) {
-        //        std::cout << "--  " << first_submap_id << " to " <<
-        //        second_submap_id
-        //                  << std::endl;
         // Add the constraint
         RegistrationConstraint::Config constraint_config = {first_submap_id,
                                                             second_submap_id};
@@ -171,17 +172,18 @@ int main(int argc, char** argv) {
     }
   }
 
+  // Publish the unoptimized pose graph
+  voxgraph::PoseGraphVisuals pose_graph_vis;
+  pose_graph.initialize();
+  pose_graph_vis.publishPoseGraph(pose_graph, "world", "edges",
+                                  pose_graph_edge_original_pub);
+
   // Optimize the graph
   std::cout << "Optimizing the graph" << std::endl;
   pose_graph.optimize();
 
   // Update the submap poses
   for (const auto& submap_pose_kv : pose_graph.getSubmapPoses()) {
-    voxblox::Transformation original_pose;
-    submap_collection_ptr->getSubMapPose(submap_pose_kv.first, &original_pose);
-    //    std::cout << "Updating submap " << submap_pose_kv.first << " from \n"
-    //              << original_pose.getPosition() << "\n to \n"
-    //              << submap_pose_kv.second.getPosition() << std::endl;
     submap_collection_ptr->setSubMapPose(submap_pose_kv.first,
                                          submap_pose_kv.second);
   }
@@ -189,6 +191,10 @@ int main(int argc, char** argv) {
   // Show the optimized submap meshes in Rviz
   submap_vis.publishSeparatedMesh(*submap_collection_ptr, "world",
                                   separated_mesh_optimized_pub);
+
+  // Publish the optimized pose graph
+  pose_graph_vis.publishPoseGraph(pose_graph, "world", "edges",
+                                  pose_graph_edge_optimized_pub);
 
   // Keep the ROS node alive in order to interact with its topics in Rviz
   std::cout << "Done" << std::endl;
