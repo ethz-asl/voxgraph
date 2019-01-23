@@ -1,0 +1,22 @@
+<launch>
+  <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
+    <remap from="odometry" to="/firefly/ground_truth/odometry"/>
+    <remap from="pointcloud" to="/velodyne_points"/>
+    <rosparam>
+      submap_creation_interval: 20
+      use_tf_to_get_pointcloud_poses: true
+      <!--odom_simulator_noise_linear_vel_mean: 0-->
+      <!--odom_simulator_noise_linear_vel_stddev: 0.2-->
+      <!--odom_simulator_noise_angular_vel_mean: 0-->
+      <!--odom_simulator_noise_angular_vel_stddev: 0.2-->
+      odom_base_frame: "/firefly/base_link"
+      verbose: true
+      truncation_distance: 0.6
+      max_ray_length_m: 15
+      anti_grazing: true
+    </rosparam>
+  </node>
+  <node pkg="rosbag" type="play" name="player" output="screen"
+        args="--quiet /home/victor/catkin_ws/bags/terrain_coverage_2019-01-21-23-26-31.bag"/>
+  <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" />
+</launch>

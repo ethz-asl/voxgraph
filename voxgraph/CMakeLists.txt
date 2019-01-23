@@ -33,3 +33,7 @@ cs_add_executable(pose_graph_test_bench
     src/visualization/submap_visuals.cpp
     src/visualization/cost_function_visuals.cpp
     src/visualization/tf_helper.cpp)
+
+cs_add_executable(voxgraph_mapping_node
+    src/voxgraph_mapping_node.cpp
+    src/voxgraph_mapper.cpp)

@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
   // TODO(victorr): This is temporary
   voxblox::Point disturbance;
   std::default_random_engine random_engine;
-  std::normal_distribution<double> linear_noise_distrib(0.0, 0.1);
+  std::normal_distribution<double> linear_noise_distrib(0.0, 0.3);
 
   // Generate the ESDFs for the submaps
   std::vector<cblox::SubmapID> submap_ids = submap_collection_ptr->getIDs();
@@ -57,12 +57,11 @@ int main(int argc, char** argv) {
     CHECK(submap_collection_ptr->generateEsdfById(submap_id));
 
     // TODO(victorr): This is temporary
-    disturbance.x() += linear_noise_distrib(random_engine);
-    disturbance.y() += linear_noise_distrib(random_engine);
-    disturbance.z() += 3 * linear_noise_distrib(random_engine);
     voxblox::Transformation pose;
     CHECK(submap_collection_ptr->getSubMapPose(submap_id, &pose));
-    pose.getPosition() = pose.getPosition() + disturbance;
+    pose.getPosition().x() += linear_noise_distrib(random_engine);
+    pose.getPosition().y() += linear_noise_distrib(random_engine);
+    pose.getPosition().z() += 3 * linear_noise_distrib(random_engine);
     submap_collection_ptr->setSubMapPose(submap_id, pose);
   }
 
@@ -89,6 +88,15 @@ int main(int argc, char** argv) {
   ros::Publisher bounding_boxes_pub =
       nh_private.advertise<visualization_msgs::Marker>("bounding_boxes", 100,
                                                        true);
+
+  // TODO(victorr): This is temporary, don't forget to remove
+  //  cblox::AlignedVector<cblox::Transformation> poses;
+  //  submap_collection_ptr->getSubMapPoses(&poses);
+  //  int i = 0;
+  //  std::cout << "Submap poses" << std::endl;
+  //  for (auto pose : poses) {
+  //    std::cout << "-- " << i++ << ":\n" << pose << std::endl;
+  //  }
 
   // Show the original submap meshes in Rviz
   {
