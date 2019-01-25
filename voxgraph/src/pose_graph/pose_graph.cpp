@@ -5,6 +5,7 @@
 #include "voxgraph/pose_graph/pose_graph.h"
 #include <map>
 #include <memory>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -59,6 +60,7 @@ void PoseGraph::optimize() {
 
   // Run the solver
   ceres::Solver::Options ceres_options;
+  ceres_options.num_threads = std::thread::hardware_concurrency();
   ceres::Solver::Summary summary;
   ceres::Solve(ceres_options, problem_ptr_.get(), &summary);
 

@@ -205,6 +205,7 @@ int main(int argc, char** argv) {
   registerer_options.cost.visualize_gradients = visualize_gradients;
   registerer_options.solver.max_num_iterations = 40;
   registerer_options.solver.parameter_tolerance = 3e-3;
+  registerer_options.param.optimize_yaw = true;
   voxgraph::SubmapRegisterer submap_registerer(submap_collection_ptr,
                                                registerer_options);
 
@@ -345,21 +346,25 @@ int main(int argc, char** argv) {
 
               // Set initial conditions
               ceres::Solver::Summary summary;
-              voxblox::Transformation::Vector6 T_vec =
+              voxblox::Transformation::Vector6 T_vec_read =
                   T_world__reading_perturbed.log();
-              double world_t_world_reading[3] = {T_vec[0], T_vec[1], T_vec[2]};
+              double world_pose_reading[4] = {T_vec_read[0], T_vec_read[1],
+                                              T_vec_read[2], T_vec_read[5]};
 
               // Optimize submap registration
               bool registration_successful = submap_registerer.testRegistration(
-                  reference_submap_id, reading_submap_id, world_t_world_reading,
+                  reference_submap_id, reading_submap_id, world_pose_reading,
                   &summary);
               if (registration_successful) {
                 // Update reading submap pose with the optimization result
-                T_vec[0] = world_t_world_reading[0];
-                T_vec[1] = world_t_world_reading[1];
-                T_vec[2] = world_t_world_reading[2];
+                T_vec_read[0] = world_pose_reading[0];
+                T_vec_read[1] = world_pose_reading[1];
+                T_vec_read[2] = world_pose_reading[2];
+                if (registerer_options.param.optimize_yaw) {
+                  T_vec_read[5] = world_pose_reading[3];
+                }
                 const voxblox::Transformation T_world__reading_optimized =
-                    voxblox::Transformation::exp(T_vec);
+                    voxblox::Transformation::exp(T_vec_read);
                 submap_collection_ptr->setSubMapPose(
                     reading_submap_id, T_world__reading_optimized);
 

@@ -8,7 +8,7 @@
 #include <memory>
 #include <utility>
 #include "voxgraph/pose_graph/constraint/constraint.h"
-#include "voxgraph/submap_registration/registration_cost_function.h"
+#include "voxgraph/submap_registration/registration_cost_function_xyz.h"
 
 namespace voxgraph {
 class RegistrationConstraint : public Constraint {

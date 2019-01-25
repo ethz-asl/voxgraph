@@ -4,8 +4,8 @@
     <rosparam>
       submap_collection_file_path: "/home/victor/catkin_ws/voxgraph/submap_collections/burning_house_gt_truncdist2_maxraylength15_antigrazing1"
       log_folder_path: "/home/victor/catkin_ws/voxgraph/registration_test_bench_stats"
-      reference_submap_id: 2
-      reading_submap_id: 2
+      reference_submap_id: 1
+      reading_submap_id: 1
       visualize_residuals: true
       visualize_gradients: true
       use_esdf_distance: true

@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
   //                distort the submaps themselves. Update the noisy odometer
   //                from voxgraph_mapper and use that instead.
   std::default_random_engine random_engine;
-  std::normal_distribution<double> linear_noise_distrib(0.0, 1.0);
+  std::normal_distribution<double> linear_noise_distrib(0.0, 1.2);
   std::vector<cblox::SubmapID> submap_ids = submap_collection_ptr->getIDs();
   for (const cblox::SubmapID& submap_id : submap_ids) {
     // NOTE: Submap 0 should not be perturbed,
