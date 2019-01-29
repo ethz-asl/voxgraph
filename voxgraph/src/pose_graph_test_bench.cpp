@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
   //                distort the submaps themselves. Update the noisy odometer
   //                from voxgraph_mapper and use that instead.
   std::default_random_engine random_engine;
-  std::normal_distribution<double> linear_noise_distrib(0.0, 1.2);
+  std::normal_distribution<double> noise_distrib(0.0, 0.4);
   std::vector<cblox::SubmapID> submap_ids = submap_collection_ptr->getIDs();
   for (const cblox::SubmapID& submap_id : submap_ids) {
     // NOTE: Submap 0 should not be perturbed,
@@ -61,9 +61,12 @@ int main(int argc, char** argv) {
       // Get the submap pose; perturb it; then write it back to the collection
       voxblox::Transformation pose;
       CHECK(submap_collection_ptr->getSubMapPose(submap_id, &pose));
-      pose.getPosition().x() += linear_noise_distrib(random_engine);
-      pose.getPosition().y() += linear_noise_distrib(random_engine);
-      pose.getPosition().z() += linear_noise_distrib(random_engine);
+      voxblox::Transformation::Vector6 T_vec = pose.log();
+      T_vec[0] += noise_distrib(random_engine);
+      T_vec[1] += noise_distrib(random_engine);
+      T_vec[2] += noise_distrib(random_engine);
+      T_vec[5] += 0.2*noise_distrib(random_engine);
+      pose = voxblox::Transformation::exp(T_vec);
       submap_collection_ptr->setSubMapPose(submap_id, pose);
     }
   }

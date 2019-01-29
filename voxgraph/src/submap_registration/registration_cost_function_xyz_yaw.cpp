@@ -289,7 +289,7 @@ bool RegistrationCostFunctionXYZYaw::Evaluate(double const *const *parameters,
           // Transform the current point and Jacobian into the world frame
           const voxblox::Point world_t_world__point =
               T_world__reading * reading_coordinate;
-          const voxblox::Point world_jacobian = pResidual_pParamRead.head<3>();
+          voxblox::Point world_jacobian = pResidual_pParamRead.head<3>();
           cost_function_visuals_.addJacobian(world_t_world__point,
                                              world_jacobian);
         }

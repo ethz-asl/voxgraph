@@ -28,7 +28,7 @@ class SubmapRegisterer {
       bool visualize_gradients = false;
     } cost;
     struct Parametrization {
-      bool optimize_yaw = false;
+      bool optimize_yaw = true;
     } param;
   };
 

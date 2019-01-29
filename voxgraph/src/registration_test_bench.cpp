@@ -204,7 +204,7 @@ int main(int argc, char** argv) {
   registerer_options.cost.visualize_residuals = visualize_residuals;
   registerer_options.cost.visualize_gradients = visualize_gradients;
   registerer_options.solver.max_num_iterations = 40;
-  registerer_options.solver.parameter_tolerance = 3e-3;
+  registerer_options.solver.parameter_tolerance = 3e-9;
   registerer_options.param.optimize_yaw = true;
   voxgraph::SubmapRegisterer submap_registerer(submap_collection_ptr,
                                                registerer_options);
@@ -336,8 +336,8 @@ int main(int argc, char** argv) {
                   "yaw % 4.2f    pitch % 4.2f    roll % 4.2f\n",
                   counter, perturbed_position.x() - ground_truth_position.x(),
                   perturbed_position.y() - ground_truth_position.y(),
-                  perturbed_position.z() - ground_truth_position.z(), yaw,
-                  pitch, roll);
+                  perturbed_position.z() - ground_truth_position.z(),
+                  yaw, pitch, roll);
 
               // Publish the TF of perturbed mesh
               voxgraph::TfHelper::publishTransform(T_world__reading_perturbed,
@@ -379,8 +379,11 @@ int main(int argc, char** argv) {
                     counter++,
                     optimized_position.x() - ground_truth_position.x(),
                     optimized_position.y() - ground_truth_position.y(),
-                    optimized_position.z() - ground_truth_position.z(), 0.0,
-                    0.0, 0.0, summary.total_time_in_seconds);
+                    optimized_position.z() - ground_truth_position.z(),
+                    T_world__reading_optimized.log()[5]
+                        - T_world__reading_original.log()[5],
+                    0.0,
+                    0.0, summary.total_time_in_seconds);
 
                 // Append stats to log file
                 log_file << optimized_position.x() - ground_truth_position.x()
@@ -400,9 +403,14 @@ int main(int argc, char** argv) {
               std::cout << summary.BriefReport() << std::endl;
               //  std::cout << summary.FullReport() << std::endl;
 
-              ros::spinOnce();
+              // Exit if CTRL+C was pressed
+              if (!ros::ok()){
+                std::cout << "Shutting down..." << std::endl;
+                goto endloop;
+              }
             }
   }
+  endloop:
 
   // Close the log file and exit normally
   log_file.close();
