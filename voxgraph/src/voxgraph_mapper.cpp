@@ -216,8 +216,13 @@ void VoxgraphMapper::pointcloudCallback(
       current_submap_creation_stamp_ + submap_creation_interval_) {
     // Create new submap
     ROS_INFO_STREAM("Creating submap nr: " << tsdf_submap_collection_.size());
-    std::cout << "with pose\n" << T_world__odom << std::endl;
-    tsdf_submap_collection_.createNewSubMap(T_world__odom);
+    voxblox::Transformation::Vector6 T_vec = T_world__odom.log();
+    T_vec[3] = 0;
+    T_vec[4] = 0;
+    voxblox::Transformation T_world__new_submap =
+        voxblox::Transformation::exp(T_vec);
+    std::cout << "with pose\n" << T_world__new_submap << std::endl;
+    tsdf_submap_collection_.createNewSubMap(T_world__new_submap);
     current_submap_creation_stamp_ = pointcloud_msg->header.stamp;
 
     // Tell the TSDF integrator to update the new submap
