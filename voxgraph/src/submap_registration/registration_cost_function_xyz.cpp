@@ -2,7 +2,7 @@
 // Created by victor on 15.12.18.
 //
 
-#include "voxgraph/submap_registration/registration_cost_function.h"
+#include "voxgraph/submap_registration/registration_cost_function_xyz.h"
 #include <minkindr_conversions/kindr_tf.h>
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
@@ -10,7 +10,7 @@
 #include "voxgraph/voxgraph_submap.h"
 
 namespace voxgraph {
-RegistrationCostFunction::RegistrationCostFunction(
+RegistrationCostFunctionXYZ::RegistrationCostFunctionXYZ(
     VoxgraphSubmap::ConstPtr reference_submap_ptr,
     VoxgraphSubmap::ConstPtr reading_submap_ptr,
     SubmapRegisterer::Options::CostFunction options)
@@ -53,7 +53,7 @@ RegistrationCostFunction::RegistrationCostFunction(
     }
   }
 
-  // Set number of parameters: namely 2 poses, each having 3 params
+  // Set number of parameters: namely 2 poses, each having 3 params (X,Y,Z)
   mutable_parameter_block_sizes()->clear();
   mutable_parameter_block_sizes()->push_back(3);
   mutable_parameter_block_sizes()->push_back(3);
@@ -62,9 +62,9 @@ RegistrationCostFunction::RegistrationCostFunction(
   set_num_residuals(num_relevant_reference_voxels_);
 }
 
-bool RegistrationCostFunction::Evaluate(double const *const *parameters,
-                                        double *residuals,
-                                        double **jacobians) const {
+bool RegistrationCostFunctionXYZ::Evaluate(double const *const *parameters,
+                                           double *residuals,
+                                           double **jacobians) const {
   unsigned int residual_idx = 0;
   double summed_reference_weight = 0;
 
@@ -93,8 +93,11 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
       voxblox::Transformation::exp(T_vec_reading);
 
   // Publish the TF corresponding to the current optimized submap pose
-  TfHelper::publishTransform(T_world__reading, "world", "optimized_submap",
-                             true);
+  // TODO(victorr): Parametrize this
+  if (false) {
+    TfHelper::publishTransform(T_world__reading, "world", "optimized_submap",
+                               true);
+  }
 
   // Set the relative transform from the reading submap to the reference submap
   const voxblox::Transformation T_reading__reference =
@@ -212,9 +215,9 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
                           (interp_table_ * distances.transpose());
           dResidual.z() = reference_weight * q_vector_dz *
                           (interp_table_ * distances.transpose());
-          dResidual = T_world__reading * dResidual;
+          dResidual = T_world__reading.getRotationMatrix() * dResidual;
         } else {
-          dResidual = {0, 0, 0};
+          dResidual.setZero();
         }
         // Add Jacobian to visualization
         if (options_.visualize_gradients) {

@@ -7,7 +7,7 @@
 
 #include <map>
 #include <memory>
-#include "voxgraph/pose_graph/submap_node.h"
+#include "voxgraph/pose_graph/node/submap_node.h"
 
 namespace voxgraph {
 class NodeCollection {

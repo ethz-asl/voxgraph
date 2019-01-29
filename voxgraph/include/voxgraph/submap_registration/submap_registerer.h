@@ -27,6 +27,9 @@ class SubmapRegisterer {
       bool visualize_residuals = false;
       bool visualize_gradients = false;
     } cost;
+    struct Parametrization {
+      bool optimize_yaw = true;
+    } param;
   };
 
   SubmapRegisterer(
@@ -37,7 +40,7 @@ class SubmapRegisterer {
 
   bool testRegistration(const cblox::SubmapID &reference_submap_id,
                         const cblox::SubmapID &reading_submap_id,
-                        double *world_t_world_reading,
+                        double *world_pose_reading,
                         ceres::Solver::Summary *summary);
 
  private:

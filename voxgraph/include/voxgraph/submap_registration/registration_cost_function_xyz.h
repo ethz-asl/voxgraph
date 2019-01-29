@@ -2,15 +2,15 @@
 // Created by victor on 15.12.18.
 //
 
-#ifndef VOXGRAPH_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_H_
-#define VOXGRAPH_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_H_
+#ifndef VOXGRAPH_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_H_
+#define VOXGRAPH_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_H_
 
-#include <ceres/ceres.h>
-#include <voxblox/interpolator/interpolator.h>
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
-#include <cblox/core/tsdf_submap.h>
 #include <cblox/core/tsdf_esdf_submap.h>
+#include <cblox/core/tsdf_submap.h>
+#include <ceres/ceres.h>
+#include <voxblox/interpolator/interpolator.h>
 #include "voxgraph/submap_registration/submap_registerer.h"
 
 // For visualization only
@@ -18,16 +18,11 @@
 #include "voxgraph/visualization/cost_function_visuals.h"
 
 namespace voxgraph {
-class RegistrationCostFunction : public ceres::CostFunction {
+class RegistrationCostFunctionXYZ : public ceres::CostFunction {
  public:
-  RegistrationCostFunction(VoxgraphSubmap::ConstPtr reference_submap_ptr,
-                           VoxgraphSubmap::ConstPtr reading_submap_ptr,
-                           SubmapRegisterer::Options::CostFunction options);
-
-  bool getVoxelsAndQVector(const voxblox::Layer<voxblox::TsdfVoxel> &layer,
-                           const voxblox::Point &pos,
-                           const voxblox::TsdfVoxel **neighboring_voxels,
-                           voxblox::InterpVector *q_vector) const;
+  RegistrationCostFunctionXYZ(VoxgraphSubmap::ConstPtr reference_submap_ptr,
+                              VoxgraphSubmap::ConstPtr reading_submap_ptr,
+                              SubmapRegisterer::Options::CostFunction options);
 
   bool Evaluate(double const *const *parameters, double *residuals,
                 double **jacobians) const override;
@@ -64,17 +59,16 @@ class RegistrationCostFunction : public ceres::CostFunction {
   // It corresponds to matrix B_1 from paper: http://spie.org/samples/PM159.pdf
   // clang-format off
   const voxblox::InterpTable interp_table_ =
-      (voxblox::InterpTable() <<
-        1,  0,  0,  0,  0,  0,  0,  0,
-       -1,  0,  0,  0,  1,  0,  0,  0,
-       -1,  0,  1,  0,  0,  0,  0,  0,
-       -1,  1,  0,  0,  0,  0,  0,  0,
-        1,  0, -1,  0, -1,  0,  1,  0,
-        1, -1, -1,  1,  0,  0,  0,  0,
-        1, -1,  0,  0, -1,  1,  0,  0,
-       -1,  1,  1, -1,  1, -1, -1,  1).finished();
+      (voxblox::InterpTable() << 1,  0,  0,  0,  0,  0,  0,  0,
+                                -1,  0,  0,  0,  1,  0,  0,  0,
+                                -1,  0,  1,  0,  0,  0,  0,  0,
+                                -1,  1,  0,  0,  0,  0,  0,  0,
+                                 1,  0, -1,  0, -1,  0,  1,  0,
+                                 1, -1, -1,  1,  0,  0,  0,  0,
+                                 1, -1,  0,  0, -1,  1,  0,  0,
+                                -1,  1,  1, -1,  1, -1, -1,  1).finished();
   // clang-format on
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_H_
+#endif  // VOXGRAPH_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_H_

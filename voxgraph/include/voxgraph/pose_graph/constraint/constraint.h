@@ -2,8 +2,8 @@
 // Created by victor on 15.01.19.
 //
 
-#ifndef VOXGRAPH_POSE_GRAPH_CONSTRAINT_H_
-#define VOXGRAPH_POSE_GRAPH_CONSTRAINT_H_
+#ifndef VOXGRAPH_POSE_GRAPH_CONSTRAINT_CONSTRAINT_H_
+#define VOXGRAPH_POSE_GRAPH_CONSTRAINT_CONSTRAINT_H_
 
 #include <ceres/ceres.h>
 #include <memory>
@@ -22,9 +22,14 @@ class Constraint {
   virtual void addToProblem(const NodeCollection &node_collection,
                             ceres::Problem *problem) = 0;
 
+  const ceres::ResidualBlockId getResidualBlockId() {
+    return residual_block_id_;
+  }
+
  protected:
   const ConstraintId constraint_id_;
+  ceres::ResidualBlockId residual_block_id_ = nullptr;
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_POSE_GRAPH_CONSTRAINT_H_
+#endif  // VOXGRAPH_POSE_GRAPH_CONSTRAINT_CONSTRAINT_H_

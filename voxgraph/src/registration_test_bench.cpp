@@ -204,8 +204,8 @@ int main(int argc, char** argv) {
   registerer_options.cost.visualize_residuals = visualize_residuals;
   registerer_options.cost.visualize_gradients = visualize_gradients;
   registerer_options.solver.max_num_iterations = 40;
-  // Corresponds to moving less than 1mm:
-  registerer_options.solver.parameter_tolerance = 3e-2;
+  registerer_options.solver.parameter_tolerance = 3e-9;
+  registerer_options.param.optimize_yaw = true;
   voxgraph::SubmapRegisterer submap_registerer(submap_collection_ptr,
                                                registerer_options);
 
@@ -336,8 +336,8 @@ int main(int argc, char** argv) {
                   "yaw % 4.2f    pitch % 4.2f    roll % 4.2f\n",
                   counter, perturbed_position.x() - ground_truth_position.x(),
                   perturbed_position.y() - ground_truth_position.y(),
-                  perturbed_position.z() - ground_truth_position.z(), yaw,
-                  pitch, roll);
+                  perturbed_position.z() - ground_truth_position.z(),
+                  yaw, pitch, roll);
 
               // Publish the TF of perturbed mesh
               voxgraph::TfHelper::publishTransform(T_world__reading_perturbed,
@@ -346,21 +346,25 @@ int main(int argc, char** argv) {
 
               // Set initial conditions
               ceres::Solver::Summary summary;
-              voxblox::Transformation::Vector6 T_vec =
+              voxblox::Transformation::Vector6 T_vec_read =
                   T_world__reading_perturbed.log();
-              double world_t_world_reading[3] = {T_vec[0], T_vec[1], T_vec[2]};
+              double world_pose_reading[4] = {T_vec_read[0], T_vec_read[1],
+                                              T_vec_read[2], T_vec_read[5]};
 
               // Optimize submap registration
               bool registration_successful = submap_registerer.testRegistration(
-                  reference_submap_id, reading_submap_id, world_t_world_reading,
+                  reference_submap_id, reading_submap_id, world_pose_reading,
                   &summary);
               if (registration_successful) {
                 // Update reading submap pose with the optimization result
-                T_vec[0] = world_t_world_reading[0];
-                T_vec[1] = world_t_world_reading[1];
-                T_vec[2] = world_t_world_reading[2];
+                T_vec_read[0] = world_pose_reading[0];
+                T_vec_read[1] = world_pose_reading[1];
+                T_vec_read[2] = world_pose_reading[2];
+                if (registerer_options.param.optimize_yaw) {
+                  T_vec_read[5] = world_pose_reading[3];
+                }
                 const voxblox::Transformation T_world__reading_optimized =
-                    voxblox::Transformation::exp(T_vec);
+                    voxblox::Transformation::exp(T_vec_read);
                 submap_collection_ptr->setSubMapPose(
                     reading_submap_id, T_world__reading_optimized);
 
@@ -375,8 +379,11 @@ int main(int argc, char** argv) {
                     counter++,
                     optimized_position.x() - ground_truth_position.x(),
                     optimized_position.y() - ground_truth_position.y(),
-                    optimized_position.z() - ground_truth_position.z(), 0.0,
-                    0.0, 0.0, summary.total_time_in_seconds);
+                    optimized_position.z() - ground_truth_position.z(),
+                    T_world__reading_optimized.log()[5]
+                        - T_world__reading_original.log()[5],
+                    0.0,
+                    0.0, summary.total_time_in_seconds);
 
                 // Append stats to log file
                 log_file << optimized_position.x() - ground_truth_position.x()
@@ -394,11 +401,16 @@ int main(int argc, char** argv) {
 
               // TODO(victorr): Set report style from params
               std::cout << summary.BriefReport() << std::endl;
-              //               std::cout << summary.FullReport() << std::endl;
+              //  std::cout << summary.FullReport() << std::endl;
 
-              ros::spinOnce();
+              // Exit if CTRL+C was pressed
+              if (!ros::ok()){
+                std::cout << "Shutting down..." << std::endl;
+                goto endloop;
+              }
             }
   }
+  endloop:
 
   // Close the log file and exit normally
   log_file.close();
