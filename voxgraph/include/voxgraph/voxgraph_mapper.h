@@ -5,7 +5,6 @@
 #ifndef VOXGRAPH_VOXGRAPH_MAPPER_H
 #define VOXGRAPH_VOXGRAPH_MAPPER_H
 
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <ros/ros.h>
@@ -21,6 +20,9 @@
 #include <voxblox_ros/mesh_vis.h>
 #include <voxblox_ros/transformer.h>
 
+#include "voxgraph/visualization/submap_visuals.h"
+#include "voxgraph/voxgraph_submap.h"
+
 namespace voxgraph {
 class VoxgraphMapper {
  public:
@@ -29,9 +31,6 @@ class VoxgraphMapper {
   ~VoxgraphMapper() = default;
 
   // ROS topic callbacks
-  void odometryCallback(const nav_msgs::Odometry::ConstPtr &odometry_msg);
-  void absolutePoseCallback(
-      const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &pose_msg);
   void pointcloudCallback(
       const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg);
 
@@ -42,15 +41,6 @@ class VoxgraphMapper {
                                    std_srvs::Empty::Response &response);
   bool saveToFileCallback(voxblox_msgs::FilePath::Request &request,
                           voxblox_msgs::FilePath::Response &response);
-  bool optimizeGraphCallback(std_srvs::Empty::Request &request,
-                             std_srvs::Empty::Response &response);
-
-  // TODO(victorr): Remove this once the visualization tools
-  //                get their own class
-  static void publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
-                          const ros::Publisher &publisher,
-                          const voxblox::ColorMode &color_mode,
-                          const std::string &reference_frame = "world");
 
  private:
   // Node handles
@@ -67,9 +57,7 @@ class VoxgraphMapper {
   void getParametersFromRos();
 
   // ROS topic subscribers
-  int subscriber_queue_length_;
-  ros::Subscriber odometry_subscriber_;
-  ros::Subscriber absolute_pose_subscriber_;
+  unsigned int subscriber_queue_length_;
   ros::Subscriber pointcloud_subscriber_;
 
   // ROS topic publishers
@@ -80,43 +68,24 @@ class VoxgraphMapper {
   ros::ServiceServer publish_separated_mesh_srv_;
   ros::ServiceServer publish_combined_mesh_srv_;
   ros::ServiceServer save_to_file_srv_;
-  ros::ServiceServer optimize_graph_srv_;
+  // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
 
   // Instantiate a TSDF submap collection
-  cblox::TsdfMap::Config tsdf_map_config_;
-  cblox::SubmapCollection<cblox::TsdfSubmap> tsdf_submap_collection_;
+  VoxgraphSubmap::Config submap_config_;
+  cblox::SubmapCollection<VoxgraphSubmap> submap_collection_;
 
   // Use voxblox tsdf_integrator to integrate pointclouds into submaps
+  // TODO(victorr): Use cblox SubmapCollection integrator method instead
   voxblox::TsdfIntegratorBase::Config tsdf_integrator_config_;
   std::unique_ptr<voxblox::FastTsdfIntegrator> tsdf_integrator_;
-
-  // Instantiate a cblox mesher to extract meshes
-  // from the TSDF submap collection
-  cblox::MeshIntegratorConfig mesh_integrator_config_;
-  cblox::SubmapMesher tsdf_submap_mesher_;
 
   // Use voxblox transformer to find transformations
   voxblox::Transformer transformer_;
   bool use_tf_to_get_pointcloud_poses_ = false;
-
-  // Imperfect odometry simulator
-  geometry_msgs::PoseStamped odom_simulator_pose_stamped_;
-  double odom_simulator_noise_linear_vel_mean_ = 0;
-  double odom_simulator_noise_linear_vel_stddev_ = 0;
-  double odom_simulator_noise_angular_vel_mean_ = 0;
-  double odom_simulator_noise_angular_vel_stddev_ = 0;
   std::string odom_base_frame_ = "odom";
-  std::default_random_engine odom_simulator_noise_generator_;
-  std::normal_distribution<double> odom_simulator_noise_linear_vel_dist_;
-  std::normal_distribution<double> odom_simulator_noise_angular_vel_dist_;
 
   // Visualization functions
-  enum MeshType { SEPARATED_MESH, COMBINED_MESH };
-  void generateMesh(const MeshType &mesh_type,
-                    const voxblox::MeshLayer::Ptr &mesh_layer_ptr);
-  // Convenience function to easily publish
-  // debug visuals for the entire collection
-  void publishMesh(MeshType);
+  SubmapVisuals submap_vis_;
 
   // TODO(victorr): Integrate these variables into the structure nicely
   ros::Time current_submap_creation_stamp_ = {};

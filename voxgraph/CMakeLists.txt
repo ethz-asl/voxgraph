@@ -40,3 +40,6 @@ cs_add_executable(pose_graph_test_bench
 cs_add_executable(voxgraph_mapping_node
     src/voxgraph_mapping_node.cpp
     src/voxgraph_mapper.cpp)
+
+cs_add_executable(voxgraph_odosim
+    src/voxgraph_odosim.cpp)

@@ -30,6 +30,10 @@ class SubmapVisuals {
       const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
       const std::string &world_frame, const ros::Publisher &publisher);
 
+  void publishCombinedMesh(
+      const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
+      const std::string &world_frame, const ros::Publisher &publisher);
+
   void publishBox(const VoxgraphSubmap::BoxCornerMatrix &box_corner_matrix,
                   const voxblox::Color &box_color, const std::string &frame_id,
                   const std::string &name_space,

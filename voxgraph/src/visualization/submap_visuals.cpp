@@ -58,6 +58,15 @@ void SubmapVisuals::publishSeparatedMesh(
   publishMesh(mesh_layer_ptr, world_frame, publisher);
 }
 
+void SubmapVisuals::publishCombinedMesh(
+    const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
+    const std::string &world_frame, const ros::Publisher &publisher) {
+  auto mesh_layer_ptr =
+      std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
+  submap_mesher_.generateCombinedMesh(submap_collection, mesh_layer_ptr.get());
+  publishMesh(mesh_layer_ptr, world_frame, publisher);
+}
+
 void SubmapVisuals::publishBox(
     const VoxgraphSubmap::BoxCornerMatrix &box_corner_matrix,
     const voxblox::Color &box_color, const std::string &frame_id,
