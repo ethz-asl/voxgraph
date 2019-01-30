@@ -6,8 +6,8 @@
 #include <minkindr_conversions/kindr_tf.h>
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
-#include "voxgraph/visualization/tf_helper.h"
-#include "voxgraph/voxgraph_submap.h"
+#include "voxgraph/mapper/voxgraph_submap.h"
+#include "voxgraph/utils/tf_helper.h"
 
 namespace voxgraph {
 RegistrationCostFunctionXYZ::RegistrationCostFunctionXYZ(

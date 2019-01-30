@@ -10,7 +10,7 @@
 #include <cblox/core/tsdf_esdf_submap.h>
 #include <cblox/core/tsdf_submap.h>
 #include <ceres/ceres.h>
-#include "voxgraph/voxgraph_submap.h"
+#include "voxgraph/mapper/voxgraph_submap.h"
 
 namespace voxgraph {
 class SubmapRegisterer {

@@ -10,13 +10,13 @@
 #include <time.h>
 #include <voxblox/io/layer_io.h>
 #include <voxblox_ros/ptcloud_vis.h>
-#include <voxgraph/voxgraph_submap.h>
 #include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
+#include "voxgraph/mapper/voxgraph_submap.h"
 #include "voxgraph/submap_registration/submap_registerer.h"
+#include "voxgraph/utils/tf_helper.h"
 #include "voxgraph/visualization/submap_visuals.h"
-#include "voxgraph/visualization/tf_helper.h"
 
 int main(int argc, char** argv) {
   // Start logging
@@ -404,7 +404,7 @@ int main(int argc, char** argv) {
               //  std::cout << summary.FullReport() << std::endl;
 
               // Exit if CTRL+C was pressed
-              if (!ros::ok()){
+              if (!ros::ok()) {
                 std::cout << "Shutting down..." << std::endl;
                 goto endloop;
               }

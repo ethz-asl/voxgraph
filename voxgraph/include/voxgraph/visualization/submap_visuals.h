@@ -10,7 +10,7 @@
 #include <minkindr_conversions/kindr_tf.h>
 #include <ros/ros.h>
 #include <string>
-#include "voxgraph/voxgraph_submap.h"
+#include "voxgraph/mapper/voxgraph_submap.h"
 
 namespace voxgraph {
 class SubmapVisuals {

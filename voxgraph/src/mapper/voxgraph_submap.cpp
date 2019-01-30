@@ -2,7 +2,7 @@
 // Created by victor on 17.01.19.
 //
 
-#include "voxgraph/voxgraph_submap.h"
+#include "voxgraph/mapper/voxgraph_submap.h"
 
 namespace voxgraph {
 const VoxgraphSubmap::BoundingBox VoxgraphSubmap::getSubmapFrameSurfaceObb()

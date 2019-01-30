@@ -10,9 +10,9 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "voxgraph/mapper/voxgraph_submap.h"
 #include "voxgraph/visualization/pose_graph_visuals.h"
 #include "voxgraph/visualization/submap_visuals.h"
-#include "voxgraph/voxgraph_submap.h"
 
 int main(int argc, char** argv) {
   using voxgraph::VoxgraphSubmap;

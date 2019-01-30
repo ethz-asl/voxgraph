@@ -2,26 +2,26 @@
 // Created by victor on 16.11.18.
 //
 
-#ifndef VOXGRAPH_VOXGRAPH_MAPPER_H
-#define VOXGRAPH_VOXGRAPH_MAPPER_H
+#ifndef VOXGRAPH_MAPPER_VOXGRAPH_MAPPER_H_
+#define VOXGRAPH_MAPPER_VOXGRAPH_MAPPER_H_
 
+#include <cblox/core/common.h>
+#include <cblox/core/submap_collection.h>
+#include <cblox/mesh/submap_mesher.h>
 #include <nav_msgs/Odometry.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
-
-#include <cblox/core/common.h>
-#include <cblox/core/submap_collection.h>
-#include <cblox/mesh/submap_mesher.h>
 #include <voxblox/core/common.h>
 #include <voxblox/integrator/tsdf_integrator.h>
 #include <voxblox_msgs/FilePath.h>
 #include <voxblox_ros/mesh_vis.h>
 #include <voxblox_ros/transformer.h>
-
+#include <memory>
+#include <string>
+#include "voxgraph/mapper/voxgraph_submap.h"
 #include "voxgraph/visualization/submap_visuals.h"
-#include "voxgraph/voxgraph_submap.h"
 
 namespace voxgraph {
 class VoxgraphMapper {
@@ -35,12 +35,15 @@ class VoxgraphMapper {
       const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg);
 
   // ROS service callbacks
-  bool publishSeparatedMeshCallback(std_srvs::Empty::Request &request,
-                                    std_srvs::Empty::Response &response);
-  bool publishCombinedMeshCallback(std_srvs::Empty::Request &request,
-                                   std_srvs::Empty::Response &response);
-  bool saveToFileCallback(voxblox_msgs::FilePath::Request &request,
-                          voxblox_msgs::FilePath::Response &response);
+  bool publishSeparatedMeshCallback(
+      std_srvs::Empty::Request &request,     // NOLINT
+      std_srvs::Empty::Response &response);  // NOLINT
+  bool publishCombinedMeshCallback(
+      std_srvs::Empty::Request &request,     // NOLINT
+      std_srvs::Empty::Response &response);  // NOLINT
+  bool saveToFileCallback(
+      voxblox_msgs::FilePath::Request &request,     // NOLINT
+      voxblox_msgs::FilePath::Response &response);  // NOLINT
 
  private:
   // Node handles
@@ -75,14 +78,12 @@ class VoxgraphMapper {
   cblox::SubmapCollection<VoxgraphSubmap> submap_collection_;
 
   // Use voxblox tsdf_integrator to integrate pointclouds into submaps
-  // TODO(victorr): Use cblox SubmapCollection integrator method instead
   voxblox::TsdfIntegratorBase::Config tsdf_integrator_config_;
   std::unique_ptr<voxblox::FastTsdfIntegrator> tsdf_integrator_;
 
   // Use voxblox transformer to find transformations
   voxblox::Transformer transformer_;
-  bool use_tf_to_get_pointcloud_poses_ = false;
-  std::string odom_base_frame_ = "odom";
+  std::string odom_base_frame_;
 
   // Visualization functions
   SubmapVisuals submap_vis_;
@@ -93,4 +94,4 @@ class VoxgraphMapper {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_VOXGRAPH_MAPPER_H
+#endif  // VOXGRAPH_MAPPER_VOXGRAPH_MAPPER_H_

@@ -2,8 +2,8 @@
 // Created by victor on 05.01.19.
 //
 
-#ifndef VOXGRAPH_VISUALIZATION_TF_HELPER_H_
-#define VOXGRAPH_VISUALIZATION_TF_HELPER_H_
+#ifndef VOXGRAPH_UTILS_TF_HELPER_H_
+#define VOXGRAPH_UTILS_TF_HELPER_H_
 
 #include <ros/ros.h>
 #include <voxblox/core/common.h>
@@ -19,4 +19,4 @@ class TfHelper {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_VISUALIZATION_TF_HELPER_H_
+#endif  // VOXGRAPH_UTILS_TF_HELPER_H_

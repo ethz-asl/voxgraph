@@ -2,9 +2,10 @@
 // Created by victor on 16.11.18.
 //
 
-#include "voxgraph/voxgraph_mapper.h"
+#include "voxgraph/mapper/voxgraph_mapper.h"
 #include <visualization_msgs/MarkerArray.h>
 #include <voxblox_ros/ros_params.h>
+#include <string>
 #include "voxgraph/submap_registration/submap_registerer.h"
 
 namespace voxgraph {
@@ -13,6 +14,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
     : nh_(nh),
       nh_private_(nh_private),
       transformer_(nh, nh_private),
+      odom_base_frame_("odom"),
       subscriber_queue_length_(100),
       submap_collection_(submap_config_),
       submap_vis_(submap_config_) {
@@ -31,6 +33,7 @@ void VoxgraphMapper::getParametersFromRos() {
                     use_tf_to_get_pointcloud_poses_,
                     use_tf_to_get_pointcloud_poses_);
 
+  // Get the submap creation interval as a ros::Duration
   double submap_creation_interval_temp;
   if (nh_private_.getParam("submap_creation_interval",
                            submap_creation_interval_temp)) {

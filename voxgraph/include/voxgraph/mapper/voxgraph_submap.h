@@ -2,8 +2,8 @@
 // Created by victor on 08.01.19.
 //
 
-#ifndef VOXGRAPH_VOXGRAPH_SUBMAP_H_
-#define VOXGRAPH_VOXGRAPH_SUBMAP_H_
+#ifndef VOXGRAPH_MAPPER_VOXGRAPH_SUBMAP_H_
+#define VOXGRAPH_MAPPER_VOXGRAPH_SUBMAP_H_
 
 #include <cblox/core/tsdf_esdf_submap.h>
 #include <bitset>
@@ -77,4 +77,4 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_VOXGRAPH_SUBMAP_H_
+#endif  // VOXGRAPH_MAPPER_VOXGRAPH_SUBMAP_H_

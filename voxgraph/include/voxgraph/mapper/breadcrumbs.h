@@ -1,0 +1,8 @@
+//
+// Created by victor on 30.01.19.
+//
+
+#ifndef VOXGRAPH_MAPPER_BREADCRUMBS_H_
+#define VOXGRAPH_MAPPER_BREADCRUMBS_H_
+
+#endif  // VOXGRAPH_MAPPER_BREADCRUMBS_H_
