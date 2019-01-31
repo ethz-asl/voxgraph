@@ -21,6 +21,7 @@ class NormalDistribution {
   double operator()() {
     CHECK_GE(stddev_, 0) << "The standard deviation must be non-negative.";
     // Random engine
+    // TODO(victorr): Add proper random seed handling (and option to provide it)
     static std::mt19937 noise_generator_;
     // NOTE: The noise generator is static to ensure that all instances draw
     // subsequent (different) numbers from the same pseudo random sequence.
