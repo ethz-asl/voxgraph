@@ -31,6 +31,9 @@ class OdometrySimulator {
   // Published pose = internal_pose_ + noise on X, Y, Z, Yaw, Pitch and Roll
   geometry_msgs::TransformStamped published_pose_;
 
+  // Debug mode (determines whether to publish the true pose)
+  bool debug_;
+
   // ROS Node handles
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -49,8 +52,10 @@ class OdometrySimulator {
     NormalDistribution yaw_rate;
   } noise_;
 
-  // Transform publisher
-  void publishCurrentPoseTf();
+  // Transform publisher for the simulated noisy pose
+  void publishSimulatedPoseTf();
+  // Transform publisher for the true, noise-free pose
+  void publishTruePoseTf(const nav_msgs::Odometry::ConstPtr &odometry_msg);
 };
 }  // namespace voxgraph
 

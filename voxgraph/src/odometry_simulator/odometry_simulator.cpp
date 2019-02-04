@@ -12,10 +12,12 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle &nh,
                                      const ros::NodeHandle &nh_private)
     : nh_(nh),
       nh_private_(nh_private),
+      debug_(false),
       subscriber_queue_length_(100),
       subscribe_to_odom_topic_("odometry"),
       publish_to_tf_frame_id_("simulated_odometry") {
   // Read odometry simulator params from ROS
+  nh_private_.param("debug", debug_, debug_);
   nh_private_.param("subscriber_queue_length_", subscriber_queue_length_,
                     subscriber_queue_length_);
   nh_private_.param("subscribe_to_odom_topic", subscribe_to_odom_topic_,
@@ -60,7 +62,7 @@ void OdometrySimulator::odometryCallback(
     // Initialize the published pose
     published_pose_.child_frame_id = publish_to_tf_frame_id_;
     ROS_INFO("Initialized drifting odometry simulator");
-    publishCurrentPoseTf();
+    publishSimulatedPoseTf();
     return;
   }
   // Calculate time delta since last message
@@ -114,11 +116,20 @@ void OdometrySimulator::odometryCallback(
   internal_pose_.header = odometry_msg->header;
   tf::quaternionKindrToMsg(Rotation_WB, &internal_pose_.pose.orientation);
   tf::pointKindrToMsg(W_translation_WB, &internal_pose_.pose.position);
-  publishCurrentPoseTf();
+
+  // Publish simulated pose TF
+  publishSimulatedPoseTf();
+
+  // Publish true pose TF if requested
+  if (debug_) {
+    publishTruePoseTf(odometry_msg);
+  }
 }
 
-void OdometrySimulator::publishCurrentPoseTf() {
+void OdometrySimulator::publishSimulatedPoseTf() {
+  // Declare the TF broadcaster
   static tf2_ros::TransformBroadcaster transform_broadcaster;
+
   // Update the TF message header
   published_pose_.header = internal_pose_.header;
 
@@ -145,6 +156,26 @@ void OdometrySimulator::publishCurrentPoseTf() {
                            &published_pose_.transform.rotation);
 
   // Publish
-  transform_broadcaster.sendTransform(published_pose_);
+  transform_broadcaster.sendTransform(published_pose_);  // Simulated pose
+}
+
+void OdometrySimulator::publishTruePoseTf(
+    const nav_msgs::Odometry::ConstPtr &odometry_msg) {
+  // Declare the TF broadcaster
+  static tf2_ros::TransformBroadcaster transform_broadcaster;
+
+  // Create the transform msg
+  geometry_msgs::TransformStamped true_pose;
+  true_pose.header = odometry_msg->header;
+  true_pose.child_frame_id = "debug_T_world__true_odom";
+
+  // Copy the true pose from the odometry message to the TF msg
+  true_pose.transform.translation.x = odometry_msg->pose.pose.position.x;
+  true_pose.transform.translation.y = odometry_msg->pose.pose.position.y;
+  true_pose.transform.translation.z = odometry_msg->pose.pose.position.z;
+  true_pose.transform.rotation = odometry_msg->pose.pose.orientation;
+
+  // Publish
+  transform_broadcaster.sendTransform(true_pose);
 }
 }  // namespace voxgraph
