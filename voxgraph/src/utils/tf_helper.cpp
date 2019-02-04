@@ -11,12 +11,12 @@ namespace voxgraph {
 void TfHelper::publishTransform(const voxblox::Transformation &transform,
                                 const std::string &base_frame,
                                 const std::string &target_frame,
-                                bool tf_is_static) {
+                                bool tf_is_static, const ros::Time &timestamp) {
   static tf2_ros::TransformBroadcaster transform_broadcaster;
   static tf2_ros::StaticTransformBroadcaster static_transform_broadcaster;
 
   geometry_msgs::TransformStamped tf_stamped;
-  tf_stamped.header.stamp = ros::Time::now();
+  tf_stamped.header.stamp = timestamp;
   tf_stamped.header.frame_id = base_frame;
   tf_stamped.child_frame_id = target_frame;
   tf_stamped.transform.translation.x = transform.getPosition().x();

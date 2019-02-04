@@ -1,0 +1,15 @@
+verbose: false
+debug: true
+submap_creation_interval: 20
+pointcloud_topic: "/velodyne_points"
+odom_tf_frame: "simulated_odometry"
+use_gt_ptcloud_pose_from_sensor_tf: false
+T_odom_sensor:
+  - [0.877583,  0.0, 0.479426,  7.43428e-05]
+  - [0.0,       1.0, 0.0,       0.0]
+  - [-0.479426, 0.0, 0.877583, -0.0669151]
+  - [0.0,       0.0, 0.0,       1.0]
+tsdf_integrator:
+  truncation_distance: 0.6
+  max_ray_length_m: 15
+  anti_grazing: true

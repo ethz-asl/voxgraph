@@ -1,49 +1,14 @@
 <launch>
   <node name="odometry_simulator" pkg="voxgraph" type="odometry_simulator" output="screen">
-    <remap from="odometry" to="/firefly/ground_truth/odometry"/>
-    <rosparam>
-        subscriber_queue_length: 100
-        subscribe_to_odom_topic: "odometry"
-        publish_to_tf_frame_id: "simulated_odometry"
-        x_mean: 0
-        x_stddev: 0
-        y_mean: 0
-        y_stddev: 0
-        z_mean: 0
-        z_stddev: 0
-        yaw_mean: 0
-        yaw_stddev: 0
-        pitch_mean: 0
-        pitch_stddev: 0
-        roll_mean: 0
-        roll_stddev: 0
-        x_vel_mean: 0
-        x_vel_stddev: 0
-        y_vel_mean: 0
-        y_vel_stddev: 0
-        z_vel_mean: 0
-        z_vel_stddev: 0
-        yaw_rate_mean: 0
-        yaw_rate_stddev: 0
-    </rosparam>
+    <rosparam file="$(find voxgraph)/cfg/odometry_simulator.yaml"/>
   </node>
-  <!--<node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">-->
-    <!--<remap from="pointcloud" to="/velodyne_points"/>-->
-    <!--<rosparam>-->
-      <!--submap_creation_interval: 20-->
-      <!--use_tf_to_get_pointcloud_poses: false-->
-      <!--&lt;!&ndash;odom_simulator_noise_linear_vel_mean: 0&ndash;&gt;-->
-      <!--&lt;!&ndash;odom_simulator_noise_linear_vel_stddev: 0.2&ndash;&gt;-->
-      <!--&lt;!&ndash;odom_simulator_noise_angular_vel_mean: 0&ndash;&gt;-->
-      <!--&lt;!&ndash;odom_simulator_noise_angular_vel_stddev: 0.2&ndash;&gt;-->
-      <!--odom_base_frame: "/firefly/base_link"-->
-      <!--verbose: true-->
-      <!--truncation_distance: 0.6-->
-      <!--max_ray_length_m: 15-->
-      <!--anti_grazing: true-->
-    <!--</rosparam>-->
-  <!--</node>-->
+
+  <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
+    <rosparam file="$(find voxgraph)/cfg/voxgraph_mapper.yaml"/>
+  </node>
+
   <node name="player" pkg="rosbag" type="play" output="screen"
         args="--quiet -s50 /home/victor/catkin_ws/bags/terrain_coverage_2019-01-21-23-26-31.bag"/>
-  <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" />
+
+  <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen"/>
 </launch>

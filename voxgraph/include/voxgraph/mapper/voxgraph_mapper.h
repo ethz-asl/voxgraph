@@ -50,8 +50,9 @@ class VoxgraphMapper {
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
 
-  // Verbosity
-  bool verbose_ = true;
+  // Verbosity and debug mode
+  bool verbose_;
+  bool debug_;
 
   // Interaction with ROS
   void subscribeToTopics();
@@ -60,7 +61,8 @@ class VoxgraphMapper {
   void getParametersFromRos();
 
   // ROS topic subscribers
-  unsigned int subscriber_queue_length_;
+  int subscriber_queue_length_;
+  std::string pointcloud_topic_;
   ros::Subscriber pointcloud_subscriber_;
 
   // ROS topic publishers
@@ -77,20 +79,32 @@ class VoxgraphMapper {
   VoxgraphSubmap::Config submap_config_;
   cblox::SubmapCollection<VoxgraphSubmap> submap_collection_;
 
-  // Use voxblox tsdf_integrator to integrate pointclouds into submaps
+  // Control new submap creation
+  bool shouldCreateNewSubmap(const ros::Time &current_time);
+  ros::Time current_submap_creation_stamp_;
+  ros::Duration submap_creation_interval_;
+
+  // Tools to integrate the pointclouds into submaps
   voxblox::TsdfIntegratorBase::Config tsdf_integrator_config_;
   std::unique_ptr<voxblox::FastTsdfIntegrator> tsdf_integrator_;
+  void integratePointcloud(
+      const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg,
+      const voxblox::Transformation &T_world__sensor);
 
-  // Use voxblox transformer to find transformations
+  // Transformations and related tools
   voxblox::Transformer transformer_;
-  std::string odom_base_frame_;
+  std::string odom_tf_frame_;
+  std::string world_frame_;
+  voxblox::Transformation T_odom__sensor_;
+  voxblox::Transformation T_world__odom_;
+  void updateToOdomAt(ros::Time timestamp);
+
+  // Whether to directly use ground truth T_world__sensor, or
+  // T_world__sensor = T_world__noisy_odom * T_odom__sensor
+  bool use_gt_ptcloud_pose_from_sensor_tf_;
 
   // Visualization functions
   SubmapVisuals submap_vis_;
-
-  // TODO(victorr): Integrate these variables into the structure nicely
-  ros::Time current_submap_creation_stamp_ = {};
-  ros::Duration submap_creation_interval_ = ros::Duration(20);  // In seconds
 };
 }  // namespace voxgraph
 

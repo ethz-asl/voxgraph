@@ -15,7 +15,8 @@ class TfHelper {
   static void publishTransform(const voxblox::Transformation &transform,
                                const std::string &base_frame,
                                const std::string &target_frame,
-                               bool tf_is_static = false);
+                               bool tf_is_static = false,
+                               const ros::Time &timestamp = ros::Time::now());
 };
 }  // namespace voxgraph
 

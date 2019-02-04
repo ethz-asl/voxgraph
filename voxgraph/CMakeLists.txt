@@ -37,10 +37,12 @@ cs_add_executable(pose_graph_test_bench
     src/visualization/pose_graph_visuals.cpp
     src/utils/tf_helper.cpp)
 
-#cs_add_executable(voxgraph_mapping_node
-#    src/voxgraph_mapping_node.cpp
-#    src/mapper/voxgraph_mapper.cpp)
-
-cs_add_executable(voxgraph_odometry_simulator
+cs_add_executable(odometry_simulator
     src/odometry_simulator_node.cpp
     src/odometry_simulator/odometry_simulator.cpp)
+
+cs_add_executable(voxgraph_mapping_node
+    src/voxgraph_mapping_node.cpp
+    src/mapper/voxgraph_mapper.cpp
+    src/visualization/submap_visuals.cpp
+    src/utils/tf_helper.cpp)
