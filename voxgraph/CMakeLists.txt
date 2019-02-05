@@ -44,5 +44,13 @@ cs_add_executable(odometry_simulator
 cs_add_executable(voxgraph_mapping_node
     src/voxgraph_mapping_node.cpp
     src/mapper/voxgraph_mapper.cpp
+    src/mapper/voxgraph_submap.cpp
+    src/pose_graph/pose_graph.cpp
+    src/pose_graph/node/submap_node.cpp
+    src/pose_graph/constraint/registration_constraint.cpp
+    src/submap_registration/registration_cost_function_xyz.cpp
+    src/submap_registration/registration_cost_function_xyz_yaw.cpp
+    src/visualization/cost_function_visuals.cpp
+    src/visualization/pose_graph_visuals.cpp
     src/visualization/submap_visuals.cpp
     src/utils/tf_helper.cpp)

@@ -64,7 +64,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   const BoxCornerMatrix getWorldFrameSurfaceAabbCorners() const;
   const BoxCornerMatrix getWorldFrameSubmapAabbCorners() const;
 
-  bool overlapsWith(VoxgraphSubmap::ConstPtr otherSubmap) const;
+  bool overlapsWith(const VoxgraphSubmap &otherSubmap) const;
 
   // TODO(victorr): Move RelevantVoxelList from registration_cost_function here
 

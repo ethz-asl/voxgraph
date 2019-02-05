@@ -127,10 +127,10 @@ VoxgraphSubmap::getWorldFrameSubmapAabbCorners() const {
   return getWorldFrameSubmapAabb().getCornerCoordinates();
 }
 
-bool VoxgraphSubmap::overlapsWith(VoxgraphSubmap::ConstPtr otherSubmap) const {
+bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap &otherSubmap) const {
   // TODO(victorr): Implement improved overlap test
   const BoundingBox aabb = getWorldFrameSurfaceAabb();
-  const BoundingBox other_aabb = otherSubmap->getWorldFrameSubmapAabb();
+  const BoundingBox other_aabb = otherSubmap.getWorldFrameSubmapAabb();
   // If there's a separation along any of the 3 axes, the AABBs don't intersect
   if (aabb.max[0] < other_aabb.min[0] || aabb.min[0] > other_aabb.max[0])
     return false;

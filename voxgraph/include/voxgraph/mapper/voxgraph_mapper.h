@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 #include "voxgraph/mapper/voxgraph_submap.h"
+#include "voxgraph/pose_graph/pose_graph.h"
 #include "voxgraph/visualization/submap_visuals.h"
 
 namespace voxgraph {
@@ -46,6 +47,10 @@ class VoxgraphMapper {
       voxblox_msgs::FilePath::Response &response);  // NOLINT
 
  private:
+  using Transformation = voxblox::Transformation;
+  using SubmapID = cblox::SubmapID;
+  using SubmapCollection = cblox::SubmapCollection<VoxgraphSubmap>;
+
   // Node handles
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -75,14 +80,17 @@ class VoxgraphMapper {
   ros::ServiceServer save_to_file_srv_;
   // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
 
-  // Instantiate a TSDF submap collection
+  // Instantiate a submap collection
   VoxgraphSubmap::Config submap_config_;
-  cblox::SubmapCollection<VoxgraphSubmap> submap_collection_;
+  SubmapCollection::Ptr submap_collection_;
 
   // Control new submap creation
   bool shouldCreateNewSubmap(const ros::Time &current_time);
   ros::Time current_submap_creation_stamp_;
   ros::Duration submap_creation_interval_;
+
+  // Pose graph
+  PoseGraph pose_graph_;
 
   // Tools to integrate the pointclouds into submaps
   voxblox::TsdfIntegratorBase::Config tsdf_integrator_config_;

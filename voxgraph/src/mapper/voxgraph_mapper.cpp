@@ -6,6 +6,7 @@
 #include <minkindr_conversions/kindr_xml.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <voxblox_ros/ros_params.h>
+#include <memory>
 #include <string>
 #include "voxgraph/submap_registration/submap_registerer.h"
 #include "voxgraph/utils/tf_helper.h"
@@ -23,7 +24,8 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       odom_tf_frame_("odom"),
       world_frame_("world"),
       use_gt_ptcloud_pose_from_sensor_tf_(false),
-      submap_collection_(submap_config_),
+      submap_collection_(std::make_shared<SubmapCollection>(submap_config_)),
+      pose_graph_(submap_collection_),
       submap_vis_(submap_config_),
       submap_creation_interval_(20),  // In seconds
       current_submap_creation_stamp_(0) {
@@ -92,14 +94,14 @@ void VoxgraphMapper::advertiseServices() {
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
     std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
-  submap_vis_.publishSeparatedMesh(submap_collection_, world_frame_,
+  submap_vis_.publishSeparatedMesh(*submap_collection_, world_frame_,
                                    separated_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
 bool VoxgraphMapper::publishCombinedMeshCallback(
     std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
-  submap_vis_.publishCombinedMesh(submap_collection_, world_frame_,
+  submap_vis_.publishCombinedMesh(*submap_collection_, world_frame_,
                                   combined_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
@@ -107,10 +109,11 @@ bool VoxgraphMapper::publishCombinedMeshCallback(
 bool VoxgraphMapper::saveToFileCallback(
     voxblox_msgs::FilePath::Request &request,
     voxblox_msgs::FilePath::Response &response) {
-  submap_collection_.saveToFile(request.file_path);
+  submap_collection_->saveToFile(request.file_path);
   return true;
 }
 
+// TODO(victorr): Check if this method can be broken down in clearer submethods
 void VoxgraphMapper::pointcloudCallback(
     const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg) {
   // Lookup the robot pose at the time of the pointcloud message
@@ -118,23 +121,68 @@ void VoxgraphMapper::pointcloudCallback(
 
   // Check if it's time to create a new submap
   if (shouldCreateNewSubmap(pointcloud_msg->header.stamp)) {
+    // Add the finished submap to the pose graph,
+    // unless the first submap has not yet been created
+    if (!submap_collection_->empty()) {
+      SubmapID finished_submap_id = submap_collection_->getActiveSubMapID();
+
+      // Generate the finished submap's ESDF
+      submap_collection_->generateEsdfById(finished_submap_id);
+
+      // Configure the submap node and add it to the pose graph
+      SubmapNode::Config node_config;
+      node_config.submap_id = finished_submap_id;
+      CHECK(submap_collection_->getSubMapPose(
+          finished_submap_id, &node_config.initial_submap_pose));
+      if (finished_submap_id == 0) {
+        std::cout << "Setting pose of submap 0 to constant" << std::endl;
+        node_config.set_constant = true;
+      } else {
+        node_config.set_constant = false;
+      }
+      pose_graph_.addNode(node_config);
+
+      // Constrain the finished submap to all submaps it overlaps with
+      const VoxgraphSubmap &finished_submap =
+          submap_collection_->getSubMap(finished_submap_id);
+      for (const auto &other_submap_ptr : submap_collection_->getSubMaps()) {
+        if (other_submap_ptr->getID() != finished_submap_id) {
+          if (finished_submap.overlapsWith(*other_submap_ptr)) {
+            // Add the constraint
+            RegistrationConstraint::Config constraint_config = {
+                finished_submap_id, other_submap_ptr->getID()};
+            pose_graph_.addConstraint(constraint_config);
+          }
+        }
+      }
+
+      // Optimize the pose graph
+      ROS_INFO("Optimizing the pose graph");
+      pose_graph_.optimize();
+
+      // Update the submap poses
+      for (const auto &submap_pose_kv : pose_graph_.getSubmapPoses()) {
+        submap_collection_->setSubMapPose(submap_pose_kv.first,
+                                          submap_pose_kv.second);
+      }
+    }
+
     // Define the new submap frame to be at the current robot pose
     // and have its Z-axis aligned with gravity
-    voxblox::Transformation::Vector6 T_vec = T_world__odom_.log();
+    Transformation::Vector6 T_vec = T_world__odom_.log();
     T_vec[3] = 0;  // Set roll to zero
     T_vec[4] = 0;  // Set pitch to zero
-    voxblox::Transformation T_world__new_submap =
-        voxblox::Transformation::exp(T_vec);
+    Transformation T_world__new_submap = Transformation::exp(T_vec);
 
     // Create the new submap
-    submap_collection_.createNewSubMap(T_world__new_submap);
+    SubmapID new_submap_id =
+        submap_collection_->createNewSubMap(T_world__new_submap);
     current_submap_creation_stamp_ = pointcloud_msg->header.stamp;
-    ROS_INFO_STREAM("Creating submap nr: " << submap_collection_.size()
-                                           << " with pose\n"
-                                           << T_world__new_submap);
+    ROS_INFO_STREAM("Creating submap: " << new_submap_id << " with pose\n"
+                                        << T_world__new_submap);
 
     // Update the TSDF submap collection visualization in Rviz
-    submap_vis_.publishSeparatedMesh(submap_collection_, world_frame_,
+    submap_vis_.publishSeparatedMesh(*submap_collection_, world_frame_,
                                      separated_mesh_pub_);
     if (debug_) {
       TfHelper::publishTransform(T_world__new_submap, "world",
@@ -144,7 +192,7 @@ void VoxgraphMapper::pointcloudCallback(
   }
 
   // Lookup the sensor's pose in world frame
-  voxblox::Transformation T_world__sensor;
+  Transformation T_world__sensor;
   if (use_gt_ptcloud_pose_from_sensor_tf_) {
     ROS_WARN_STREAM_THROTTLE(20, "Using ground truth pointcloud poses"
                                      << " provided by TF from " << world_frame_
@@ -177,7 +225,7 @@ void VoxgraphMapper::pointcloudCallback(
 }
 
 void VoxgraphMapper::updateToOdomAt(ros::Time timestamp) {
-  voxblox::Transformation transform_getter;
+  Transformation transform_getter;
   double t_waited = 0;  // Total time spent waiting for the updated pose
   double t_max = 0.08;  // Maximum time to wait before giving up
   const ros::Duration timeout(0.005);  // Timeout between each update attempt
@@ -204,11 +252,11 @@ bool VoxgraphMapper::shouldCreateNewSubmap(const ros::Time &current_time) {
 
 void VoxgraphMapper::integratePointcloud(
     const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg,
-    const voxblox::Transformation &T_world__sensor) {
+    const Transformation &T_world__sensor) {
   // Transform the sensor pose into the submap frame
-  const cblox::Transformation T_world__submap =
-      submap_collection_.getActiveSubMapPose();
-  const cblox::Transformation T_submap__sensor =
+  const Transformation T_world__submap =
+      submap_collection_->getActiveSubMapPose();
+  const Transformation T_submap__sensor =
       T_world__submap.inverse() * T_world__sensor;
 
   // Convert pointcloud_msg into voxblox::Pointcloud
@@ -246,7 +294,7 @@ void VoxgraphMapper::integratePointcloud(
   if (!tsdf_integrator_) {
     tsdf_integrator_.reset(new voxblox::FastTsdfIntegrator(
         tsdf_integrator_config_,
-        submap_collection_.getActiveTsdfMapPtr()->getTsdfLayerPtr()));
+        submap_collection_->getActiveTsdfMapPtr()->getTsdfLayerPtr()));
     ROS_INFO("Initialized TSDF Integrator");
   }
 
@@ -255,7 +303,7 @@ void VoxgraphMapper::integratePointcloud(
 
   // Point the integrator to the current submap
   tsdf_integrator_->setLayer(
-      submap_collection_.getActiveTsdfMapPtr()->getTsdfLayerPtr());
+      submap_collection_->getActiveTsdfMapPtr()->getTsdfLayerPtr());
 
   // Integrate the pointcloud (and report timings if requested)
   ROS_INFO_COND(verbose_, "Integrating a pointcloud with %lu points.",
@@ -266,8 +314,8 @@ void VoxgraphMapper::integratePointcloud(
   ROS_INFO_COND(
       verbose_,
       "Finished integrating in %f seconds, submap %u now has %lu blocks.",
-      (end - start).toSec(), submap_collection_.getActiveSubMapID(),
-      submap_collection_.getActiveTsdfMap()
+      (end - start).toSec(), submap_collection_->getActiveSubMapID(),
+      submap_collection_->getActiveTsdfMap()
           .getTsdfLayer()
           .getNumberOfAllocatedBlocks());
 }

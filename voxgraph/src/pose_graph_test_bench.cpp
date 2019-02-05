@@ -80,13 +80,12 @@ int main(int argc, char** argv) {
   VoxgraphSubmap::Config submap_config;
   {
     // Configure the submap_config
-    VoxgraphSubmap::ConstPtr submap_ptr =
-        submap_collection_ptr->getSubMapConstPtrById(submap_ids[0]);
-    CHECK_NOTNULL(submap_ptr);
+    const VoxgraphSubmap& submap =
+        submap_collection_ptr->getSubMap(submap_ids[0]);
     submap_config.tsdf_voxel_size =
-        submap_ptr->getTsdfMap().getTsdfLayer().voxel_size();
+        submap.getTsdfMap().getTsdfLayer().voxel_size();
     submap_config.tsdf_voxels_per_side =
-        size_t(submap_ptr->getTsdfMap().getTsdfLayer().block_size() /
+        size_t(submap.getTsdfMap().getTsdfLayer().block_size() /
                submap_config.tsdf_voxel_size);
   }
   SubmapVisuals submap_vis(submap_config);
@@ -105,15 +104,6 @@ int main(int argc, char** argv) {
   ros::Publisher pose_graph_edge_optimized_pub =
       nh_private.advertise<visualization_msgs::Marker>(
           "pose_graph_optimized_edges", 100, true);
-
-  // TODO(victorr): This is temporary, don't forget to remove
-  //  cblox::AlignedVector<cblox::Transformation> poses;
-  //  submap_collection_ptr->getSubMapPoses(&poses);
-  //  int i = 0;
-  //  std::cout << "Submap poses" << std::endl;
-  //  for (auto pose : poses) {
-  //    std::cout << "-- " << i++ << ":\n" << pose << std::endl;
-  //  }
 
   // Show the original submap meshes in Rviz
   submap_vis.publishSeparatedMesh(*submap_collection_ptr, "world",
@@ -145,37 +135,35 @@ int main(int argc, char** argv) {
   for (unsigned int i = 0; i < submap_ids.size(); i++) {
     // Get a pointer to the first submap
     cblox::SubmapID first_submap_id = submap_ids[i];
-    VoxgraphSubmap::ConstPtr first_submap_ptr =
-        submap_collection_ptr->getSubMapConstPtrById(first_submap_id);
-    CHECK_NOTNULL(first_submap_ptr);
+    const VoxgraphSubmap& first_submap =
+        submap_collection_ptr->getSubMap(first_submap_id);
 
     // Publish the submap's bounding boxes
-    submap_vis.publishBox(first_submap_ptr->getWorldFrameSurfaceObbCorners(),
+    submap_vis.publishBox(first_submap.getWorldFrameSurfaceObbCorners(),
                           voxblox::Color::Blue(), "world",
                           "surface_obb" + std::to_string(first_submap_id),
                           bounding_boxes_pub);
-    submap_vis.publishBox(first_submap_ptr->getWorldFrameSurfaceAabbCorners(),
+    submap_vis.publishBox(first_submap.getWorldFrameSurfaceAabbCorners(),
                           voxblox::Color::Red(), "world",
                           "surface_aabb" + std::to_string(first_submap_id),
                           bounding_boxes_pub);
-    submap_vis.publishBox(first_submap_ptr->getWorldFrameSubmapObbCorners(),
+    submap_vis.publishBox(first_submap.getWorldFrameSubmapObbCorners(),
                           voxblox::Color::Blue(), "world",
                           "submap_obb" + std::to_string(first_submap_id),
                           bounding_boxes_pub);
-    submap_vis.publishBox(first_submap_ptr->getWorldFrameSubmapAabbCorners(),
+    submap_vis.publishBox(first_submap.getWorldFrameSubmapAabbCorners(),
                           voxblox::Color::Red(), "world",
                           "submap_aabb" + std::to_string(first_submap_id),
                           bounding_boxes_pub);
 
     for (unsigned int j = i + 1; j < submap_ids.size(); j++) {
-      // Get a pointer to the second submap
+      // Get the second submap
       cblox::SubmapID second_submap_id = submap_ids[j];
-      VoxgraphSubmap::ConstPtr second_submap_ptr =
-          submap_collection_ptr->getSubMapConstPtrById(second_submap_id);
-      CHECK_NOTNULL(second_submap_ptr);
+      const VoxgraphSubmap& second_submap =
+          submap_collection_ptr->getSubMap(second_submap_id);
 
       // Check whether the first and second submap overlap
-      if (first_submap_ptr->overlapsWith(second_submap_ptr)) {
+      if (first_submap.overlapsWith(second_submap)) {
         // Add the constraint
         RegistrationConstraint::Config constraint_config = {first_submap_id,
                                                             second_submap_id};
