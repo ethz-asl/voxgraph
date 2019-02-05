@@ -1,6 +1,6 @@
 verbose: false
 debug: true
-submap_creation_interval: 15
+submap_creation_interval: 10
 pointcloud_topic: "/velodyne_points"
 odom_tf_frame: "simulated_odometry"
 use_gt_ptcloud_pose_from_sensor_tf: false

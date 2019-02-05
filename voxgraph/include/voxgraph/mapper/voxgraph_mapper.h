@@ -80,39 +80,53 @@ class VoxgraphMapper {
   ros::ServiceServer save_to_file_srv_;
   // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
 
-  // Instantiate a submap collection
+  // Visualization tools
+  SubmapVisuals submap_vis_;
+
+  // Instantiate the submap collection
   VoxgraphSubmap::Config submap_config_;
   SubmapCollection::Ptr submap_collection_;
+
+  // Instantiate the pose graph
+  PoseGraph pose_graph_;
 
   // Control new submap creation
   bool shouldCreateNewSubmap(const ros::Time &current_time);
   ros::Time current_submap_creation_stamp_;
   ros::Duration submap_creation_interval_;
 
-  // Pose graph
-  PoseGraph pose_graph_;
-
   // Tools to integrate the pointclouds into submaps
   voxblox::TsdfIntegratorBase::Config tsdf_integrator_config_;
   std::unique_ptr<voxblox::FastTsdfIntegrator> tsdf_integrator_;
   void integratePointcloud(
       const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg,
-      const voxblox::Transformation &T_world__sensor);
+      const voxblox::Transformation &T_world_sensor);
 
-  // Transformations and related tools
+  // Voxblox transformer used to lookup transforms from the TF tree or rosparams
   voxblox::Transformer transformer_;
-  std::string odom_tf_frame_;
+
+  // Coordinate frame naming convention:
+  // W: World frame
+  // R: The body frame of the robot
+  // D: A fictional frame that is used cancel out the odometry drift
   std::string world_frame_;
-  voxblox::Transformation T_odom__sensor_;
-  voxblox::Transformation T_world__odom_;
-  void updateToOdomAt(ros::Time timestamp);
+  bool lookup_T_world_robot(ros::Time timestamp,
+                            Transformation *T_world_robot_ptr);
 
-  // Whether to directly use ground truth T_world__sensor, or
-  // T_world__sensor = T_world__noisy_odom * T_odom__sensor
+  // Static transform from body to sensor frame
+  Transformation T_robot_sensor_;
+
+  // Transform from the world frame to the fictional drifting odometry origin
+  // such that T_W_D * T_D_R = the drift free robot pose in world frame,
+  // where T_D_R corresponds to the received odometry TF
+  // NOTE: T_W_D is initialized to the robot's starting pose and gets updated
+  //       when the active submap jumps following a pose graph optimization step
+  Transformation T_W_D_;
+  std::string odom_tf_frame_;
+
+  // Whether to use ground truth T_world__sensor,
+  // instead of its estimated pose (for validation purposes)
   bool use_gt_ptcloud_pose_from_sensor_tf_;
-
-  // Visualization functions
-  SubmapVisuals submap_vis_;
 };
 }  // namespace voxgraph
 

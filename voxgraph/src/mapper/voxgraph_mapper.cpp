@@ -56,11 +56,11 @@ void VoxgraphMapper::getParametersFromRos() {
   }
 
   // Load the transform from the odometry frame to the sensor frame
-  XmlRpc::XmlRpcValue T_odom__sensor_xml;
-  CHECK(nh_private_.getParam("T_odom_sensor", T_odom__sensor_xml))
+  XmlRpc::XmlRpcValue T_odom_sensor_xml;
+  CHECK(nh_private_.getParam("T_odom_sensor", T_odom_sensor_xml))
       << "The transform from the odom frame to the sensor frame "
-      << "T_odom__sensor is required but was not set.";
-  kindr::minimal::xmlRpcToKindr(T_odom__sensor_xml, &T_odom__sensor_);
+      << "T_odom_sensor is required but was not set.";
+  kindr::minimal::xmlRpcToKindr(T_odom_sensor_xml, &T_robot_sensor_);
 
   // Read TSDF integrator params from ROS (stored in their own sub-namespace)
   ros::NodeHandle nh_tsdf_integrator(nh_private_, "tsdf_integrator");
@@ -117,7 +117,13 @@ bool VoxgraphMapper::saveToFileCallback(
 void VoxgraphMapper::pointcloudCallback(
     const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg) {
   // Lookup the robot pose at the time of the pointcloud message
-  updateToOdomAt(pointcloud_msg->header.stamp);
+  Transformation T_world_robot;
+  if (!lookup_T_world_robot(pointcloud_msg->header.stamp, &T_world_robot)) {
+    // If the pose cannot be found, the pointcloud is skipped
+    ROS_WARN_STREAM("Skipping pointcloud since the robot pose at time "
+                    << pointcloud_msg->header.stamp << " is unknown.");
+    return;
+  }
 
   // Check if it's time to create a new submap
   if (shouldCreateNewSubmap(pointcloud_msg->header.stamp)) {
@@ -160,16 +166,23 @@ void VoxgraphMapper::pointcloudCallback(
       ROS_INFO("Optimizing the pose graph");
       pose_graph_.optimize();
 
+      // Remember the pose of the current submap (later used to eliminate drift)
+      Transformation T_W_S_old = submap_collection_->getActiveSubMapPose();
+
       // Update the submap poses
       for (const auto &submap_pose_kv : pose_graph_.getSubmapPoses()) {
         submap_collection_->setSubMapPose(submap_pose_kv.first,
                                           submap_pose_kv.second);
       }
+
+      // Update the fictional odometry origin to cancel out drift
+      Transformation T_W_S_new = submap_collection_->getActiveSubMapPose();
+      T_W_D_ = T_W_S_new * T_W_S_old.inverse() * T_W_D_;
     }
 
     // Define the new submap frame to be at the current robot pose
     // and have its Z-axis aligned with gravity
-    Transformation::Vector6 T_vec = T_world__odom_.log();
+    Transformation::Vector6 T_vec = T_world_robot.log();
     T_vec[3] = 0;  // Set roll to zero
     T_vec[4] = 0;  // Set pitch to zero
     Transformation T_world__new_submap = Transformation::exp(T_vec);
@@ -192,55 +205,56 @@ void VoxgraphMapper::pointcloudCallback(
   }
 
   // Lookup the sensor's pose in world frame
-  Transformation T_world__sensor;
+  Transformation T_world_sensor;
   if (use_gt_ptcloud_pose_from_sensor_tf_) {
     ROS_WARN_STREAM_THROTTLE(20, "Using ground truth pointcloud poses"
                                      << " provided by TF from " << world_frame_
                                      << " to "
                                      << pointcloud_msg->header.frame_id);
     transformer_.lookupTransform(pointcloud_msg->header.frame_id, world_frame_,
-                                 pointcloud_msg->header.stamp,
-                                 &T_world__sensor);
+                                 pointcloud_msg->header.stamp, &T_world_sensor);
     if (debug_) {
-      TfHelper::publishTransform(T_world__sensor, "world",
-                                 "debug_T_world__sensor", false,
+      TfHelper::publishTransform(T_world_sensor, "world",
+                                 "debug_T_world_sensor", false,
                                  pointcloud_msg->header.stamp);
     }
   } else {
     // Get the pose of the sensor in world frame
-    T_world__sensor = T_world__odom_ * T_odom__sensor_;
+    T_world_sensor = T_world_robot * T_robot_sensor_;
     if (debug_) {
-      TfHelper::publishTransform(T_world__odom_, "world", "debug_T_world__odom",
+      // TODO(victorr): Update these visuals to show the appropriate transforms
+      TfHelper::publishTransform(T_world_robot, "world", "debug_T_world_robot",
                                  false, pointcloud_msg->header.stamp);
-      TfHelper::publishTransform(T_odom__sensor_, "world",
-                                 "debug_T_odom__sensor", false,
+      TfHelper::publishTransform(T_robot_sensor_, "world",
+                                 "debug_T_robot_sensor", false,
                                  pointcloud_msg->header.stamp);
-      TfHelper::publishTransform(T_world__sensor, "world",
-                                 "debug_T_world__sensor", false,
+      TfHelper::publishTransform(T_world_sensor, "world",
+                                 "debug_T_world_sensor", false,
                                  pointcloud_msg->header.stamp);
     }
   }
 
-  integratePointcloud(pointcloud_msg, T_world__sensor);
+  integratePointcloud(pointcloud_msg, T_world_sensor);
 }
 
-void VoxgraphMapper::updateToOdomAt(ros::Time timestamp) {
-  Transformation transform_getter;
-  double t_waited = 0;  // Total time spent waiting for the updated pose
-  double t_max = 0.08;  // Maximum time to wait before giving up
+bool VoxgraphMapper::lookup_T_world_robot(ros::Time timestamp,
+                                          Transformation *T_world_robot) {
+  CHECK_NOTNULL(T_world_robot);
+  Transformation T_D_R;  // Transform corresponding to the received odometry TF
+  double t_waited = 0;   // Total time spent waiting for the updated pose
+  double t_max = 0.08;   // Maximum time to wait before giving up
   const ros::Duration timeout(0.005);  // Timeout between each update attempt
   while (t_waited < t_max) {
     if (transformer_.lookupTransform(odom_tf_frame_, world_frame_, timestamp,
-                                     &transform_getter)) {
-      T_world__odom_ = transform_getter;
-      break;
+                                     &T_D_R)) {
+      *T_world_robot = T_W_D_ * T_D_R;
+      return true;
     }
     timeout.sleep();
     t_waited += timeout.toSec();
   }
-  if (t_waited >= t_max) {
-    ROS_WARN("Waited %.3fs, but still couldn't update T_world__odom", t_waited);
-  }
+  ROS_WARN("Waited %.3fs, but still could not get the updated odom", t_waited);
+  return false;
 }
 
 bool VoxgraphMapper::shouldCreateNewSubmap(const ros::Time &current_time) {
@@ -252,12 +266,12 @@ bool VoxgraphMapper::shouldCreateNewSubmap(const ros::Time &current_time) {
 
 void VoxgraphMapper::integratePointcloud(
     const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg,
-    const Transformation &T_world__sensor) {
+    const Transformation &T_world_sensor) {
   // Transform the sensor pose into the submap frame
-  const Transformation T_world__submap =
+  const Transformation T_world_submap =
       submap_collection_->getActiveSubMapPose();
-  const Transformation T_submap__sensor =
-      T_world__submap.inverse() * T_world__sensor;
+  const Transformation T_submap_sensor =
+      T_world_submap.inverse() * T_world_sensor;
 
   // Convert pointcloud_msg into voxblox::Pointcloud
   pcl::PointCloud<pcl::PointXYZI> pointcloud_pcl;
@@ -309,7 +323,7 @@ void VoxgraphMapper::integratePointcloud(
   ROS_INFO_COND(verbose_, "Integrating a pointcloud with %lu points.",
                 pointcloud.size());
   ros::WallTime start = ros::WallTime::now();
-  tsdf_integrator_->integratePointCloud(T_submap__sensor, pointcloud, colors);
+  tsdf_integrator_->integratePointCloud(T_submap_sensor, pointcloud, colors);
   ros::WallTime end = ros::WallTime::now();
   ROS_INFO_COND(
       verbose_,

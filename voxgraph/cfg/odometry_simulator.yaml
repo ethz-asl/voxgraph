@@ -4,12 +4,12 @@ subscribe_to_odom_topic: "/firefly/ground_truth/odometry"
 publish_to_tf_frame_id: "simulated_odometry"
 x_vel_mean: 0.04
 x_vel_stddev: 0.4
-y_vel_mean: 0
-y_vel_stddev: 0.1
-z_vel_mean: 0
-z_vel_stddev: 0.1
+y_vel_mean: 0.04
+y_vel_stddev: 0.4
+z_vel_mean: 0.0
+z_vel_stddev: 0.0
 yaw_rate_mean: 0.01
-yaw_rate_stddev: 0.1
+yaw_rate_stddev: 0.04
 #x_mean: 0
 #x_stddev: 0
 #y_mean: 0
