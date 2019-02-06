@@ -9,6 +9,7 @@
 #include <cblox/mesh/submap_mesher.h>
 #include <minkindr_conversions/kindr_tf.h>
 #include <ros/ros.h>
+#include <voxblox_ros/mesh_vis.h>
 #include <string>
 #include "voxgraph/mapper/voxgraph_submap.h"
 
@@ -17,9 +18,10 @@ class SubmapVisuals {
  public:
   explicit SubmapVisuals(const VoxgraphSubmap::Config &submap_config);
 
-  void publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
-                   const std::string &submap_frame,
-                   const ros::Publisher &publisher) const;
+  void publishMesh(
+      const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
+      const std::string &submap_frame, const ros::Publisher &publisher,
+      const voxblox::ColorMode &color_mode = voxblox::ColorMode::kColor) const;
 
   void publishMesh(
       const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,

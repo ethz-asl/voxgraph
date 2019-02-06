@@ -16,11 +16,11 @@ SubmapVisuals::SubmapVisuals(const VoxgraphSubmap::Config &submap_config)
 
 void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
                                 const std::string &submap_frame,
-                                const ros::Publisher &publisher) const {
+                                const ros::Publisher &publisher,
+                                const voxblox::ColorMode &color_mode) const {
   // Create a marker containing the mesh
   visualization_msgs::Marker marker;
-  voxblox::fillMarkerWithMesh(mesh_layer_ptr, voxblox::ColorMode::kColor,
-                              &marker);
+  voxblox::fillMarkerWithMesh(mesh_layer_ptr, color_mode, &marker);
   marker.header.frame_id = submap_frame;
   // Update the marker's transform each time its TF frame is updated:
   marker.frame_locked = true;
@@ -64,7 +64,8 @@ void SubmapVisuals::publishCombinedMesh(
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
   submap_mesher_.generateCombinedMesh(submap_collection, mesh_layer_ptr.get());
-  publishMesh(mesh_layer_ptr, world_frame, publisher);
+  publishMesh(mesh_layer_ptr, world_frame, publisher,
+              voxblox::ColorMode::kNormals);
 }
 
 void SubmapVisuals::publishBox(
