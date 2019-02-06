@@ -4,6 +4,7 @@
 
 #include "voxgraph/mapper/voxgraph_mapper.h"
 #include <minkindr_conversions/kindr_xml.h>
+#include <std_srvs/SetBool.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <voxblox_ros/ros_params.h>
 #include <memory>
@@ -131,6 +132,13 @@ void VoxgraphMapper::pointcloudCallback(
     // unless the first submap has not yet been created
     if (!submap_collection_->empty()) {
       SubmapID finished_submap_id = submap_collection_->getActiveSubMapID();
+      // TODO(victorr): Move the graph optimization and visuals in
+      //                separate threads instead of pausing the bag
+      static ros::ServiceClient rosbag_pause_srv =
+          nh_.serviceClient<std_srvs::SetBool>("/player/pause_playback");
+      std_srvs::SetBool srv_msg;
+      srv_msg.request.data = true;
+      rosbag_pause_srv.call(srv_msg);
 
       // Generate the finished submap's ESDF
       submap_collection_->generateEsdfById(finished_submap_id);
@@ -178,6 +186,16 @@ void VoxgraphMapper::pointcloudCallback(
       // Update the fictional odometry origin to cancel out drift
       Transformation T_W_S_new = submap_collection_->getActiveSubMapPose();
       T_W_D_ = T_W_S_new * T_W_S_old.inverse() * T_W_D_;
+      T_world_robot = T_W_S_new * T_W_S_old.inverse() * T_world_robot;
+
+      // Update the submap collection visualization in Rviz
+      submap_vis_.publishSeparatedMesh(*submap_collection_, world_frame_,
+                                       separated_mesh_pub_);
+
+      // TODO(victorr): Move the graph optimization and visuals in
+      //                separate threads instead of pausing the bag
+      srv_msg.request.data = false;
+      rosbag_pause_srv.call(srv_msg);
     }
 
     // Define the new submap frame to be at the current robot pose
@@ -186,6 +204,11 @@ void VoxgraphMapper::pointcloudCallback(
     T_vec[3] = 0;  // Set roll to zero
     T_vec[4] = 0;  // Set pitch to zero
     Transformation T_world__new_submap = Transformation::exp(T_vec);
+    if (debug_) {
+      TfHelper::publishTransform(T_world__new_submap, "world",
+                                 "debug_T_world__new_submap", true,
+                                 pointcloud_msg->header.stamp);
+    }
 
     // Create the new submap
     SubmapID new_submap_id =
@@ -193,15 +216,6 @@ void VoxgraphMapper::pointcloudCallback(
     current_submap_creation_stamp_ = pointcloud_msg->header.stamp;
     ROS_INFO_STREAM("Creating submap: " << new_submap_id << " with pose\n"
                                         << T_world__new_submap);
-
-    // Update the TSDF submap collection visualization in Rviz
-    submap_vis_.publishSeparatedMesh(*submap_collection_, world_frame_,
-                                     separated_mesh_pub_);
-    if (debug_) {
-      TfHelper::publishTransform(T_world__new_submap, "world",
-                                 "debug_T_world__new_submap", true,
-                                 pointcloud_msg->header.stamp);
-    }
   }
 
   // Lookup the sensor's pose in world frame

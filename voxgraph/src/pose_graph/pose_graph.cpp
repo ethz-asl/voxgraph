@@ -60,6 +60,9 @@ void PoseGraph::optimize() {
 
   // Run the solver
   ceres::Solver::Options ceres_options;
+  // TODO(victorr): Set these from parameters
+  ceres_options.parameter_tolerance = 3e-4;
+  ceres_options.max_solver_time_in_seconds = 10;
   ceres_options.num_threads = std::thread::hardware_concurrency();
   ceres::Solver::Summary summary;
   ceres::Solve(ceres_options, problem_ptr_.get(), &summary);
