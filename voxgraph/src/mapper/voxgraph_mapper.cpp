@@ -205,7 +205,7 @@ void VoxgraphMapper::pointcloudCallback(
     T_vec[4] = 0;  // Set pitch to zero
     Transformation T_world__new_submap = Transformation::exp(T_vec);
     if (debug_) {
-      TfHelper::publishTransform(T_world__new_submap, "world",
+      TfHelper::publishTransform(T_world__new_submap, world_frame_,
                                  "debug_T_world__new_submap", true,
                                  pointcloud_msg->header.stamp);
     }
@@ -228,7 +228,7 @@ void VoxgraphMapper::pointcloudCallback(
     transformer_.lookupTransform(pointcloud_msg->header.frame_id, world_frame_,
                                  pointcloud_msg->header.stamp, &T_world_sensor);
     if (debug_) {
-      TfHelper::publishTransform(T_world_sensor, "world",
+      TfHelper::publishTransform(T_world_sensor, world_frame_,
                                  "debug_T_world_sensor", false,
                                  pointcloud_msg->header.stamp);
     }
@@ -237,12 +237,13 @@ void VoxgraphMapper::pointcloudCallback(
     T_world_sensor = T_world_robot * T_robot_sensor_;
     if (debug_) {
       // TODO(victorr): Update these visuals to show the appropriate transforms
-      TfHelper::publishTransform(T_world_robot, "world", "debug_T_world_robot",
-                                 false, pointcloud_msg->header.stamp);
-      TfHelper::publishTransform(T_robot_sensor_, "world",
+      TfHelper::publishTransform(T_world_robot, world_frame_,
+                                 "debug_T_world_robot", false,
+                                 pointcloud_msg->header.stamp);
+      TfHelper::publishTransform(T_robot_sensor_, world_frame_,
                                  "debug_T_robot_sensor", false,
                                  pointcloud_msg->header.stamp);
-      TfHelper::publishTransform(T_world_sensor, "world",
+      TfHelper::publishTransform(T_world_sensor, world_frame_,
                                  "debug_T_world_sensor", false,
                                  pointcloud_msg->header.stamp);
     }

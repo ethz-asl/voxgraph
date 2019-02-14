@@ -10,6 +10,7 @@
 #include <minkindr_conversions/kindr_tf.h>
 #include <ros/ros.h>
 #include <voxblox_ros/mesh_vis.h>
+#include <memory>
 #include <string>
 #include "voxgraph/mapper/voxgraph_submap.h"
 
@@ -43,7 +44,7 @@ class SubmapVisuals {
 
  private:
   voxblox::MeshIntegratorConfig mesh_config_;
-  cblox::SubmapMesher submap_mesher_;
+  std::unique_ptr<cblox::SubmapMesher> submap_mesher_;
 };
 }  // namespace voxgraph
 
