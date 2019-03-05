@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>voxgraph</name>
+  <version>1.0.0</version>
+  <description>The voxgraph package</description>
+
+  <maintainer email="victorr@ethz.ch">Victor Reijgwart</maintainer>
+
+  <author>Victor Reijgwart</author>
+
+  <license>ASL 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>voxblox</build_depend>
+  <build_depend>voxblox_ros</build_depend>
+  <build_depend>cblox</build_depend>
+  <build_depend>ceres_catkin</build_depend>
+
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>voxblox</exec_depend>
+  <exec_depend>voxblox_ros</exec_depend>
+  <exec_depend>cblox</exec_depend>
+  <exec_depend>ceres_catkin</exec_depend>
+
+</package>
