@@ -1,0 +1,24 @@
+<launch>
+  <node name="voxgraph_registration_test_bench" pkg="voxgraph" type="registration_test_bench" output="screen">
+    <!--launch-prefix="gdb -ex run &#45;&#45;args">-->
+    <rosparam>
+      submap_collection_file_path: "/home/victor/catkin_ws/voxgraph/submap_collections/burning_house_gt_truncdist2_maxraylength15_antigrazing1"
+      log_folder_path: "/home/victor/catkin_ws/voxgraph/test_bench_stats"
+      reference_submap_id: 1
+      reading_submap_id: 1
+      visualize_residuals: true
+      visualize_gradients: true
+      <!--range_x: [0.4]-->
+      <!--range_y: [0.4]-->
+      <!--range_z: [0.4]-->
+      range_x: [-1, 0, 0.4]
+      range_y: [-1, 0, 0.4]
+      range_z: [-1, 0, 0.4]
+      <!--range_yaw: [-0.17, 0, 0.17]-->
+      <!--range_pitch: [-0.17, 0, 0.17]-->
+      <!--range_roll: [-0.17, 0, 0.17]-->
+    </rosparam>
+  </node>
+  <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" />
+  <!--<node pkg="tf" type="static_transform_publisher" name="static_tf_pub" args="0 0 0 0 0 0 1 world test 10"/>-->
+</launch>
