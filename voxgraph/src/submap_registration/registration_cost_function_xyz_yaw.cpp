@@ -133,9 +133,7 @@ bool RegistrationCostFunctionXYZYaw::Evaluate(double const *const *parameters,
       T_world__reading.inverse() * T_world__reference;
 
   // Iterate over all reference submap blocks that contain relevant voxels
-  // TODO(victorr): Replace with const auto &
-  for (const std::pair<voxblox::BlockIndex, voxblox::VoxelIndexList> &kv :
-       reference_block_voxel_list_) {
+  for (const auto &kv : reference_block_voxel_list_) {
     // Get a const ref to the current reference submap tsdf block
     const voxblox::Block<voxblox::TsdfVoxel> &reference_tsdf_block =
         reference_tsdf_layer_.getBlockByIndex(kv.first);
@@ -271,6 +269,7 @@ bool RegistrationCostFunctionXYZYaw::Evaluate(double const *const *parameters,
                   0,      0,    -1,  0;
           // TODO(victorr): Consider using the similarity in
           //                pTrr_pParamRef and pTrr_pParamRead
+          //                to reduce redundant computations
           // clang-format on
 
           // Compute the Jacobian of the residual over the reference pose params

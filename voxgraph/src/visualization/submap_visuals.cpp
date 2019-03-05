@@ -39,6 +39,7 @@ void SubmapVisuals::publishMesh(
   // Generate the mesh
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
+
   voxblox::MeshIntegrator<voxblox::TsdfVoxel> reference_mesh_integrator(
       mesh_config_, submap_ptr->getTsdfMap().getTsdfLayer(),
       mesh_layer_ptr.get());

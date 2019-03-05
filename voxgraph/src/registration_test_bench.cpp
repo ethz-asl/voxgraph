@@ -43,8 +43,8 @@ int main(int argc, char** argv) {
     << "Rosparam reference_submap_id must be set" << std::endl;
     CHECK(nh_private.getParam("reading_submap_id", reading_submap_id_tmp))
     << "Rosparam reading_submap_id must be set" << std::endl;
-    reference_submap_id = fixed_submap_id_tmp;
-    reading_submap_id = reading_submap_id_tmp;
+    reference_submap_id = static_cast<cblox::SubmapID>(fixed_submap_id_tmp);
+    reading_submap_id = static_cast<cblox::SubmapID>(reading_submap_id_tmp);
   }
   bool use_esdf_distance;
   bool visualize_residuals, visualize_gradients;
@@ -97,15 +97,16 @@ int main(int argc, char** argv) {
     }
 
     // Debug info
-    std::cout << "tsdf_submap_collection_proto.voxel_size(): "
-              << tsdf_submap_collection_proto.voxel_size() << std::endl;
-    std::cout << "tsdf_submap_collection_proto.voxels_per_side(): "
-              << tsdf_submap_collection_proto.voxels_per_side() << std::endl;
-    std::cout << "tsdf_submap_collection_proto.num_submaps(): "
-              << tsdf_submap_collection_proto.num_submaps() << std::endl;
+    ROS_INFO_STREAM("tsdf_submap_collection_proto.voxel_size(): "
+                    << tsdf_submap_collection_proto.voxel_size());
+    ROS_INFO_STREAM("tsdf_submap_collection_proto.voxels_per_side(): "
+                    << tsdf_submap_collection_proto.voxels_per_side());
+    ROS_INFO_STREAM("tsdf_submap_collection_proto.num_submaps(): "
+                    << tsdf_submap_collection_proto.num_submaps());
 
     // Creating the new submap collection based on the loaded parameters
-    submap_config.tsdf_voxel_size = tsdf_submap_collection_proto.voxel_size();
+    submap_config.tsdf_voxel_size = static_cast<voxblox::FloatingPoint>(
+        tsdf_submap_collection_proto.voxel_size());
     submap_config.tsdf_voxels_per_side =
         tsdf_submap_collection_proto.voxels_per_side();
     submap_config.esdf_voxel_size = submap_config.tsdf_voxel_size;
@@ -114,8 +115,9 @@ int main(int argc, char** argv) {
         new cblox::SubmapCollection<voxgraph::VoxgraphSubmap>(submap_config));
 
     // Load the two submaps of interest
-    std::cout << "Searching for submap IDs " << reference_submap_id << " and "
-              << reading_submap_id << " in protobuf:" << std::endl;
+    ROS_INFO_STREAM("Searching for submap IDs " << reference_submap_id
+                                                << " and " << reading_submap_id
+                                                << " in protobuf:");
     for (size_t sub_map_index = 0;
          sub_map_index < tsdf_submap_collection_proto.num_submaps();
          sub_map_index++) {
@@ -130,17 +132,16 @@ int main(int argc, char** argv) {
       }
 
       if (tsdf_sub_map_proto.id() == reference_submap_id) {
-        std::cout << "-- Found submap corresponding to reference_submap_id: "
-                  << reference_submap_id << std::endl;
+        ROS_INFO_STREAM("-- Found submap corresponding to reference_submap_id: "
+                        << reference_submap_id);
       } else if (tsdf_sub_map_proto.id() == reading_submap_id) {
-        std::cout << "-- Found submap corresponding to reading_submap_id: "
-                  << reading_submap_id << std::endl;
+        ROS_INFO_STREAM("-- Found submap corresponding to reading_submap_id: "
+                        << reading_submap_id);
       } else {
-        std::cout << "-- Skipping submap with ID " << tsdf_sub_map_proto.id()
-                  << std::endl;
+        ROS_INFO_STREAM("-- Skipping submap with ID "
+                        << tsdf_sub_map_proto.id());
         // Advance byte_offset in protobuf but don't add them to the map
-        // TODO(victorr): Advancing the byte_offset directly would be nicer
-        // but seems dangerous. Is there a better solution?
+        // TODO(victorr): Advance the byte_offset directly
         cblox::TsdfMap tmp_tsdf_map(submap_config);
         voxblox::io::LoadBlocksFromStream(
             tsdf_sub_map_proto.num_blocks(),
@@ -156,13 +157,13 @@ int main(int argc, char** argv) {
       cblox::conversions::transformProtoToKindr(transformation_proto, &T_M_S);
 
       // Debug info
-      std::cout << "--- Tsdf number of allocated blocks: "
-                << tsdf_sub_map_proto.num_blocks() << std::endl;
+      ROS_INFO_STREAM("--- Tsdf number of allocated blocks: "
+                      << tsdf_sub_map_proto.num_blocks());
       Eigen::Vector3 t = T_M_S.getPosition();
       cblox::Quaternion q = T_M_S.getRotation();
-      std::cout << "--- [ " << t.x() << ", " << t.y() << ", " << t.z() << ", "
-                << q.w() << q.x() << ", " << q.y() << ", " << q.z() << " ]"
-                << std::endl;
+      ROS_INFO_STREAM("--- [ " << t.x() << ", " << t.y() << ", " << t.z()
+                               << ", " << q.w() << q.x() << ", " << q.y()
+                               << ", " << q.z() << " ]");
 
       // Creating a new submap to hold the data
       submap_collection_ptr->createNewSubMap(T_M_S, tsdf_sub_map_proto.id());
@@ -185,8 +186,9 @@ int main(int argc, char** argv) {
 
   // If both submaps IDs are the same, duplicate the reference submap
   if (reference_submap_id == reading_submap_id) {
-    std::cout << "Reference and reading submap IDs are the same, "
-              << "duplicating the reference..." << std::endl;
+    ROS_INFO(
+        "Reference and reading submap IDs are the same, "
+        "duplicating the reference...");
     reading_submap_id = INT32_MAX;
     CHECK(submap_collection_ptr->duplicateSubMap(reference_submap_id,
                                                  reading_submap_id));
@@ -234,8 +236,9 @@ int main(int argc, char** argv) {
     // Wait for Rviz to launch so that it receives the meshes
     ros::Rate wait_rate(1);
     while (reference_mesh_pub.getNumSubscribers() == 0) {
-      std::cout << "Waiting for Rviz to launch "
-                << "and subscribe to topic 'reference_mesh_pub'" << std::endl;
+      ROS_INFO(
+          "Waiting for Rviz to launch "
+          "and subscribe to topic 'reference_mesh_pub'");
       wait_rate.sleep();
     }
     // Publish reference submap Mesh
@@ -274,7 +277,7 @@ int main(int argc, char** argv) {
   log_file_path = log_folder_path;
   log_file_path /= time_char_buffer;
   log_file_path += ".csv";
-  std::cout << "Log file will be saved as: " << log_file_path << std::endl;
+  ROS_INFO_STREAM("Log file will be saved as: " << log_file_path);
 
   // Create log file and write header
   // TODO(victorr): Write Git ID into log file
@@ -302,13 +305,13 @@ int main(int argc, char** argv) {
 
   // Loop over all ranges
   int counter(0);
-  std::cout << "Looping over all starting positions:" << std::endl;
-  for (auto x : range_x) {
-    for (auto y : range_y)
-      for (auto z : range_z)
-        for (auto yaw : range_yaw)
-          for (auto pitch : range_pitch)
-            for (auto roll : range_roll) {
+  ROS_INFO("Looping over all starting positions:");
+  for (const float &x : range_x) {
+    for (const float &y : range_y)
+      for (const float &z : range_z)
+        for (const float &yaw : range_yaw)
+          for (const float &pitch : range_pitch)
+            for (const float &roll : range_roll) {
               // Append test to log file
               log_file << x << "," << y << "," << z << "," << yaw << ","
                        << pitch << "," << roll << ",";
@@ -368,7 +371,7 @@ int main(int argc, char** argv) {
                     reading_submap_id, T_world__reading_optimized);
 
                 // Announce results
-                const Eigen::Vector3f optimized_position =
+                const Eigen::Vector3f &optimized_position =
                     T_world__reading_optimized.getPosition();
                 printf(
                     "-- % 2i remaining error:    "
@@ -404,7 +407,7 @@ int main(int argc, char** argv) {
 
               // Exit if CTRL+C was pressed
               if (!ros::ok()) {
-                std::cout << "Shutting down..." << std::endl;
+                ROS_INFO("Shutting down...");
                 goto endloop;
               }
             }

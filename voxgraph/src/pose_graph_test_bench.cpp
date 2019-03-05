@@ -48,9 +48,11 @@ int main(int argc, char** argv) {
   PoseGraph pose_graph(submap_collection_ptr);
 
   // Add noise to the submap collection
-  // TODO(victorr): This is a poor approximation of drift, since it doesn't
-  //                distort the submaps themselves. Update the noisy odometer
-  //                from voxgraph_mapper and use that instead.
+  // NOTE: This is a poor approximation of drift, since it doesn't simulate
+  //       distortion within the submaps themselves. Only use it for quick
+  //       tests. For proper validation, use the noisy odometry simulator
+  //       from voxgraph_mapper to create a distorted submap collection and
+  //       disable the noise below.
   std::default_random_engine random_engine;
   std::normal_distribution<double> noise_distrib(0.0, 0.4);
   std::vector<cblox::SubmapID> submap_ids = submap_collection_ptr->getIDs();
@@ -111,14 +113,14 @@ int main(int argc, char** argv) {
                                   separated_mesh_original_pub);
 
   // Add all submaps as nodes
-  std::cout << "Adding all submaps as nodes" << std::endl;
+  ROS_INFO("Adding all submaps as nodes");
   for (const cblox::SubmapID& submap_id : submap_ids) {
     SubmapNode::Config node_config;
     node_config.submap_id = submap_id;
     CHECK(submap_collection_ptr->getSubMapPose(
         submap_id, &node_config.initial_submap_pose));
     if (submap_id == 0) {
-      std::cout << "Setting pose of submap 0 to constant" << std::endl;
+      ROS_INFO("Setting pose of submap 0 to constant");
       node_config.set_constant = true;
     } else {
       node_config.set_constant = false;
@@ -132,7 +134,7 @@ int main(int argc, char** argv) {
   }
 
   // Add a registration constraint for each overlapping submap pair
-  std::cout << "Adding registration constraint from submap " << std::endl;
+  ROS_INFO("Adding registration constraint for all overlapping submaps");
   for (unsigned int i = 0; i < submap_ids.size(); i++) {
     // Get a pointer to the first submap
     cblox::SubmapID first_submap_id = submap_ids[i];
@@ -182,7 +184,7 @@ int main(int argc, char** argv) {
                                   pose_graph_edge_original_pub);
 
   // Optimize the graph
-  std::cout << "Optimizing the graph" << std::endl;
+  ROS_INFO("Optimizing the graph");
   pose_graph.optimize();
 
   // Update the submap poses
@@ -200,7 +202,7 @@ int main(int argc, char** argv) {
                                   pose_graph_edge_optimized_pub);
 
   // Keep the ROS node alive in order to interact with its topics in Rviz
-  std::cout << "Done" << std::endl;
+  ROS_INFO("Done");
   ros::spin();
 
   return 0;
