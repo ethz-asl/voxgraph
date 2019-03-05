@@ -48,8 +48,8 @@ int main(int argc, char** argv) {
   }
   bool use_esdf_distance;
   bool visualize_residuals, visualize_gradients;
-  std::vector<double> range_x, range_y, range_z;
-  std::vector<double> range_yaw, range_pitch, range_roll;
+  std::vector<float> range_x, range_y, range_z;
+  std::vector<float> range_yaw, range_pitch, range_roll;
   nh_private.param("range_x", range_x, {0});
   nh_private.param("range_y", range_y, {0});
   nh_private.param("range_z", range_z, {0});
@@ -213,13 +213,13 @@ int main(int argc, char** argv) {
   voxgraph::SubmapVisuals submap_vis(submap_config);
 
   // Save the reference submap pose and the original reading submap pose
-  cblox::Transformation transform_getter;
+  voxblox::Transformation transform_getter;
   CHECK(submap_collection_ptr->getSubMapPose(reference_submap_id,
                                              &transform_getter));
-  const cblox::Transformation T_world__reference = transform_getter;
+  const voxblox::Transformation T_world__reference = transform_getter;
   CHECK(submap_collection_ptr->getSubMapPose(reading_submap_id,
                                              &transform_getter));
-  const cblox::Transformation T_world__reading_original = transform_getter;
+  const voxblox::Transformation T_world__reading_original = transform_getter;
   const Eigen::Vector3f &ground_truth_position =
       T_world__reading_original.getPosition();
 
@@ -314,16 +314,15 @@ int main(int argc, char** argv) {
                        << pitch << "," << roll << ",";
 
               // Move reading_submap to T(x,y,z,yaw,pitch,roll)
-              Eigen::Vector3d position(x, y, z);
-              Eigen::Quaterniond orientation =
-                  Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) *
-                  Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) *
-                  Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
-              cblox::Transformation perturbation(
-                  position.cast<cblox::FloatingPoint>(),
-                  orientation.cast<cblox::FloatingPoint>());
-              const cblox::Transformation T_world__reading_perturbed =
-                  perturbation * T_world__reading_original;
+              // TODO(victorr): Implement disturbance over pitch & roll
+              voxblox::Transformation::Vector3 rot_vec(0, 0, yaw);
+              voxblox::Rotation rotation(rot_vec);
+              voxblox::Transformation T_world__reading_perturbed;
+              T_world__reading_perturbed.getRotation() =
+                  T_world__reading_original.getRotation() * rotation;
+              voxblox::Transformation::Vector3 translation(x, y, z);
+              T_world__reading_perturbed.getPosition() =
+                  T_world__reading_original.getPosition() + translation;
               submap_collection_ptr->setSubMapPose(reading_submap_id,
                                                    T_world__reading_perturbed);
 
