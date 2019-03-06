@@ -9,6 +9,7 @@
 #include <voxblox_ros/ros_params.h>
 #include <memory>
 #include <string>
+#include "voxgraph/mapper/submap_timeline.h"
 #include "voxgraph/submap_registration/submap_registerer.h"
 #include "voxgraph/utils/tf_helper.h"
 

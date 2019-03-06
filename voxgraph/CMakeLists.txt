@@ -12,6 +12,7 @@ catkin_simple(ALL_DEPS_REQUIRED)
 # NOTE: The library is static to avoid segfaults
 #       following voxblox multi threading
 cs_add_library(${PROJECT_NAME} STATIC
+    src/mapper/submap_timeline.cpp
     src/mapper/voxgraph_mapper.cpp
     src/mapper/voxgraph_submap.cpp
     src/odometry_simulator/odometry_simulator.cpp
