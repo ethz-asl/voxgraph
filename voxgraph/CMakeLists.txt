@@ -9,48 +9,39 @@ catkin_simple(ALL_DEPS_REQUIRED)
 #############
 # LIBRARIES #
 #############
-# TODO(victorr): Use library with all deps, then link against it
+# NOTE: The library is static to avoid segfaults
+#       following voxblox multi threading
+cs_add_library(${PROJECT_NAME} STATIC
+    src/mapper/voxgraph_mapper.cpp
+    src/mapper/voxgraph_submap.cpp
+    src/odometry_simulator/odometry_simulator.cpp
+    src/pose_graph/pose_graph.cpp
+    src/pose_graph/constraint/registration_constraint.cpp
+    src/pose_graph/node/submap_node.cpp
+    src/submap_registration/submap_registerer.cpp
+    src/submap_registration/registration_cost_function_xyz.cpp
+    src/submap_registration/registration_cost_function_xyz_yaw.cpp
+    src/utils/tf_helper.cpp
+    src/visualization/cost_function_visuals.cpp
+    src/visualization/pose_graph_visuals.cpp
+    src/visualization/submap_visuals.cpp
+)
 
 ############
 # BINARIES #
 ############
 cs_add_executable(registration_test_bench
-    src/registration_test_bench.cpp
-    src/submap_registration/submap_registerer.cpp
-    src/submap_registration/registration_cost_function_xyz.cpp
-    src/submap_registration/registration_cost_function_xyz_yaw.cpp
-    src/visualization/submap_visuals.cpp
-    src/visualization/cost_function_visuals.cpp
-    src/utils/tf_helper.cpp)
+    src/registration_test_bench.cpp)
+target_link_libraries(registration_test_bench ${PROJECT_NAME})
 
 cs_add_executable(pose_graph_test_bench
-    src/pose_graph_test_bench.cpp
-    src/mapper/voxgraph_submap.cpp
-    src/pose_graph/pose_graph.cpp
-    src/pose_graph/node/submap_node.cpp
-    src/pose_graph/constraint/registration_constraint.cpp
-    src/submap_registration/submap_registerer.cpp
-    src/submap_registration/registration_cost_function_xyz.cpp
-    src/submap_registration/registration_cost_function_xyz_yaw.cpp
-    src/visualization/submap_visuals.cpp
-    src/visualization/cost_function_visuals.cpp
-    src/visualization/pose_graph_visuals.cpp
-    src/utils/tf_helper.cpp)
+    src/pose_graph_test_bench.cpp)
+target_link_libraries(pose_graph_test_bench ${PROJECT_NAME})
 
 cs_add_executable(odometry_simulator
-    src/odometry_simulator_node.cpp
-    src/odometry_simulator/odometry_simulator.cpp)
+    src/odometry_simulator_node.cpp)
+target_link_libraries(odometry_simulator ${PROJECT_NAME})
 
 cs_add_executable(voxgraph_mapping_node
-    src/voxgraph_mapping_node.cpp
-    src/mapper/voxgraph_mapper.cpp
-    src/mapper/voxgraph_submap.cpp
-    src/pose_graph/pose_graph.cpp
-    src/pose_graph/node/submap_node.cpp
-    src/pose_graph/constraint/registration_constraint.cpp
-    src/submap_registration/registration_cost_function_xyz.cpp
-    src/submap_registration/registration_cost_function_xyz_yaw.cpp
-    src/visualization/cost_function_visuals.cpp
-    src/visualization/pose_graph_visuals.cpp
-    src/visualization/submap_visuals.cpp
-    src/utils/tf_helper.cpp)
+    src/voxgraph_mapping_node.cpp)
+target_link_libraries(voxgraph_mapping_node ${PROJECT_NAME})

@@ -32,7 +32,6 @@ bool SubmapRegisterer::testRegistration(
   ceres::LossFunction *loss_function = nullptr;
 
   // Get initial pose of reference submap (not touched by the optimization)
-  // TODO(victorr): Clean up this entire file
   voxblox::Transformation::Vector6 T_vec_ref =
       reference_submap_ptr->getPose().log();
   double world_pose_ref[4] = {T_vec_ref[0], T_vec_ref[1], T_vec_ref[2],

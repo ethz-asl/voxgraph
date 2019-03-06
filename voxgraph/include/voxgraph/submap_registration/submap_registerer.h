@@ -22,6 +22,7 @@ class SubmapRegisterer {
       double min_voxel_weight = 1e-6;
       double max_voxel_distance = 0.6;
       // Cost to assign for voxels that can't be interpolated
+      // i.e. that don't exist in the other submap
       double no_correspondence_cost = 0;
       bool use_esdf_distance = true;
       bool visualize_residuals = false;

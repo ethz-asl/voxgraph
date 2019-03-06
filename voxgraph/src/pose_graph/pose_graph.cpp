@@ -15,8 +15,8 @@ void PoseGraph::addNode(const SubmapNode::Config &config) {
   node_collection_.addNode(config);
 }
 
+// TODO(victorr): Implement odometry constraints
 void PoseGraph::addConstraint(const OdometryConstraint::Config &config) {
-  // TODO(victorr): Implement this
   // Add to the constraint set
   auto ptr = std::make_shared<OdometryConstraint>(newConstraintId(), config);
   constraints_.emplace_back(std::static_pointer_cast<Constraint>(ptr));
@@ -94,7 +94,7 @@ std::vector<PoseGraph::Edge> PoseGraph::getEdges() const {
   // Iterate over all residual blocks and setup the corresponding edges
   std::vector<Edge> edges;
   size_t residual_idx = 0;
-  for (auto residual_block_id : residual_block_ids) {
+  for (const ceres::ResidualBlockId &residual_block_id : residual_block_ids) {
     Edge edge;
 
     // Find and store the edge endpoints

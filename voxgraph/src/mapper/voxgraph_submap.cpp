@@ -138,7 +138,7 @@ bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap &otherSubmap) const {
     return false;
   if (aabb.max[2] < other_aabb.min[2] || aabb.min[2] > other_aabb.max[2])
     return false;
-  // The AABBs overlapping on all axes: therefore they must be intersecting
+  // The AABBs overlap on all axes: therefore they must be intersecting
   return true;
 }
 

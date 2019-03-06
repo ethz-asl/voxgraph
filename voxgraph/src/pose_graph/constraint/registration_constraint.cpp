@@ -33,7 +33,7 @@ void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
         second_submap_node_ptr->getPosePtr()->data());
   }
 
-  // TODO(victorr): Handle cost_options properly
+  // TODO(victorr): Load cost options from ROS params instead of using default
   SubmapRegisterer::Options::CostFunction cost_options;
 
   // Create submap alignment cost function
