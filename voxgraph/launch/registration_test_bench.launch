@@ -1,21 +1,7 @@
 <launch>
   <node name="registration_test_bench" pkg="voxgraph" type="registration_test_bench" output="screen">
     <!--launch-prefix="gdb -ex run &#45;&#45;args">-->
-    <rosparam>
-      submap_collection_file_path: "/home/victor/catkin_ws/voxgraph/submap_collections/burning_house_rubble_gt_truncdist06_z-aligned"
-      log_folder_path: "/home/victor/catkin_ws/voxgraph/registration_test_bench_stats"
-      reference_submap_id: 2
-      reading_submap_id: 3
-      visualize_residuals: true
-      visualize_gradients: true
-      use_esdf_distance: true
-      range_x: [-0.6, 0, 0.3]
-      range_y: [-0.6, 0, 0.3]
-      range_z: [-0.6, 0, 0.3]
-      range_yaw: [-0.2, 0, 0.1]
-      <!--range_pitch: [-0.17, 0, 0.17]-->
-      <!--range_roll: [-0.17, 0, 0.17]-->
-    </rosparam>
+    <rosparam file="$(find voxgraph)/cfg/registration_test_bench.yaml"/>
   </node>
-  <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" />
+  <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen"/>
 </launch>

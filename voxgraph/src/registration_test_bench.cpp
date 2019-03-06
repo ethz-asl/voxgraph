@@ -19,6 +19,8 @@
 #include "voxgraph/visualization/tf_helper.h"
 
 int main(int argc, char** argv) {
+  enum SolverReportStyle { kBrief, kFull, kNone };
+
   // Start logging
   google::InitGoogleLogging(argv[0]);
 
@@ -29,7 +31,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
   ros::NodeHandle nh_private("~");
 
-  // Read ROS params
+  // Read ROS params: General experiment settings
   std::string submap_collection_file_path, log_folder_path;
   CHECK(nh_private.getParam("submap_collection_file_path",
                             submap_collection_file_path))
@@ -46,19 +48,73 @@ int main(int argc, char** argv) {
     reference_submap_id = static_cast<cblox::SubmapID>(fixed_submap_id_tmp);
     reading_submap_id = static_cast<cblox::SubmapID>(reading_submap_id_tmp);
   }
-  bool use_esdf_distance;
-  bool visualize_residuals, visualize_gradients;
   std::vector<float> range_x, range_y, range_z;
   std::vector<float> range_yaw, range_pitch, range_roll;
-  nh_private.param("range_x", range_x, {0});
-  nh_private.param("range_y", range_y, {0});
-  nh_private.param("range_z", range_z, {0});
-  nh_private.param("range_yaw", range_yaw, {0});
-  nh_private.param("range_pitch", range_pitch, {0});
-  nh_private.param("range_roll", range_roll, {0});
-  nh_private.param("use_esdf_distance", use_esdf_distance, true);
-  nh_private.param("visualize_residuals", visualize_residuals, false);
-  nh_private.param("visualize_gradients", visualize_gradients, false);
+  nh_private.param("test_range/x", range_x, {0});
+  nh_private.param("test_range/y", range_y, {0});
+  nh_private.param("test_range/z", range_z, {0});
+  nh_private.param("test_range/yaw", range_yaw, {0});
+  nh_private.param("test_range/pitch", range_pitch, {0});
+  nh_private.param("test_range/roll", range_roll, {0});
+  SolverReportStyle solver_report_style;
+  {
+    std::string report_style_str;
+    nh_private.param<std::string>("solver_report_style", report_style_str,
+                                  "brief");
+    if (report_style_str == "brief") {
+      solver_report_style = kBrief;
+    } else if (report_style_str == "full") {
+      solver_report_style = kFull;
+    } else if (report_style_str == "none") {
+      solver_report_style = kNone;
+    } else {
+      ROS_FATAL(
+          "Param \"report_style\" must be "
+          "\"brief\" (default), \"full\" or \"none\"");
+      ros::shutdown();
+      return -1;
+    }
+  }
+
+  // Read ROS params: Submap registration settings
+  ros::NodeHandle nh_registration(nh_private, "submap_registration");
+  voxgraph::SubmapRegisterer::Options registerer_options;
+  nh_registration.param("param/optimize_yaw",
+                        registerer_options.param.optimize_yaw, true);
+  nh_registration.param("solver/max_num_iterations",
+                        registerer_options.solver.max_num_iterations, 40);
+  nh_registration.param("solver/parameter_tolerance",
+                        registerer_options.solver.parameter_tolerance, 3e-9);
+  nh_registration.param("cost/min_voxel_weight",
+                        registerer_options.cost.min_voxel_weight, 1e-6);
+  nh_registration.param("cost/max_voxel_distance",
+                        registerer_options.cost.max_voxel_distance, 0.6);
+  nh_registration.param("cost/no_correspondence_cost",
+                        registerer_options.cost.no_correspondence_cost, 0.0);
+  nh_registration.param("cost/use_esdf_distance",
+                        registerer_options.cost.use_esdf_distance, true);
+  nh_registration.param("cost/visualize_residuals",
+                        registerer_options.cost.visualize_residuals, false);
+  nh_registration.param("cost/visualize_gradients",
+                        registerer_options.cost.visualize_gradients, false);
+  {
+    std::string cost_function_type_str;
+    nh_registration.param<std::string>("cost/cost_function_type",
+                                       cost_function_type_str, "analytic");
+    if (cost_function_type_str == "analytic") {
+      registerer_options.cost.cost_function_type =
+          voxgraph::SubmapRegisterer::Options::CostFunction::Type::kAnalytic;
+    } else if (cost_function_type_str == "numeric") {
+      registerer_options.cost.cost_function_type =
+          voxgraph::SubmapRegisterer::Options::CostFunction::Type::kNumeric;
+    } else {
+      ROS_FATAL(
+          "Param \"submap_registration/cost/cost_function_type\" "
+          "must be \"analytic\" (default) or \"numeric\"");
+      ros::shutdown();
+      return -1;
+    }
+  }
 
   // Announce ROS topics for Rviz debug visuals
   ros::Publisher reference_mesh_pub =
@@ -74,115 +130,10 @@ int main(int argc, char** argv) {
       nh_private.advertise<visualization_msgs::Marker>(
           "optimized_reading_mesh_pub", 1, true);
 
-  // NOTE(victorr): The code below comes from cblox,
-  // but has been modified to selectively load submaps.
-  // TODO(victorr): Integrate the feature back into cblox.
+  // Load the submap collection
   cblox::SubmapCollection<voxgraph::VoxgraphSubmap>::Ptr submap_collection_ptr;
-  voxgraph::VoxgraphSubmap::Config submap_config;
-  {
-    // Load the protobuf file containing the submap collection
-    std::fstream proto_file;
-    proto_file.open(submap_collection_file_path, std::fstream::in);
-    if (!proto_file.is_open()) {
-      LOG(FATAL) << "Could not open protobuf file to load layer: "
-                 << submap_collection_file_path;
-    }
-    uint32_t tmp_byte_offset = 0;  // Protobuf byte offset
-
-    // Load the protobuf header
-    cblox::TsdfSubmapCollectionProto tsdf_submap_collection_proto;
-    if (!voxblox::utils::readProtoMsgFromStream(
-            &proto_file, &tsdf_submap_collection_proto, &tmp_byte_offset)) {
-      LOG(FATAL) << "Could not read submap collection protobuf message.";
-    }
-
-    // Debug info
-    ROS_INFO_STREAM("tsdf_submap_collection_proto.voxel_size(): "
-                    << tsdf_submap_collection_proto.voxel_size());
-    ROS_INFO_STREAM("tsdf_submap_collection_proto.voxels_per_side(): "
-                    << tsdf_submap_collection_proto.voxels_per_side());
-    ROS_INFO_STREAM("tsdf_submap_collection_proto.num_submaps(): "
-                    << tsdf_submap_collection_proto.num_submaps());
-
-    // Creating the new submap collection based on the loaded parameters
-    submap_config.tsdf_voxel_size = static_cast<voxblox::FloatingPoint>(
-        tsdf_submap_collection_proto.voxel_size());
-    submap_config.tsdf_voxels_per_side =
-        tsdf_submap_collection_proto.voxels_per_side();
-    submap_config.esdf_voxel_size = submap_config.tsdf_voxel_size;
-    submap_config.esdf_voxels_per_side = submap_config.tsdf_voxels_per_side;
-    submap_collection_ptr.reset(
-        new cblox::SubmapCollection<voxgraph::VoxgraphSubmap>(submap_config));
-
-    // Load the two submaps of interest
-    ROS_INFO_STREAM("Searching for submap IDs " << reference_submap_id
-                                                << " and " << reading_submap_id
-                                                << " in protobuf:");
-    for (size_t sub_map_index = 0;
-         sub_map_index < tsdf_submap_collection_proto.num_submaps();
-         sub_map_index++) {
-      CHECK(submap_collection_ptr);
-
-      // Getting the header for the current submap
-      cblox::TsdfSubmapProto tsdf_sub_map_proto;
-      if (!voxblox::utils::readProtoMsgFromStream(
-              &proto_file, &tsdf_sub_map_proto, &tmp_byte_offset)) {
-        LOG(ERROR) << "Could not read tsdf sub map protobuf message.";
-        continue;
-      }
-
-      if (tsdf_sub_map_proto.id() == reference_submap_id) {
-        ROS_INFO_STREAM("-- Found submap corresponding to reference_submap_id: "
-                        << reference_submap_id);
-      } else if (tsdf_sub_map_proto.id() == reading_submap_id) {
-        ROS_INFO_STREAM("-- Found submap corresponding to reading_submap_id: "
-                        << reading_submap_id);
-      } else {
-        ROS_INFO_STREAM("-- Skipping submap with ID "
-                        << tsdf_sub_map_proto.id());
-        // Advance byte_offset in protobuf but don't add them to the map
-        // TODO(victorr): Advance the byte_offset directly
-        cblox::TsdfMap tmp_tsdf_map(submap_config);
-        voxblox::io::LoadBlocksFromStream(
-            tsdf_sub_map_proto.num_blocks(),
-            voxblox::Layer<voxblox::TsdfVoxel>::BlockMergingStrategy::kReplace,
-            &proto_file, tmp_tsdf_map.getTsdfLayerPtr(), &tmp_byte_offset);
-        continue;
-      }
-
-      // Get the transformation
-      cblox::Transformation T_M_S;
-      cblox::QuatTransformationProto transformation_proto =
-          tsdf_sub_map_proto.transform();
-      cblox::conversions::transformProtoToKindr(transformation_proto, &T_M_S);
-
-      // Debug info
-      ROS_INFO_STREAM("--- Tsdf number of allocated blocks: "
-                      << tsdf_sub_map_proto.num_blocks());
-      Eigen::Vector3 t = T_M_S.getPosition();
-      cblox::Quaternion q = T_M_S.getRotation();
-      ROS_INFO_STREAM("--- [ " << t.x() << ", " << t.y() << ", " << t.z()
-                               << ", " << q.w() << q.x() << ", " << q.y()
-                               << ", " << q.z() << " ]");
-
-      // Creating a new submap to hold the data
-      submap_collection_ptr->createNewSubMap(T_M_S, tsdf_sub_map_proto.id());
-
-      // Getting the blocks for this submap (the tsdf layer)
-      if (!voxblox::io::LoadBlocksFromStream(
-              tsdf_sub_map_proto.num_blocks(),
-              voxblox::Layer<
-                  voxblox::TsdfVoxel>::BlockMergingStrategy::kReplace,
-              &proto_file,
-              submap_collection_ptr->getActiveTsdfMapPtr()->getTsdfLayerPtr(),
-              &tmp_byte_offset)) {
-        LOG(ERROR) << "Could not load the blocks from stream.";
-        continue;
-      }
-    }
-    // Because grown ups clean up after themselves
-    proto_file.close();
-  }
+  cblox::io::LoadSubmapCollection<voxgraph::VoxgraphSubmap>(
+      submap_collection_file_path, &submap_collection_ptr);
 
   // If both submaps IDs are the same, duplicate the reference submap
   if (reference_submap_id == reading_submap_id) {
@@ -195,24 +146,11 @@ int main(int argc, char** argv) {
   }
 
   // Setup the submap to submap registerer
-  // TODO(victorr): Set these parameters from ROS
-  voxgraph::SubmapRegisterer::Options registerer_options;
-  registerer_options.cost.cost_function_type =
-      voxgraph::SubmapRegisterer::Options::CostFunction::Type::kAnalytic;
-  registerer_options.cost.min_voxel_weight = 1e-6;
-  registerer_options.cost.max_voxel_distance = 0.6;
-  registerer_options.cost.no_correspondence_cost = 0;
-  registerer_options.cost.use_esdf_distance = use_esdf_distance;
-  registerer_options.cost.visualize_residuals = visualize_residuals;
-  registerer_options.cost.visualize_gradients = visualize_gradients;
-  registerer_options.solver.max_num_iterations = 40;
-  registerer_options.solver.parameter_tolerance = 3e-9;
-  registerer_options.param.optimize_yaw = true;
   voxgraph::SubmapRegisterer submap_registerer(submap_collection_ptr,
                                                registerer_options);
 
   // Setup visualization tools
-  voxgraph::SubmapVisuals submap_vis(submap_config);
+  voxgraph::SubmapVisuals submap_vis(submap_collection_ptr->getConfig());
 
   // Save the reference submap pose and the original reading submap pose
   voxblox::Transformation transform_getter;
@@ -262,7 +200,7 @@ int main(int argc, char** argv) {
   }
 
   // Generate the ESDFs for the submaps
-  if (use_esdf_distance) {
+  if (registerer_options.cost.use_esdf_distance) {
     CHECK(submap_collection_ptr->generateEsdfById(reference_submap_id));
     CHECK(submap_collection_ptr->generateEsdfById(reading_submap_id));
   }
@@ -292,8 +230,9 @@ int main(int argc, char** argv) {
   } else {
     log_file << reading_submap_id;
   }
-  log_file << "," << (visualize_residuals || visualize_gradients) << ","
-           << use_esdf_distance << "\n"
+  log_file << "," << (registerer_options.cost.visualize_residuals ||
+                      registerer_options.cost.visualize_gradients)
+           << "," << registerer_options.cost.use_esdf_distance << "\n"
            << "x_true, y_true, z_true, yaw_true, pitch_true, roll_true\n"
            << ground_truth_position.x() << "," << ground_truth_position.y()
            << "," << ground_truth_position.z() << ","
@@ -401,9 +340,12 @@ int main(int argc, char** argv) {
                 log_file << "X,X,X,X,X,X\n";
               }
 
-              // TODO(victorr): Set report style from params
-              std::cout << summary.BriefReport() << std::endl;
-              //  std::cout << summary.FullReport() << std::endl;
+              // Report solver stats
+              if (solver_report_style == kBrief) {
+                std::cout << summary.BriefReport() << std::endl;
+              } else if (solver_report_style == kFull) {
+                std::cout << summary.FullReport() << std::endl;
+              }
 
               // Exit if CTRL+C was pressed
               if (!ros::ok()) {

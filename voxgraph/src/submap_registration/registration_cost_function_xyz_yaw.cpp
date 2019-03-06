@@ -2,10 +2,6 @@
 // Created by victor on 24.01.19.
 //
 
-//
-// Created by victor on 15.12.18.
-//
-
 #include "voxgraph/submap_registration/registration_cost_function_xyz_yaw.h"
 #include <minkindr_conversions/kindr_tf.h>
 #include <voxblox/interpolator/interpolator.h>
@@ -221,8 +217,9 @@ bool RegistrationCostFunctionXYZYaw::Evaluate(double const *const *parameters,
           // Calculate q_vector derivatives
           double inv = reference_tsdf_layer_.voxel_size_inv();
           // TODO(victorr): Inv should come from reading_tsdf_layer_,
-          // but when duplicating submaps in cblox voxel_size_inv
-          // doesn't get initialized. Revert this once duplication works well.
+          //                but when duplicating submaps in cblox
+          //                voxel_size_inv doesn't get initialized.
+          //                Revert this once duplication works well.
 
           // Build the Jacobian of the interpolation function
           // over its input vector, evaluated at reading_coordinate
@@ -267,10 +264,10 @@ bool RegistrationCostFunctionXYZYaw::Evaluate(double const *const *parameters,
               << -cos_e, -sin_e, 0, -xi*sin_emo + yi*cos_emo + (xe-xo)*sin_e - (ye-yo)*cos_e,  // NOLINT
                   sin_e, -cos_e, 0, -xi*cos_emo - yi*sin_emo + (xe-xo)*cos_e + (ye-yo)*sin_e,  // NOLINT
                   0,      0,    -1,  0;
+          // clang-format on
           // TODO(victorr): Consider using the similarity in
           //                pTrr_pParamRef and pTrr_pParamRead
           //                to reduce redundant computations
-          // clang-format on
 
           // Compute the Jacobian of the residual over the reference pose params
           pResidual_pParamRef =

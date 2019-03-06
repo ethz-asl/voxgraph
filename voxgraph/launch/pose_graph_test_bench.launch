@@ -1,10 +1,7 @@
 <launch>
-    <node name="pose_graph_test_bench" pkg="voxgraph" type="pose_graph_test_bench" output="screen">
-        <!--launch-prefix="gdb -ex run &#45;&#45;args">-->
-        <rosparam>
-            submap_collection_file_path: "/home/victor/catkin_ws/voxgraph/submap_collections/burning_house_rubble_gt_truncdist06_z-aligned"
-            log_folder_path: "/home/victor/catkin_ws/voxgraph/pose_graph_test_bench_stats"
-        </rosparam>
-    </node>
-    <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen" />
+  <node name="pose_graph_test_bench" pkg="voxgraph" type="pose_graph_test_bench" output="screen">
+    <!--launch-prefix="gdb -ex run &#45;&#45;args">-->
+    <rosparam file="$(find voxgraph)/cfg/pose_graph_test_bench.yaml"/>
+  </node>
+  <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen"/>
 </launch>

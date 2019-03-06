@@ -20,6 +20,11 @@ int main(int argc, char** argv) {
   using voxgraph::SubmapNode;
   using voxgraph::RegistrationConstraint;
   using voxgraph::SubmapVisuals;
+  struct SubmapPerturbation {
+    struct NormalDistribution {
+      double mean = 0, stddev = 0;
+    } x, y, z, roll, pitch, yaw;
+  };
 
   // Start logging
   google::InitGoogleLogging(argv[0]);
@@ -38,6 +43,24 @@ int main(int argc, char** argv) {
       << "Rosparam submap_collection_file_path must be set" << std::endl;
   CHECK(nh_private.getParam("log_folder_path", log_folder_path))
       << "Rosparam log_folder_path must be set" << std::endl;
+  SubmapPerturbation submap_perturbation;
+  nh_private.param("submap_noise/x/mean", submap_perturbation.x.mean, 0.0);
+  nh_private.param("submap_noise/x/stddev", submap_perturbation.x.stddev, 0.0);
+  nh_private.param("submap_noise/y/mean", submap_perturbation.y.mean, 0.0);
+  nh_private.param("submap_noise/y/stddev", submap_perturbation.y.stddev, 0.0);
+  nh_private.param("submap_noise/z/mean", submap_perturbation.z.mean, 0.0);
+  nh_private.param("submap_noise/z/stddev", submap_perturbation.z.stddev, 0.0);
+  nh_private.param("submap_noise/roll/mean", submap_perturbation.roll.mean,
+                   0.0);
+  nh_private.param("submap_noise/roll/stddev", submap_perturbation.roll.stddev,
+                   0.0);
+  nh_private.param("submap_noise/pitch/mean", submap_perturbation.pitch.mean,
+                   0.0);
+  nh_private.param("submap_noise/pitch/stddev",
+                   submap_perturbation.pitch.stddev, 0.0);
+  nh_private.param("submap_noise/yaw/mean", submap_perturbation.yaw.mean, 0.0);
+  nh_private.param("submap_noise/yaw/stddev", submap_perturbation.yaw.stddev,
+                   0.0);
 
   // Load the submap collection
   cblox::SubmapCollection<VoxgraphSubmap>::Ptr submap_collection_ptr;
@@ -53,21 +76,33 @@ int main(int argc, char** argv) {
   //       tests. For proper validation, use the noisy odometry simulator
   //       from voxgraph_mapper to create a distorted submap collection and
   //       disable the noise below.
-  std::default_random_engine random_engine;
-  std::normal_distribution<double> noise_distrib(0.0, 0.4);
+  std::mt19937 random_engine;
+  // Get a standard normal distribution
+  std::normal_distribution<double> std_normal_dist(0.0, 1.0);
   std::vector<cblox::SubmapID> submap_ids = submap_collection_ptr->getIDs();
   for (const cblox::SubmapID& submap_id : submap_ids) {
     // NOTE: Submap 0 should not be perturbed,
     //       since its pose is not being optimized
     if (submap_id != 0) {
-      // Get the submap pose; perturb it; then write it back to the collection
+      // Get the submap pose; perturb it; then update it
       voxblox::Transformation pose;
       CHECK(submap_collection_ptr->getSubMapPose(submap_id, &pose));
       voxblox::Transformation::Vector6 T_vec = pose.log();
-      T_vec[0] += noise_distrib(random_engine);
-      T_vec[1] += noise_distrib(random_engine);
-      T_vec[2] += noise_distrib(random_engine);
-      T_vec[5] += 0.2*noise_distrib(random_engine);
+      T_vec[0] += submap_perturbation.x.mean +
+                  submap_perturbation.x.stddev * std_normal_dist(random_engine);
+      T_vec[1] += submap_perturbation.y.mean +
+                  submap_perturbation.y.stddev * std_normal_dist(random_engine);
+      T_vec[2] += submap_perturbation.z.mean +
+                  submap_perturbation.z.stddev * std_normal_dist(random_engine);
+      T_vec[3] +=
+          submap_perturbation.roll.mean +
+          submap_perturbation.roll.stddev * std_normal_dist(random_engine);
+      T_vec[4] +=
+          submap_perturbation.pitch.mean +
+          submap_perturbation.pitch.stddev * std_normal_dist(random_engine);
+      T_vec[5] +=
+          submap_perturbation.yaw.mean +
+          submap_perturbation.yaw.stddev * std_normal_dist(random_engine);
       pose = voxblox::Transformation::exp(T_vec);
       submap_collection_ptr->setSubMapPose(submap_id, pose);
     }
