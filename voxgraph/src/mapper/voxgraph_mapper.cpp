@@ -9,9 +9,9 @@
 #include <voxblox_ros/ros_params.h>
 #include <memory>
 #include <string>
-#include "voxgraph/mapper/submap_timeline.h"
-#include "voxgraph/submap_registration/submap_registerer.h"
-#include "voxgraph/utils/tf_helper.h"
+#include "voxgraph/mapper/submap_collection/submap_timeline.h"
+#include "voxgraph/pose_graph/constraint/submap_registration/submap_registerer.h"
+#include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {
 VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,

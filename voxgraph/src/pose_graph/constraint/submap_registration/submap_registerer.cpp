@@ -2,11 +2,11 @@
 // Created by victor on 04.12.18.
 //
 
-#include "voxgraph/submap_registration/submap_registerer.h"
+#include "voxgraph/pose_graph/constraint/submap_registration/submap_registerer.h"
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
-#include "voxgraph/submap_registration/registration_cost_function_xyz.h"
-#include "voxgraph/submap_registration/registration_cost_function_xyz_yaw.h"
+#include "voxgraph/pose_graph/constraint/submap_registration/registration_cost_function_xyz.h"
+#include "voxgraph/pose_graph/constraint/submap_registration/registration_cost_function_xyz_yaw.h"
 
 namespace voxgraph {
 SubmapRegisterer::SubmapRegisterer(
@@ -88,5 +88,5 @@ bool SubmapRegisterer::testRegistration(
   ceres::Solve(ceres_options, &problem, summary);
 
   return summary->IsSolutionUsable();
-  }
-  }  // namespace voxgraph
+}
+}  // namespace voxgraph

@@ -2,12 +2,12 @@
 // Created by victor on 24.01.19.
 //
 
-#include "voxgraph/submap_registration/registration_cost_function_xyz_yaw.h"
+#include "voxgraph/pose_graph/constraint/submap_registration/registration_cost_function_xyz_yaw.h"
 #include <minkindr_conversions/kindr_tf.h>
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
-#include "voxgraph/mapper/voxgraph_submap.h"
-#include "voxgraph/utils/tf_helper.h"
+#include "voxgraph/mapper/submap_collection/voxgraph_submap.h"
+#include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {
 RegistrationCostFunctionXYZYaw::RegistrationCostFunctionXYZYaw(

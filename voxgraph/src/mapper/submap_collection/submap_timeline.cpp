@@ -2,7 +2,7 @@
 // Created by victor on 06.03.19.
 //
 
-#include "voxgraph/mapper/submap_timeline.h"
+#include "voxgraph/mapper/submap_collection/submap_timeline.h"
 
 namespace voxgraph {
 void voxgraph::SubmapTimeline::addNextSubmap(

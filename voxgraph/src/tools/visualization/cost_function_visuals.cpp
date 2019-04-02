@@ -2,7 +2,7 @@
 // Created by victor on 05.01.19.
 //
 
-#include "voxgraph/visualization/cost_function_visuals.h"
+#include "voxgraph/tools/visualization/cost_function_visuals.h"
 
 namespace voxgraph {
 CostFunctionVisuals::CostFunctionVisuals() {

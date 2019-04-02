@@ -2,8 +2,8 @@
 // Created by victor on 06.03.19.
 //
 
-#ifndef VOXGRAPH_MAPPER_SUBMAP_TIMELINE_H_
-#define VOXGRAPH_MAPPER_SUBMAP_TIMELINE_H_
+#ifndef VOXGRAPH_MAPPER_SUBMAP_COLLECTION_SUBMAP_TIMELINE_H_
+#define VOXGRAPH_MAPPER_SUBMAP_COLLECTION_SUBMAP_TIMELINE_H_
 
 #include <cblox/core/common.h>
 #include <ros/time.h>
@@ -28,4 +28,4 @@ class SubmapTimeline {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_MAPPER_SUBMAP_TIMELINE_H_
+#endif  // VOXGRAPH_MAPPER_SUBMAP_COLLECTION_SUBMAP_TIMELINE_H_

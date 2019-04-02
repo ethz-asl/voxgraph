@@ -2,8 +2,8 @@
 // Created by victor on 29.01.19.
 //
 
-#ifndef VOXGRAPH_ODOMETRY_SIMULATOR_ODOMETRY_SIMULATOR_H_
-#define VOXGRAPH_ODOMETRY_SIMULATOR_ODOMETRY_SIMULATOR_H_
+#ifndef VOXGRAPH_TOOLS_ODOMETRY_SIMULATOR_ODOMETRY_SIMULATOR_H_
+#define VOXGRAPH_TOOLS_ODOMETRY_SIMULATOR_ODOMETRY_SIMULATOR_H_
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -11,7 +11,7 @@
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <string>
-#include "voxgraph/odometry_simulator/normal_distribution.h"
+#include "voxgraph/tools/odometry_simulator/normal_distribution.h"
 
 namespace voxgraph {
 class OdometrySimulator {
@@ -59,4 +59,4 @@ class OdometrySimulator {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_ODOMETRY_SIMULATOR_ODOMETRY_SIMULATOR_H_
+#endif  // VOXGRAPH_TOOLS_ODOMETRY_SIMULATOR_ODOMETRY_SIMULATOR_H_

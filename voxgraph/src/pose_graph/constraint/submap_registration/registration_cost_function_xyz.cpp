@@ -2,12 +2,12 @@
 // Created by victor on 15.12.18.
 //
 
-#include "voxgraph/submap_registration/registration_cost_function_xyz.h"
+#include "voxgraph/pose_graph/constraint/submap_registration/registration_cost_function_xyz.h"
 #include <minkindr_conversions/kindr_tf.h>
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
-#include "voxgraph/mapper/voxgraph_submap.h"
-#include "voxgraph/utils/tf_helper.h"
+#include "voxgraph/mapper/submap_collection/voxgraph_submap.h"
+#include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {
 RegistrationCostFunctionXYZ::RegistrationCostFunctionXYZ(

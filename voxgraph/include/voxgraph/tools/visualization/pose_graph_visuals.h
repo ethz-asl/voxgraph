@@ -2,8 +2,8 @@
 // Created by victor on 23.01.19.
 //
 
-#ifndef VOXGRAPH_VISUALIZATION_POSE_GRAPH_VISUALS_H_
-#define VOXGRAPH_VISUALIZATION_POSE_GRAPH_VISUALS_H_
+#ifndef VOXGRAPH_TOOLS_VISUALIZATION_POSE_GRAPH_VISUALS_H_
+#define VOXGRAPH_TOOLS_VISUALIZATION_POSE_GRAPH_VISUALS_H_
 
 #include <string>
 #include "voxgraph/pose_graph/pose_graph.h"
@@ -20,4 +20,4 @@ class PoseGraphVisuals {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_VISUALIZATION_POSE_GRAPH_VISUALS_H_
+#endif  // VOXGRAPH_TOOLS_VISUALIZATION_POSE_GRAPH_VISUALS_H_

@@ -2,8 +2,8 @@
 // Created by victor on 05.01.19.
 //
 
-#ifndef VOXGRAPH_VISUALIZATION_COST_FUNCTION_VISUALS_H_
-#define VOXGRAPH_VISUALIZATION_COST_FUNCTION_VISUALS_H_
+#ifndef VOXGRAPH_TOOLS_VISUALIZATION_COST_FUNCTION_VISUALS_H_
+#define VOXGRAPH_TOOLS_VISUALIZATION_COST_FUNCTION_VISUALS_H_
 
 #include <voxblox/core/common.h>
 #include <voxblox_ros/ptcloud_vis.h>
@@ -32,4 +32,4 @@ class CostFunctionVisuals {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_VISUALIZATION_COST_FUNCTION_VISUALS_H_
+#endif  // VOXGRAPH_TOOLS_VISUALIZATION_COST_FUNCTION_VISUALS_H_

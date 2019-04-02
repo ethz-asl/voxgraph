@@ -2,8 +2,8 @@
 // Created by victor on 19.12.18.
 //
 
-#ifndef VOXGRAPH_VISUALIZATION_SUBMAP_VISUALS_H_
-#define VOXGRAPH_VISUALIZATION_SUBMAP_VISUALS_H_
+#ifndef VOXGRAPH_TOOLS_VISUALIZATION_SUBMAP_VISUALS_H_
+#define VOXGRAPH_TOOLS_VISUALIZATION_SUBMAP_VISUALS_H_
 
 #include <cblox/core/submap_collection.h>
 #include <cblox/mesh/submap_mesher.h>
@@ -12,7 +12,7 @@
 #include <voxblox_ros/mesh_vis.h>
 #include <memory>
 #include <string>
-#include "voxgraph/mapper/voxgraph_submap.h"
+#include "voxgraph/mapper/submap_collection/voxgraph_submap.h"
 
 namespace voxgraph {
 class SubmapVisuals {
@@ -48,4 +48,4 @@ class SubmapVisuals {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_VISUALIZATION_SUBMAP_VISUALS_H_
+#endif  // VOXGRAPH_TOOLS_VISUALIZATION_SUBMAP_VISUALS_H_

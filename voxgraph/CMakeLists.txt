@@ -12,20 +12,20 @@ catkin_simple(ALL_DEPS_REQUIRED)
 # NOTE: The library is static to avoid segfaults
 #       following voxblox multi threading
 cs_add_library(${PROJECT_NAME} STATIC
-    src/mapper/submap_timeline.cpp
+    src/mapper/submap_collection/submap_timeline.cpp
     src/mapper/voxgraph_mapper.cpp
-    src/mapper/voxgraph_submap.cpp
-    src/odometry_simulator/odometry_simulator.cpp
+    src/mapper/submap_collection/voxgraph_submap.cpp
+    src/tools/odometry_simulator/odometry_simulator.cpp
     src/pose_graph/pose_graph.cpp
     src/pose_graph/constraint/registration_constraint.cpp
     src/pose_graph/node/submap_node.cpp
-    src/submap_registration/submap_registerer.cpp
-    src/submap_registration/registration_cost_function_xyz.cpp
-    src/submap_registration/registration_cost_function_xyz_yaw.cpp
-    src/utils/tf_helper.cpp
-    src/visualization/cost_function_visuals.cpp
-    src/visualization/pose_graph_visuals.cpp
-    src/visualization/submap_visuals.cpp
+    src/pose_graph/constraint/submap_registration/submap_registerer.cpp
+    src/pose_graph/constraint/submap_registration/registration_cost_function_xyz.cpp
+    src/pose_graph/constraint/submap_registration/registration_cost_function_xyz_yaw.cpp
+    src/tools/tf_helper.cpp
+    src/tools/visualization/cost_function_visuals.cpp
+    src/tools/visualization/pose_graph_visuals.cpp
+    src/tools/visualization/submap_visuals.cpp
 )
 
 ############

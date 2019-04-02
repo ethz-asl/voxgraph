@@ -2,15 +2,15 @@
 // Created by victor on 04.12.18.
 //
 
-#ifndef VOXGRAPH_SUBMAP_REGISTRATION_SUBMAP_REGISTERER_H_
-#define VOXGRAPH_SUBMAP_REGISTRATION_SUBMAP_REGISTERER_H_
+#ifndef VOXGRAPH_POSE_GRAPH_CONSTRAINT_SUBMAP_REGISTRATION_SUBMAP_REGISTERER_H_
+#define VOXGRAPH_POSE_GRAPH_CONSTRAINT_SUBMAP_REGISTRATION_SUBMAP_REGISTERER_H_
 
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
 #include <cblox/core/tsdf_esdf_submap.h>
 #include <cblox/core/tsdf_submap.h>
 #include <ceres/ceres.h>
-#include "voxgraph/mapper/voxgraph_submap.h"
+#include "voxgraph/mapper/submap_collection/voxgraph_submap.h"
 
 namespace voxgraph {
 class SubmapRegisterer {
@@ -50,4 +50,4 @@ class SubmapRegisterer {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_SUBMAP_REGISTRATION_SUBMAP_REGISTERER_H_
+#endif  // VOXGRAPH_POSE_GRAPH_CONSTRAINT_SUBMAP_REGISTRATION_SUBMAP_REGISTERER_H_

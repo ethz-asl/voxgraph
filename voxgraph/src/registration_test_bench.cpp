@@ -13,10 +13,10 @@
 #include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
-#include "voxgraph/mapper/voxgraph_submap.h"
-#include "voxgraph/submap_registration/submap_registerer.h"
-#include "voxgraph/utils/tf_helper.h"
-#include "voxgraph/visualization/submap_visuals.h"
+#include "voxgraph/mapper/submap_collection/voxgraph_submap.h"
+#include "voxgraph/pose_graph/constraint/submap_registration/submap_registerer.h"
+#include "voxgraph/tools/tf_helper.h"
+#include "voxgraph/tools/visualization/submap_visuals.h"
 
 int main(int argc, char** argv) {
   enum SolverReportStyle { kBrief, kFull, kNone };

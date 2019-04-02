@@ -20,9 +20,9 @@
 #include <voxblox_ros/transformer.h>
 #include <memory>
 #include <string>
-#include "voxgraph/mapper/voxgraph_submap.h"
+#include "voxgraph/mapper/submap_collection/voxgraph_submap.h"
 #include "voxgraph/pose_graph/pose_graph.h"
-#include "voxgraph/visualization/submap_visuals.h"
+#include "voxgraph/tools/visualization/submap_visuals.h"
 
 namespace voxgraph {
 class VoxgraphMapper {

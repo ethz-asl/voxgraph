@@ -2,8 +2,8 @@
 // Created by victor on 24.01.19.
 //
 
-#ifndef VOXGRAPH_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
-#define VOXGRAPH_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
+#ifndef VOXGRAPH_POSE_GRAPH_CONSTRAINT_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
+#define VOXGRAPH_POSE_GRAPH_CONSTRAINT_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
 
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
@@ -11,11 +11,11 @@
 #include <cblox/core/tsdf_submap.h>
 #include <ceres/ceres.h>
 #include <voxblox/interpolator/interpolator.h>
-#include "voxgraph/submap_registration/submap_registerer.h"
+#include "voxgraph/pose_graph/constraint/submap_registration/submap_registerer.h"
 
 // For visualization only
 #include <ros/ros.h>
-#include "voxgraph/visualization/cost_function_visuals.h"
+#include "voxgraph/tools/visualization/cost_function_visuals.h"
 
 namespace voxgraph {
 class RegistrationCostFunctionXYZYaw : public ceres::CostFunction {
@@ -72,4 +72,4 @@ class RegistrationCostFunctionXYZYaw : public ceres::CostFunction {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
+#endif  // VOXGRAPH_POSE_GRAPH_CONSTRAINT_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
