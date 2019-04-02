@@ -14,9 +14,13 @@ class Constraint {
  public:
   typedef std::shared_ptr<Constraint> Ptr;
   typedef unsigned int ConstraintId;
+  typedef Eigen::Matrix<double, 4, 4> InformationMatrix;
 
-  explicit Constraint(ConstraintId constraint_id)
-      : constraint_id_(constraint_id) {}
+  struct Config {
+    InformationMatrix information_matrix;
+  };
+
+  explicit Constraint(ConstraintId constraint_id, const Config &config);
   virtual ~Constraint() = default;
 
   virtual void addToProblem(const NodeCollection &node_collection,
@@ -29,6 +33,8 @@ class Constraint {
  protected:
   const ConstraintId constraint_id_;
   ceres::ResidualBlockId residual_block_id_ = nullptr;
+
+  InformationMatrix sqrt_information_matrix_;
 };
 }  // namespace voxgraph
 

@@ -1,24 +1,24 @@
 //
-// Created by victor on 16.01.19.
+// Created by victor on 03.04.19.
 //
 
-#ifndef VOXGRAPH_POSE_GRAPH_CONSTRAINT_ODOMETRY_CONSTRAINT_H_
-#define VOXGRAPH_POSE_GRAPH_CONSTRAINT_ODOMETRY_CONSTRAINT_H_
+#ifndef VOXGRAPH_POSE_GRAPH_CONSTRAINT_LOOP_CLOSURE_CONSTRAINT_H_
+#define VOXGRAPH_POSE_GRAPH_CONSTRAINT_LOOP_CLOSURE_CONSTRAINT_H_
 
 #include <memory>
 #include "voxgraph/pose_graph/constraint/constraint.h"
 
 namespace voxgraph {
-class OdometryConstraint : public Constraint {
+class LoopClosureConstraint : public Constraint {
  public:
-  typedef std::shared_ptr<OdometryConstraint> Ptr;
+  typedef std::shared_ptr<LoopClosureConstraint> Ptr;
   struct Config : Constraint::Config {
     cblox::SubmapID origin_submap_id;
     cblox::SubmapID destination_submap_id;
     voxblox::Transformation T_origin_destination;
   };
 
-  OdometryConstraint(ConstraintId constraint_id, const Config& config)
+  LoopClosureConstraint(ConstraintId constraint_id, const Config& config)
       : Constraint(constraint_id, config), config_(config) {}
 
   void addToProblem(const NodeCollection& node_collection,
@@ -29,4 +29,4 @@ class OdometryConstraint : public Constraint {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_POSE_GRAPH_CONSTRAINT_ODOMETRY_CONSTRAINT_H_
+#endif  // VOXGRAPH_POSE_GRAPH_CONSTRAINT_LOOP_CLOSURE_CONSTRAINT_H_

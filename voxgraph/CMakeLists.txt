@@ -17,11 +17,18 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/mapper/submap_collection/voxgraph_submap.cpp
     src/tools/odometry_simulator/odometry_simulator.cpp
     src/pose_graph/pose_graph.cpp
-    src/pose_graph/constraint/registration_constraint.cpp
+    src/pose_graph/node_collection.cpp
+    src/pose_graph/node/node.cpp
     src/pose_graph/node/submap_node.cpp
-    src/pose_graph/constraint/submap_registration/submap_registerer.cpp
-    src/pose_graph/constraint/submap_registration/registration_cost_function_xyz.cpp
-    src/pose_graph/constraint/submap_registration/registration_cost_function_xyz_yaw.cpp
+    src/pose_graph/node/reference_frame_node.cpp
+    src/pose_graph/constraint/constraint.cpp
+    src/pose_graph/constraint/odometry_constraint.cpp
+    src/pose_graph/constraint/loop_closure_constraint.cpp
+    src/pose_graph/constraint/absolute_pose_constraint.cpp
+    src/pose_graph/constraint/registration_constraint.cpp
+    src/pose_graph/constraint/cost_functions/submap_registration/submap_registerer.cpp
+    src/pose_graph/constraint/cost_functions/submap_registration/registration_cost_function_xyz.cpp
+    src/pose_graph/constraint/cost_functions/submap_registration/registration_cost_function_xyz_yaw.cpp
     src/tools/tf_helper.cpp
     src/tools/visualization/cost_function_visuals.cpp
     src/tools/visualization/pose_graph_visuals.cpp

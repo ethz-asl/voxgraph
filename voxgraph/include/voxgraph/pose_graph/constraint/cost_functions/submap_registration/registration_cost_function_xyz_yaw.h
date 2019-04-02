@@ -2,8 +2,8 @@
 // Created by victor on 24.01.19.
 //
 
-#ifndef VOXGRAPH_POSE_GRAPH_CONSTRAINT_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
-#define VOXGRAPH_POSE_GRAPH_CONSTRAINT_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
+#ifndef VOXGRAPH_POSE_GRAPH_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
+#define VOXGRAPH_POSE_GRAPH_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
 
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
@@ -11,13 +11,15 @@
 #include <cblox/core/tsdf_submap.h>
 #include <ceres/ceres.h>
 #include <voxblox/interpolator/interpolator.h>
-#include "voxgraph/pose_graph/constraint/submap_registration/submap_registerer.h"
+#include "voxgraph/pose_graph/constraint/cost_functions/submap_registration/submap_registerer.h"
 
 // For visualization only
 #include <ros/ros.h>
 #include "voxgraph/tools/visualization/cost_function_visuals.h"
 
 namespace voxgraph {
+// TODO(victorr): Create and inherint from parent class
+//                to reduce code duplication w.r.t. xyz version
 class RegistrationCostFunctionXYZYaw : public ceres::CostFunction {
  public:
   RegistrationCostFunctionXYZYaw(
@@ -72,4 +74,4 @@ class RegistrationCostFunctionXYZYaw : public ceres::CostFunction {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_POSE_GRAPH_CONSTRAINT_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
+#endif  // VOXGRAPH_POSE_GRAPH_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_

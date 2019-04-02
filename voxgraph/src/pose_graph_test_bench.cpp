@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
     } else {
       node_config.set_constant = false;
     }
-    pose_graph.addNode(node_config);
+    pose_graph.addSubmapNode(node_config);
   }
 
   // Add odometry constraints between the submaps
@@ -202,9 +202,11 @@ int main(int argc, char** argv) {
       // Check whether the first and second submap overlap
       if (first_submap.overlapsWith(second_submap)) {
         // Add the constraint
-        RegistrationConstraint::Config constraint_config = {first_submap_id,
-                                                            second_submap_id};
-        pose_graph.addConstraint(constraint_config);
+        RegistrationConstraint::Config constraint_config;
+        constraint_config.first_submap_id = first_submap_id;
+        constraint_config.second_submap_id = second_submap_id;
+        constraint_config.information_matrix.setIdentity();
+        pose_graph.addRegistrationConstraint(constraint_config);
       }
     }
   }

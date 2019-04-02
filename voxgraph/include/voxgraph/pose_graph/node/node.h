@@ -5,6 +5,7 @@
 #ifndef VOXGRAPH_POSE_GRAPH_NODE_NODE_H_
 #define VOXGRAPH_POSE_GRAPH_NODE_NODE_H_
 
+#include <ceres/ceres.h>
 #include <memory>
 
 namespace voxgraph {
@@ -24,6 +25,8 @@ class Node {
   Pose* getPosePtr() { return &world_node_pose_; }
   void setConstant(bool constant) { constant_ = constant; }
   bool isConstant() { return constant_; }
+
+  void addToProblem(ceres::Problem* problem);
 
  protected:
   const NodeId node_id_;

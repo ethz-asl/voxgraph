@@ -1,15 +1,17 @@
 //
-// Created by victor on 17.01.19.
+// Created by victor on 04.04.19.
 //
 
-#include "voxgraph/pose_graph/node/submap_node.h"
+#include "voxgraph/pose_graph/node/reference_frame_node.h"
 #include <utility>
 
 namespace voxgraph {
-SubmapNode::SubmapNode(NodeId node_id, SubmapNode::Config config)
+ReferenceFrameNode::ReferenceFrameNode(
+    voxgraph::Node::NodeId node_id, voxgraph::ReferenceFrameNode::Config config)
     : Node(node_id), config_(std::move(config)) {
-  // Set the node's pose to the initial submap pose
-  voxblox::Transformation::Vector6 T_vec = config.initial_submap_pose.log();
+  // Set the node's pose to the initial reference frame pose
+  voxblox::Transformation::Vector6 T_vec =
+      config.initial_reference_frame_pose.log();
   world_node_pose_[0] = T_vec[0];
   world_node_pose_[1] = T_vec[1];
   world_node_pose_[2] = T_vec[2];
@@ -19,8 +21,10 @@ SubmapNode::SubmapNode(NodeId node_id, SubmapNode::Config config)
   constant_ = config_.set_constant;
 }
 
-const voxblox::Transformation SubmapNode::getSubmapPose() const {
-  voxblox::Transformation::Vector6 T_vec = config_.initial_submap_pose.log();
+const voxblox::Transformation ReferenceFrameNode::getReferenceFramePose()
+    const {
+  voxblox::Transformation::Vector6 T_vec =
+      config_.initial_reference_frame_pose.log();
   T_vec[0] = world_node_pose_[0];
   T_vec[1] = world_node_pose_[1];
   T_vec[2] = world_node_pose_[2];

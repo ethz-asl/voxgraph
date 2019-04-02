@@ -10,7 +10,7 @@
 #include <memory>
 #include <string>
 #include "voxgraph/mapper/submap_collection/submap_timeline.h"
-#include "voxgraph/pose_graph/constraint/submap_registration/submap_registerer.h"
+#include "voxgraph/pose_graph/constraint/cost_functions/submap_registration/submap_registerer.h"
 #include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {
@@ -155,7 +155,7 @@ void VoxgraphMapper::pointcloudCallback(
       } else {
         node_config.set_constant = false;
       }
-      pose_graph_.addNode(node_config);
+      pose_graph_.addSubmapNode(node_config);
 
       // Constrain the finished submap to all submaps it overlaps with
       const VoxgraphSubmap &finished_submap =
@@ -164,9 +164,11 @@ void VoxgraphMapper::pointcloudCallback(
         if (other_submap_ptr->getID() != finished_submap_id) {
           if (finished_submap.overlapsWith(*other_submap_ptr)) {
             // Add the constraint
-            RegistrationConstraint::Config constraint_config = {
-                finished_submap_id, other_submap_ptr->getID()};
-            pose_graph_.addConstraint(constraint_config);
+            RegistrationConstraint::Config registration_config;
+            registration_config.first_submap_id = finished_submap_id;
+            registration_config.first_submap_id = other_submap_ptr->getID();
+            registration_config.information_matrix.setIdentity();
+            pose_graph_.addRegistrationConstraint(registration_config);
           }
         }
       }

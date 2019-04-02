@@ -2,11 +2,11 @@
 // Created by victor on 04.12.18.
 //
 
-#include "voxgraph/pose_graph/constraint/submap_registration/submap_registerer.h"
+#include "voxgraph/pose_graph/constraint/cost_functions/submap_registration/submap_registerer.h"
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
-#include "voxgraph/pose_graph/constraint/submap_registration/registration_cost_function_xyz.h"
-#include "voxgraph/pose_graph/constraint/submap_registration/registration_cost_function_xyz_yaw.h"
+#include "voxgraph/pose_graph/constraint/cost_functions/submap_registration/registration_cost_function_xyz.h"
+#include "voxgraph/pose_graph/constraint/cost_functions/submap_registration/registration_cost_function_xyz_yaw.h"
 
 namespace voxgraph {
 SubmapRegisterer::SubmapRegisterer(
@@ -58,7 +58,7 @@ bool SubmapRegisterer::testRegistration(
                                              reading_submap_ptr, options_.cost);
       cost_function = new ceres::NumericDiffCostFunction<
           RegistrationCostFunctionXYZYaw, ceres::CENTRAL,
-          ceres::DYNAMIC /* residuals */, 4 /* translation variables */>(
+          ceres::DYNAMIC /* residuals */, 4 /* pose variables */>(
           analytic_cost_function_ptr, ceres::TAKE_OWNERSHIP,
           static_cast<int>(analytic_cost_function_ptr->getNumRelevantVoxels()));
     } else {

@@ -8,25 +8,27 @@
 #include <memory>
 #include <utility>
 #include "voxgraph/pose_graph/constraint/constraint.h"
-#include "voxgraph/pose_graph/constraint/submap_registration/registration_cost_function_xyz_yaw.h"
+#include "voxgraph/pose_graph/constraint/cost_functions/submap_registration/registration_cost_function_xyz_yaw.h"
 
 namespace voxgraph {
 class RegistrationConstraint : public Constraint {
  public:
   typedef std::shared_ptr<RegistrationConstraint> Ptr;
-  struct Config {
+  struct Config : Constraint::Config {
     cblox::SubmapID first_submap_id;
     cblox::SubmapID second_submap_id;
   };
 
-  explicit RegistrationConstraint(ConstraintId constraint_id, Config config,
+  explicit RegistrationConstraint(ConstraintId constraint_id,
+                                  const Config& config,
                                   VoxgraphSubmap::ConstPtr first_submap_ptr,
                                   VoxgraphSubmap::ConstPtr second_submap_ptr)
-      : Constraint(constraint_id),
+      : Constraint(constraint_id, config),
         config_(config),
         first_submap_ptr_(std::move(first_submap_ptr)),
         second_submap_ptr_(std::move(second_submap_ptr)) {}
 
+  // TODO(victorr): Use the sqrt_information_matrix_ when computing the residual
   void addToProblem(const NodeCollection& node_collection,
                     ceres::Problem* problem) final;
 

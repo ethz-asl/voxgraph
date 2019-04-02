@@ -9,6 +9,8 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include "voxgraph/pose_graph/constraint/absolute_pose_constraint.h"
+#include "voxgraph/pose_graph/constraint/loop_closure_constraint.h"
 #include "voxgraph/pose_graph/constraint/odometry_constraint.h"
 #include "voxgraph/pose_graph/constraint/registration_constraint.h"
 #include "voxgraph/pose_graph/node/submap_node.h"
@@ -22,11 +24,12 @@ class PoseGraph {
       cblox::SubmapCollection<VoxgraphSubmap>::ConstPtr submap_collection_ptr)
       : submap_collection_ptr_(std::move(submap_collection_ptr)) {}
 
-  void addNode(const SubmapNode::Config &config);
+  void addSubmapNode(const SubmapNode::Config &config);
 
-  void addConstraint(const OdometryConstraint::Config &config);
-
-  void addConstraint(const RegistrationConstraint::Config &config);
+  void addRegistrationConstraint(const RegistrationConstraint::Config &config);
+  void addOdometryConstraint(const OdometryConstraint::Config &config);
+  void addLoopClosureConstraint(const LoopClosureConstraint::Config &config);
+  void addAbsolutePoseConstraint(const AbsolutePoseConstraint::Config &config);
 
   void initialize();
 

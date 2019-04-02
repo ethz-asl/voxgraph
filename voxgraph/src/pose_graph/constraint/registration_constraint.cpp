@@ -13,25 +13,15 @@ void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
 
   // Get pointers to both submap nodes
   SubmapNode::Ptr first_submap_node_ptr =
-      node_collection.getNodePtrById(config_.first_submap_id);
+      node_collection.getNodePtrBySubmapId(config_.first_submap_id);
   SubmapNode::Ptr second_submap_node_ptr =
-      node_collection.getNodePtrById(config_.second_submap_id);
+      node_collection.getNodePtrBySubmapId(config_.second_submap_id);
   CHECK_NOTNULL(first_submap_node_ptr);
   CHECK_NOTNULL(second_submap_node_ptr);
 
-  // Add the submap parameters tot the problem
-  problem->AddParameterBlock(first_submap_node_ptr->getPosePtr()->data(),
-                             first_submap_node_ptr->getPosePtr()->size());
-  problem->AddParameterBlock(second_submap_node_ptr->getPosePtr()->data(),
-                             second_submap_node_ptr->getPosePtr()->size());
-  if (first_submap_node_ptr->isConstant()) {
-    problem->SetParameterBlockConstant(
-        first_submap_node_ptr->getPosePtr()->data());
-  }
-  if (second_submap_node_ptr->isConstant()) {
-    problem->SetParameterBlockConstant(
-        second_submap_node_ptr->getPosePtr()->data());
-  }
+  // Add the submap parameters to the problem
+  first_submap_node_ptr->addToProblem(problem);
+  second_submap_node_ptr->addToProblem(problem);
 
   // TODO(victorr): Load cost options from ROS params instead of using default
   SubmapRegisterer::Options::CostFunction cost_options;

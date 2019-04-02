@@ -7,26 +7,21 @@
 
 #include <map>
 #include <memory>
+#include "voxgraph/pose_graph/node/reference_frame_node.h"
 #include "voxgraph/pose_graph/node/submap_node.h"
 
 namespace voxgraph {
 class NodeCollection {
  public:
   typedef std::map<cblox::SubmapID, SubmapNode::Ptr> SubmapNodeMap;
+  typedef std::map<Node::NodeId, ReferenceFrameNode::Ptr> ReferenceFrameNodeMap;
 
-  void addNode(const SubmapNode::Config& config) {
-    auto ptr = std::make_shared<SubmapNode>(newNodeId(), config);
-    submap_nodes_.emplace(config.submap_id, ptr);
-  }
+  void addSubmapNode(const SubmapNode::Config &config);
+  void addReferenceFrameNode(const ReferenceFrameNode::Config &config);
 
-  SubmapNode::Ptr getNodePtrById(cblox::SubmapID submap_id) const {
-    auto it = submap_nodes_.find(submap_id);
-    if (it != submap_nodes_.end()) {
-      return it->second;
-    } else {
-      return nullptr;
-    }
-  }
+  SubmapNode::Ptr getNodePtrBySubmapId(cblox::SubmapID submap_id) const;
+  ReferenceFrameNode::Ptr getNodePtrByReferenceFrameId(
+      ReferenceFrameNode::ReferenceFrameId) const;
 
   const SubmapNodeMap& getSubmapNodes() { return submap_nodes_; }
 
@@ -35,6 +30,7 @@ class NodeCollection {
   const Node::NodeId newNodeId() { return node_id_counter_++; }
 
   SubmapNodeMap submap_nodes_;
+  ReferenceFrameNodeMap reference_frame_nodes_;
 };
 }  // namespace voxgraph
 

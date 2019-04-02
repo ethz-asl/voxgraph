@@ -10,26 +10,28 @@
 #include <vector>
 
 namespace voxgraph {
-void PoseGraph::addNode(const SubmapNode::Config &config) {
+void PoseGraph::addSubmapNode(const SubmapNode::Config &config) {
   // Add to the node set
-  node_collection_.addNode(config);
+  node_collection_.addSubmapNode(config);
 }
 
 // TODO(victorr): Implement odometry constraints
-void PoseGraph::addConstraint(const OdometryConstraint::Config &config) {
+void PoseGraph::addOdometryConstraint(
+    const OdometryConstraint::Config &config) {
   // Add to the constraint set
   auto ptr = std::make_shared<OdometryConstraint>(newConstraintId(), config);
   constraints_.emplace_back(std::static_pointer_cast<Constraint>(ptr));
 }
 
-void PoseGraph::addConstraint(const RegistrationConstraint::Config &config) {
+void PoseGraph::addRegistrationConstraint(
+    const RegistrationConstraint::Config &config) {
   CHECK_NE(config.first_submap_id, config.second_submap_id)
       << "Cannot constrain submap " << config.first_submap_id << " to itself";
 
   // Check if there're submap nodes corresponding to both submap IDs
-  CHECK(node_collection_.getNodePtrById(config.first_submap_id))
+  CHECK(node_collection_.getNodePtrBySubmapId(config.first_submap_id))
       << "Graph contains no node for submap " << config.first_submap_id;
-  CHECK(node_collection_.getNodePtrById(config.second_submap_id))
+  CHECK(node_collection_.getNodePtrBySubmapId(config.second_submap_id))
       << "Graph contains no node for submap " << config.second_submap_id;
 
   // Get pointers to both submaps
