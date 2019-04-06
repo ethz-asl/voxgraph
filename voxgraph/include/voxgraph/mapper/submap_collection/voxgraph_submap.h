@@ -6,8 +6,10 @@
 #define VOXGRAPH_MAPPER_SUBMAP_COLLECTION_VOXGRAPH_SUBMAP_H_
 
 #include <cblox/core/tsdf_esdf_submap.h>
-#include <bitset>
+#include <ros/ros.h>
+#include <map>
 #include <memory>
+#include "voxgraph/mapper/submap_collection/bounding_box.h"
 
 namespace voxgraph {
 class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
@@ -15,46 +17,11 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   typedef std::shared_ptr<VoxgraphSubmap> Ptr;
   typedef std::shared_ptr<const VoxgraphSubmap> ConstPtr;
 
-  typedef Eigen::Matrix<voxblox::FloatingPoint, 3, 8> BoxCornerMatrix;
-  struct BoundingBox {
-    voxblox::Point min = {INFINITY, INFINITY, INFINITY};
-    voxblox::Point max = {-INFINITY, -INFINITY, -INFINITY};
-    const BoxCornerMatrix getCornerCoordinates() const {
-      BoxCornerMatrix box_corners;
-      // The set of box corners is composed by taking all combinations of
-      // coefficients from the min and max point, i.e. 2^3=8 combinations.
-      // Since these combinations correspond to the bit table of an int
-      // going from 0 to 7, we can use:
-      std::bitset<3> bit_table_row;
-      for (unsigned int i = 0; i < 8; i++) {
-        bit_table_row = std::bitset<3>(i);
-        box_corners(0, i) = bit_table_row[0] ? min.x() : max.x();
-        box_corners(1, i) = bit_table_row[1] ? min.y() : max.y();
-        box_corners(2, i) = bit_table_row[2] ? min.z() : max.z();
-      }
-      return box_corners;
-    }
-    static const BoundingBox getAabbFromObbAndPose(
-        const BoundingBox &obb, const voxblox::Transformation &pose) {
-      // Create AABB
-      BoundingBox aabb;
-      // Transform the OBB corners into world frame and update the AABB
-      const BoxCornerMatrix submap_t_submap__obb_corners =
-          obb.getCornerCoordinates();
-      for (int i = 0; i < 8; i++) {
-        const voxblox::Point world_t_world__obb_corner =
-            pose * submap_t_submap__obb_corners.col(i);
-        aabb.min = aabb.min.cwiseMin(world_t_world__obb_corner);
-        aabb.max = aabb.max.cwiseMax(world_t_world__obb_corner);
-      }
-      return aabb;
-    }
-  };
-
   VoxgraphSubmap(const voxblox::Transformation &T_M_S,
                  cblox::SubmapID submap_id, Config config)
       : cblox::TsdfEsdfSubmap(T_M_S, submap_id, config) {}
 
+  // Bounding Boxes used to check for overlap
   const BoundingBox getSubmapFrameSurfaceObb() const;
   const BoundingBox getSubmapFrameSubmapObb() const;
   const BoundingBox getWorldFrameSurfaceAabb() const;
@@ -66,6 +33,11 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   bool overlapsWith(const VoxgraphSubmap &otherSubmap) const;
 
+  void addPoseToHistory(ros::Time timestamp,
+                        voxblox::Transformation T_submap_sensor) {
+    pose_history_.emplace(timestamp, T_submap_sensor);
+  }
+
   // TODO(victorr): Move RelevantVoxelList from registration_cost_function here
 
  private:
@@ -74,6 +46,9 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   mutable BoundingBox map_obb_;      // around the entire submap
 
   typedef Eigen::Matrix<voxblox::FloatingPoint, 4, 8> HomogBoxCornerMatrix;
+
+  // History of how the robot moved through the submap
+  std::map<ros::Time, voxblox::Transformation> pose_history_;
 };
 }  // namespace voxgraph
 

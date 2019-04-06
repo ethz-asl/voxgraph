@@ -73,10 +73,11 @@ void SubmapVisuals::publishCombinedMesh(
               voxblox::ColorMode::kNormals);
 }
 
-void SubmapVisuals::publishBox(
-    const VoxgraphSubmap::BoxCornerMatrix &box_corner_matrix,
-    const voxblox::Color &box_color, const std::string &frame_id,
-    const std::string &name_space, const ros::Publisher &publisher) const {
+void SubmapVisuals::publishBox(const BoxCornerMatrix &box_corner_matrix,
+                               const voxblox::Color &box_color,
+                               const std::string &frame_id,
+                               const std::string &name_space,
+                               const ros::Publisher &publisher) const {
   // Create and configure the marker
   visualization_msgs::Marker marker;
   marker.header.frame_id = frame_id;

@@ -14,6 +14,7 @@ catkin_simple(ALL_DEPS_REQUIRED)
 cs_add_library(${PROJECT_NAME} STATIC
     src/mapper/submap_collection/submap_timeline.cpp
     src/mapper/voxgraph_mapper.cpp
+    src/mapper/submap_collection/bounding_box.cpp
     src/mapper/submap_collection/voxgraph_submap.cpp
     src/tools/odometry_simulator/odometry_simulator.cpp
     src/pose_graph/pose_graph.cpp

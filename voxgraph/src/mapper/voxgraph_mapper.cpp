@@ -334,8 +334,10 @@ void VoxgraphMapper::integratePointcloud(
   //                multiple submaps for guaranteed overlap
 
   // Point the integrator to the current submap
+  VoxgraphSubmap::Ptr active_submap_ptr =
+      submap_collection_->getActiveSubMapPtr();
   tsdf_integrator_->setLayer(
-      submap_collection_->getActiveTsdfMapPtr()->getTsdfLayerPtr());
+      active_submap_ptr->getTsdfMapPtr()->getTsdfLayerPtr());
 
   // Integrate the pointcloud (and report timings if requested)
   ROS_INFO_COND(verbose_, "Integrating a pointcloud with %lu points.",
@@ -350,5 +352,9 @@ void VoxgraphMapper::integratePointcloud(
       submap_collection_->getActiveTsdfMap()
           .getTsdfLayer()
           .getNumberOfAllocatedBlocks());
+
+  // Add the current pose to the submap's pose history
+  active_submap_ptr->addPoseToHistory(pointcloud_msg->header.stamp,
+                                      T_submap_sensor);
 }
 }  // namespace voxgraph
