@@ -12,28 +12,28 @@ catkin_simple(ALL_DEPS_REQUIRED)
 # NOTE: The library is static to avoid segfaults
 #       following voxblox multi threading
 cs_add_library(${PROJECT_NAME} STATIC
-    src/mapper/submap_collection/submap_timeline.cpp
-    src/mapper/voxgraph_mapper.cpp
-    src/mapper/submap_collection/bounding_box.cpp
-    src/mapper/submap_collection/voxgraph_submap.cpp
-    src/tools/odometry_simulator/odometry_simulator.cpp
-    src/pose_graph/pose_graph.cpp
-    src/pose_graph/node_collection.cpp
-    src/pose_graph/node/node.cpp
-    src/pose_graph/node/submap_node.cpp
-    src/pose_graph/node/reference_frame_node.cpp
-    src/pose_graph/constraint/constraint.cpp
-    src/pose_graph/constraint/odometry_constraint.cpp
-    src/pose_graph/constraint/loop_closure_constraint.cpp
-    src/pose_graph/constraint/absolute_pose_constraint.cpp
-    src/pose_graph/constraint/registration_constraint.cpp
-    src/pose_graph/constraint/cost_functions/submap_registration/submap_registerer.cpp
-    src/pose_graph/constraint/cost_functions/submap_registration/registration_cost_function_xyz.cpp
-    src/pose_graph/constraint/cost_functions/submap_registration/registration_cost_function_xyz_yaw.cpp
+    src/frontend/submap_collection/submap_timeline.cpp
+    src/frontend/voxgraph_mapper.cpp
+    src/frontend/submap_collection/bounding_box.cpp
+    src/frontend/submap_collection/voxgraph_submap.cpp
+    src/backend/pose_graph.cpp
+    src/backend/node_collection.cpp
+    src/backend/node/node.cpp
+    src/backend/node/submap_node.cpp
+    src/backend/node/reference_frame_node.cpp
+    src/backend/constraint/constraint.cpp
+    src/backend/constraint/odometry_constraint.cpp
+    src/backend/constraint/loop_closure_constraint.cpp
+    src/backend/constraint/absolute_pose_constraint.cpp
+    src/backend/constraint/registration_constraint.cpp
+    src/backend/constraint/cost_functions/submap_registration/submap_registerer.cpp
+    src/backend/constraint/cost_functions/submap_registration/registration_cost_function_xyz.cpp
+    src/backend/constraint/cost_functions/submap_registration/registration_cost_function_xyz_yaw.cpp
     src/tools/tf_helper.cpp
     src/tools/visualization/cost_function_visuals.cpp
     src/tools/visualization/pose_graph_visuals.cpp
     src/tools/visualization/submap_visuals.cpp
+    src/tools/odometry_simulator/odometry_simulator.cpp
 )
 
 ############

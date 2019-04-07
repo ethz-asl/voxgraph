@@ -2,7 +2,7 @@
 // Created by victor on 14.01.19.
 //
 
-#include "voxgraph/pose_graph/pose_graph.h"
+#include "voxgraph/backend/pose_graph.h"
 #include <cblox/core/submap_collection.h>
 #include <cblox/io/tsdf_submap_io.h>
 #include <glog/logging.h>
@@ -10,7 +10,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "voxgraph/mapper/submap_collection/voxgraph_submap.h"
+#include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/tools/visualization/pose_graph_visuals.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
 

@@ -6,7 +6,7 @@
 #define VOXGRAPH_TOOLS_VISUALIZATION_POSE_GRAPH_VISUALS_H_
 
 #include <string>
-#include "voxgraph/pose_graph/pose_graph.h"
+#include "voxgraph/backend/pose_graph.h"
 
 namespace voxgraph {
 class PoseGraphVisuals {

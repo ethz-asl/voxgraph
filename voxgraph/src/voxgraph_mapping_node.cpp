@@ -4,7 +4,7 @@
 
 #include <glog/logging.h>
 #include <ros/ros.h>
-#include "voxgraph/mapper/voxgraph_mapper.h"
+#include "voxgraph/frontend/voxgraph_mapper.h"
 
 int main(int argc, char** argv) {
   // Start logging
