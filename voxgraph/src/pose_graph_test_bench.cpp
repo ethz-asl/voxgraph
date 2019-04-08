@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
                                                   &submap_collection_ptr);
 
   // Create the pose graph
-  PoseGraph pose_graph(submap_collection_ptr);
+  PoseGraph pose_graph;
 
   // Add noise to the submap collection
   // NOTE: This is a poor approximation of drift, since it doesn't simulate
@@ -201,12 +201,23 @@ int main(int argc, char** argv) {
 
       // Check whether the first and second submap overlap
       if (first_submap.overlapsWith(second_submap)) {
-        // Add the constraint
-        RegistrationConstraint::Config constraint_config;
-        constraint_config.first_submap_id = first_submap_id;
-        constraint_config.second_submap_id = second_submap_id;
-        constraint_config.information_matrix.setIdentity();
-        pose_graph.addRegistrationConstraint(constraint_config);
+        // Configure the registration constraint
+        RegistrationConstraint::Config registration_constraint_config;
+        registration_constraint_config.first_submap_id = first_submap_id;
+        registration_constraint_config.second_submap_id = second_submap_id;
+        registration_constraint_config.information_matrix.setIdentity();
+
+        // Add pointers to both submaps
+        registration_constraint_config.first_submap_ptr =
+            submap_collection_ptr->getSubMapConstPtrById(first_submap_id);
+        registration_constraint_config.second_submap_ptr =
+            submap_collection_ptr->getSubMapConstPtrById(second_submap_id);
+
+        CHECK_NOTNULL(registration_constraint_config.first_submap_ptr);
+        CHECK_NOTNULL(registration_constraint_config.second_submap_ptr);
+
+        // Add the constraint to the pose graph
+        pose_graph.addRegistrationConstraint(registration_constraint_config);
       }
     }
   }

@@ -4,7 +4,7 @@
   </node>
 
   <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
-  <!--launch-prefix="gdb -ex run &#45;&#45;args">-->
+<!--  launch-prefix="gdb -ex run &#45;&#45;args">-->
     <rosparam file="$(find voxgraph)/cfg/voxgraph_mapper.yaml"/>
   </node>
 

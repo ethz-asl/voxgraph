@@ -24,11 +24,12 @@ void AbsolutePoseConstraint::addToProblem(const NodeCollection &node_collection,
   reference_frame_node_ptr->addToProblem(problem);
   submap_node_ptr->addToProblem(problem);
 
-  // Add the cost function to the problem
+  // Add the constraint to the optimization and keep track of it
   ceres::CostFunction *cost_function = RelativePoseCostFunction::Create(
       config_.T_ref_submap, sqrt_information_matrix_);
-  problem->AddResidualBlock(cost_function, loss_function,
-                            reference_frame_node_ptr->getPosePtr()->data(),
-                            submap_node_ptr->getPosePtr()->data());
+  residual_block_id_ =
+      problem->AddResidualBlock(cost_function, loss_function,
+                                reference_frame_node_ptr->getPosePtr()->data(),
+                                submap_node_ptr->getPosePtr()->data());
 }
 }  // namespace voxgraph

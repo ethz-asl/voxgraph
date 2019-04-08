@@ -12,16 +12,20 @@ catkin_simple(ALL_DEPS_REQUIRED)
 # NOTE: The library is static to avoid segfaults
 #       following voxblox multi threading
 cs_add_library(${PROJECT_NAME} STATIC
-    src/frontend/submap_collection/submap_timeline.cpp
     src/frontend/voxgraph_mapper.cpp
+    src/frontend/pose_graph_interface.cpp
+    src/frontend/measurement_processors/pointcloud_processor.cpp
     src/frontend/submap_collection/bounding_box.cpp
+    src/frontend/submap_collection/submap_timeline.cpp
     src/frontend/submap_collection/voxgraph_submap.cpp
+    src/frontend/submap_collection/voxgraph_submap_collection.cpp
     src/backend/pose_graph.cpp
-    src/backend/node_collection.cpp
     src/backend/node/node.cpp
+    src/backend/node/node_collection.cpp
     src/backend/node/submap_node.cpp
     src/backend/node/reference_frame_node.cpp
     src/backend/constraint/constraint.cpp
+    src/backend/constraint/constraint_collection.cpp
     src/backend/constraint/odometry_constraint.cpp
     src/backend/constraint/loop_closure_constraint.cpp
     src/backend/constraint/absolute_pose_constraint.cpp

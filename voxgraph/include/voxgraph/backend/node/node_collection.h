@@ -2,8 +2,8 @@
 // Created by victor on 18.01.19.
 //
 
-#ifndef VOXGRAPH_BACKEND_NODE_COLLECTION_H_
-#define VOXGRAPH_BACKEND_NODE_COLLECTION_H_
+#ifndef VOXGRAPH_BACKEND_NODE_NODE_COLLECTION_H_
+#define VOXGRAPH_BACKEND_NODE_NODE_COLLECTION_H_
 
 #include <map>
 #include <memory>
@@ -26,12 +26,12 @@ class NodeCollection {
   const SubmapNodeMap &getSubmapNodes() { return submap_nodes_; }
 
  private:
-  Node::NodeId node_id_counter_ = 0;
-  const Node::NodeId newNodeId() { return node_id_counter_++; }
+  Node::NodeId constraint_id_counter_ = 0;
+  const Node::NodeId newConstraintId() { return constraint_id_counter_++; }
 
   SubmapNodeMap submap_nodes_;
   ReferenceFrameNodeMap reference_frame_nodes_;
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_BACKEND_NODE_COLLECTION_H_
+#endif  // VOXGRAPH_BACKEND_NODE_NODE_COLLECTION_H_

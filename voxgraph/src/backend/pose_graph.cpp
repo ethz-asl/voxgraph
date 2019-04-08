@@ -11,16 +11,31 @@
 
 namespace voxgraph {
 void PoseGraph::addSubmapNode(const SubmapNode::Config &config) {
-  // Add to the node set
   node_collection_.addSubmapNode(config);
 }
 
-// TODO(victorr): Implement odometry constraints
+void PoseGraph::addAbsolutePoseConstraint(
+    const voxgraph::AbsolutePoseConstraint::Config &config) {
+  // TODO(victorr): Add check on whether both endpoints exist
+
+  // Add to the constraint set
+  constraints_collection_.addAbsolutePoseConstraint(config);
+}
+
+void PoseGraph::addLoopClosureConstraint(
+    const voxgraph::LoopClosureConstraint::Config &config) {
+  // TODO(victorr): Add check on whether both endpoints exist
+
+  // Add to the constraint set
+  constraints_collection_.addLoopClosureConstraint(config);
+}
+
 void PoseGraph::addOdometryConstraint(
     const OdometryConstraint::Config &config) {
+  // TODO(victorr): Add check on whether both endpoints exist
+
   // Add to the constraint set
-  auto ptr = std::make_shared<OdometryConstraint>(newConstraintId(), config);
-  constraints_.emplace_back(std::static_pointer_cast<Constraint>(ptr));
+  constraints_collection_.addOdometryConstraint(config);
 }
 
 void PoseGraph::addRegistrationConstraint(
@@ -34,26 +49,14 @@ void PoseGraph::addRegistrationConstraint(
   CHECK(node_collection_.getNodePtrBySubmapId(config.second_submap_id))
       << "Graph contains no node for submap " << config.second_submap_id;
 
-  // Get pointers to both submaps
-  VoxgraphSubmap::ConstPtr first_submap_ptr =
-      submap_collection_ptr_->getSubMapConstPtrById(config.first_submap_id);
-  VoxgraphSubmap::ConstPtr second_submap_ptr =
-      submap_collection_ptr_->getSubMapConstPtrById(config.second_submap_id);
-  CHECK_NOTNULL(first_submap_ptr);
-  CHECK_NOTNULL(second_submap_ptr);
-
   // Add to the constraint set
-  auto ptr = std::make_shared<RegistrationConstraint>(
-      newConstraintId(), config, first_submap_ptr, second_submap_ptr);
-  constraints_.emplace_back(std::static_pointer_cast<Constraint>(ptr));
+  constraints_collection_.addRegistrationConstraint(config);
 }
 
 void PoseGraph::initialize() {
   // Initialize the problem and add all constraints
   problem_ptr_.reset(new ceres::Problem(problem_options_));
-  for (const Constraint::Ptr &constraint : constraints_) {
-    constraint->addToProblem(node_collection_, problem_ptr_.get());
-  }
+  constraints_collection_.addAllToProblem(node_collection_, problem_ptr_.get());
 }
 
 void PoseGraph::optimize() {

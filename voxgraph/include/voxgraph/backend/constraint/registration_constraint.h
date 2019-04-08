@@ -17,16 +17,17 @@ class RegistrationConstraint : public Constraint {
   struct Config : Constraint::Config {
     cblox::SubmapID first_submap_id;
     cblox::SubmapID second_submap_id;
+    VoxgraphSubmap::ConstPtr first_submap_ptr;
+    VoxgraphSubmap::ConstPtr second_submap_ptr;
   };
 
   explicit RegistrationConstraint(ConstraintId constraint_id,
-                                  const Config& config,
-                                  VoxgraphSubmap::ConstPtr first_submap_ptr,
-                                  VoxgraphSubmap::ConstPtr second_submap_ptr)
-      : Constraint(constraint_id, config),
-        config_(config),
-        first_submap_ptr_(std::move(first_submap_ptr)),
-        second_submap_ptr_(std::move(second_submap_ptr)) {}
+                                  const Config& config)
+      : Constraint(constraint_id, config), config_(config) {
+    // Check whether both submap pointers have been provided
+    CHECK_NOTNULL(config_.first_submap_ptr);
+    CHECK_NOTNULL(config_.second_submap_ptr);
+  }
 
   // TODO(victorr): Use the sqrt_information_matrix_ when computing the residual
   void addToProblem(const NodeCollection& node_collection,
@@ -34,8 +35,6 @@ class RegistrationConstraint : public Constraint {
 
  private:
   Config config_;
-  VoxgraphSubmap::ConstPtr first_submap_ptr_;
-  VoxgraphSubmap::ConstPtr second_submap_ptr_;
 };
 }  // namespace voxgraph
 

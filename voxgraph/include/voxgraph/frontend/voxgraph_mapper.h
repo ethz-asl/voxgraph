@@ -5,23 +5,18 @@
 #ifndef VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 #define VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 
-#include <cblox/core/common.h>
-#include <cblox/core/submap_collection.h>
-#include <cblox/mesh/submap_mesher.h>
-#include <nav_msgs/Odometry.h>
-#include <pcl_conversions/pcl_conversions.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
-#include <voxblox/core/common.h>
-#include <voxblox/integrator/tsdf_integrator.h>
 #include <voxblox_msgs/FilePath.h>
-#include <voxblox_ros/mesh_vis.h>
 #include <voxblox_ros/transformer.h>
 #include <memory>
 #include <string>
-#include "voxgraph/backend/pose_graph.h"
-#include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
+#include "voxgraph/common.h"
+#include "voxgraph/frontend/measurement_processors/gps_processor.h"
+#include "voxgraph/frontend/measurement_processors/pointcloud_processor.h"
+#include "voxgraph/frontend/pose_graph_interface.h"
+#include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
 
 namespace voxgraph {
@@ -47,10 +42,6 @@ class VoxgraphMapper {
       voxblox_msgs::FilePath::Response &response);  // NOLINT
 
  private:
-  using Transformation = voxblox::Transformation;
-  using SubmapID = cblox::SubmapID;
-  using SubmapCollection = cblox::SubmapCollection<VoxgraphSubmap>;
-
   // Node handles
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -85,22 +76,13 @@ class VoxgraphMapper {
 
   // Instantiate the submap collection
   VoxgraphSubmap::Config submap_config_;
-  SubmapCollection::Ptr submap_collection_;
+  VoxgraphSubmapCollection::Ptr submap_collection_;
 
   // Instantiate the pose graph
-  PoseGraph pose_graph_;
+  PoseGraphInterface pose_graph_interface_;
 
-  // Control new submap creation
-  bool shouldCreateNewSubmap(const ros::Time &current_time);
-  ros::Time current_submap_creation_stamp_;
-  ros::Duration submap_creation_interval_;
-
-  // Tools to integrate the pointclouds into submaps
-  voxblox::TsdfIntegratorBase::Config tsdf_integrator_config_;
-  std::unique_ptr<voxblox::FastTsdfIntegrator> tsdf_integrator_;
-  void integratePointcloud(
-      const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg,
-      const voxblox::Transformation &T_world_sensor);
+  // Measurement processors
+  PointcloudProcessor pointcloud_processor_;
 
   // Voxblox transformer used to lookup transforms from the TF tree or rosparams
   voxblox::Transformer transformer_;

@@ -36,14 +36,6 @@ bool RelativePoseCostFunction::operator()(const T *const pose_A,
   return true;
 }
 
-ceres::CostFunction *RelativePoseCostFunction::Create(
-    const voxblox::Transformation &observed_relative_pose,
-    const Constraint::InformationMatrix &sqrt_information_matrix) {
-  return (new ceres::AutoDiffCostFunction<RelativePoseCostFunction, 4, 4, 4>(
-      new RelativePoseCostFunction(observed_relative_pose,
-                                   sqrt_information_matrix)));
-}
-
 template <typename T>
 Eigen::Matrix<T, 3, 3> RelativePoseCostFunction::rotationMatrixFromYaw(
     T yaw_radians) const {

@@ -7,7 +7,7 @@
 
 #include <ceres/ceres.h>
 #include <memory>
-#include "voxgraph/backend/node_collection.h"
+#include "voxgraph/backend/node/node_collection.h"
 
 namespace voxgraph {
 class Constraint {

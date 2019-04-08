@@ -24,11 +24,12 @@ void OdometryConstraint::addToProblem(const NodeCollection &node_collection,
   origin_submap_node_ptr->addToProblem(problem);
   destination_submap_node_ptr->addToProblem(problem);
 
-  // Add the cost function to the problem
+  // Add the constraint to the optimization and keep track of it
   ceres::CostFunction *cost_function = RelativePoseCostFunction::Create(
       config_.T_origin_destination, sqrt_information_matrix_);
-  problem->AddResidualBlock(cost_function, loss_function,
-                            origin_submap_node_ptr->getPosePtr()->data(),
-                            destination_submap_node_ptr->getPosePtr()->data());
+  residual_block_id_ = problem->AddResidualBlock(
+      cost_function, loss_function,
+      origin_submap_node_ptr->getPosePtr()->data(),
+      destination_submap_node_ptr->getPosePtr()->data());
 }
 }  // namespace voxgraph
