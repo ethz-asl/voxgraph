@@ -27,6 +27,7 @@ class SubmapRegisterer {
       bool use_esdf_distance = true;
       bool visualize_residuals = false;
       bool visualize_gradients = false;
+      bool visualize_transforms_ = false;
     } cost;
     struct Parametrization {
       bool optimize_yaw = true;

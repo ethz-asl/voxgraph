@@ -121,8 +121,10 @@ bool RegistrationCostFunctionXYZYaw::Evaluate(double const *const *parameters,
   float yo = T_vec_reference[1];  // y_reference
 
   // Publish the TF corresponding to the current optimized submap pose
-  TfHelper::publishTransform(T_world__reading, "world", "optimized_submap",
-                             true);
+  if (options_.visualize_transforms_) {
+    TfHelper::publishTransform(T_world__reading, "world", "optimized_submap",
+                               true);
+  }
 
   // Set the relative transform from the reading submap to the reference submap
   const voxblox::Transformation T_reading__reference =

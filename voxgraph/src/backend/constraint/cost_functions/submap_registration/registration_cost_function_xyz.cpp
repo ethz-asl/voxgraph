@@ -93,8 +93,7 @@ bool RegistrationCostFunctionXYZ::Evaluate(double const *const *parameters,
       voxblox::Transformation::exp(T_vec_reading);
 
   // Publish the TF corresponding to the current optimized submap pose
-  // TODO(victorr): Parametrize this
-  if (false) {
+  if (options_.visualize_transforms_) {
     TfHelper::publishTransform(T_world__reading, "world", "optimized_submap",
                                true);
   }
