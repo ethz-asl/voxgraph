@@ -55,6 +55,8 @@ void PoseGraph::addRegistrationConstraint(
 
 void PoseGraph::initialize() {
   // Initialize the problem and add all constraints
+  problem_options_.local_parameterization_ownership =
+      ceres::Ownership::DO_NOT_TAKE_OWNERSHIP;
   problem_ptr_.reset(new ceres::Problem(problem_options_));
   constraints_collection_.addAllToProblem(node_collection_, problem_ptr_.get());
 }

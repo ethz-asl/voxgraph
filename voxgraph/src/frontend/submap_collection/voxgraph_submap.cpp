@@ -133,4 +133,18 @@ bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap &otherSubmap) const {
   // The AABBs overlap on all axes: therefore they must be intersecting
   return true;
 }
+
+void VoxgraphSubmap::addPoseToHistory(
+    const ros::Time &timestamp, const voxblox::Transformation &T_world_robot) {
+  voxblox::Transformation T_submap_robot = getPose().inverse() * T_world_robot;
+  pose_history_.emplace(timestamp, T_submap_robot);
+}
+
+const ros::Time VoxgraphSubmap::getCreationTime() const {
+  if (pose_history_.empty()) {
+    return ros::Time(0);
+  } else {
+    return (pose_history_.begin())->first;
+  }
+}
 }  // namespace voxgraph

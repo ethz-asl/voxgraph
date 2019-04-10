@@ -3,8 +3,8 @@
 // This function comes directly from the ceres::examples
 //
 
-#ifndef VOXGRAPH_BACKEND_NORMALIZE_ANGLE_H_
-#define VOXGRAPH_BACKEND_NORMALIZE_ANGLE_H_
+#ifndef VOXGRAPH_BACKEND_LOCAL_PARAMETERIZATION_NORMALIZE_ANGLE_H_
+#define VOXGRAPH_BACKEND_LOCAL_PARAMETERIZATION_NORMALIZE_ANGLE_H_
 
 #include <ceres/ceres.h>
 
@@ -19,4 +19,4 @@ inline T NormalizeAngle(const T& angle_radians) {
 }
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_BACKEND_NORMALIZE_ANGLE_H_
+#endif  // VOXGRAPH_BACKEND_LOCAL_PARAMETERIZATION_NORMALIZE_ANGLE_H_

@@ -4,8 +4,15 @@
 
 #include "voxgraph/backend/node/node_collection.h"
 #include <memory>
+#include "voxgraph/backend/local_parameterization/angle_local_parameterization.h"
 
 namespace voxgraph {
+NodeCollection::NodeCollection() {
+  local_parameterization_ = std::make_shared<ceres::ProductParameterization>(
+      new ceres::IdentityParameterization(3),
+      AngleLocalParameterization::Create());
+}
+
 void NodeCollection::addSubmapNode(const SubmapNode::Config &config) {
   auto submap_node_ptr =
       std::make_shared<SubmapNode>(newConstraintId(), config);

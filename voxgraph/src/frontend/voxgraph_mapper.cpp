@@ -4,7 +4,6 @@
 
 #include "voxgraph/frontend/voxgraph_mapper.h"
 #include <minkindr_conversions/kindr_xml.h>
-#include <std_srvs/SetBool.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <memory>
 #include <string>
@@ -29,7 +28,8 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
       pose_graph_interface_(submap_collection_),
       pointcloud_processor_(submap_collection_),
-      submap_vis_(submap_config_) {
+      submap_vis_(submap_config_),
+      rosbag_helper_(nh) {
   // Setup interaction with ROS
   getParametersFromRos();
   subscribeToTopics();
@@ -117,38 +117,33 @@ bool VoxgraphMapper::saveToFileCallback(
 void VoxgraphMapper::pointcloudCallback(
     const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg) {
   // Lookup the robot pose at the time of the pointcloud message
+  ros::Time current_timestamp = pointcloud_msg->header.stamp;
   Transformation T_world_robot;
-  if (!lookup_T_world_robot(pointcloud_msg->header.stamp, &T_world_robot)) {
+  if (!lookup_T_world_robot(current_timestamp, &T_world_robot)) {
     // If the pose cannot be found, the pointcloud is skipped
     ROS_WARN_STREAM("Skipping pointcloud since the robot pose at time "
-                    << pointcloud_msg->header.stamp << " is unknown.");
+                    << current_timestamp << " is unknown.");
     return;
   }
 
   // Check if it's time to create a new submap
-  if (submap_collection_->shouldCreateNewSubmap(pointcloud_msg->header.stamp)) {
-    // Add the finished submap to the pose graph,
-    // unless the first submap has not yet been created
+  if (submap_collection_->shouldCreateNewSubmap(current_timestamp)) {
+    // Add the finished submap to the pose graph, optimize and correct for drift
+    // NOTE: We only add submaps to the pose graph once they're finished to
+    //       avoid generating their ESDF more than once
     if (!submap_collection_->empty()) {
-      // TODO(victorr): Move to rosbag_helper
-      static ros::ServiceClient rosbag_pause_srv =
-          nh_.serviceClient<std_srvs::SetBool>("/player/pause_playback");
-      std_srvs::SetBool srv_msg;
-      srv_msg.request.data = true;
-      rosbag_pause_srv.call(srv_msg);
+      // Pause the rosbag (remove this once the system runs in real-time)
+      rosbag_helper_.pauseRosbag();
 
-      // Generate the finished submap's ESDF
+      // Add the finished submap to the pose graph, including an odometry link
       SubmapID finished_submap_id = submap_collection_->getActiveSubMapID();
-      submap_collection_->generateEsdfById(finished_submap_id);
-
-      // Configure the submap node and add it to the pose graph
-      pose_graph_interface_.addSubmap(finished_submap_id);
+      pose_graph_interface_.addSubmap(finished_submap_id, true);
 
       // Optimize the pose graph
       ROS_INFO("Optimizing the pose graph");
       pose_graph_interface_.optimize();
 
-      // Remember the pose of the current submap (later used to eliminate drift)
+      // Remember the pose of the current submap (used later to eliminate drift)
       Transformation T_W_S_old = submap_collection_->getActiveSubMapPose();
 
       // Update the submap poses
@@ -163,18 +158,16 @@ void VoxgraphMapper::pointcloudCallback(
       submap_vis_.publishSeparatedMesh(*submap_collection_, world_frame_,
                                        separated_mesh_pub_);
 
-      // TODO(victorr): Move to rosbag_helper
-      srv_msg.request.data = false;
-      rosbag_pause_srv.call(srv_msg);
+      // Play the rosbag (remove this once the system runs in real-time)
+      rosbag_helper_.playRosbag();
     }
 
     // Create the new submap
-    submap_collection_->createNewSubmap(T_world_robot,
-                                        pointcloud_msg->header.stamp);
+    submap_collection_->createNewSubmap(T_world_robot, current_timestamp);
     if (debug_) {
       TfHelper::publishTransform(submap_collection_->getActiveSubMapPose(),
                                  world_frame_, "debug_T_world__new_submap",
-                                 true, pointcloud_msg->header.stamp);
+                                 true, current_timestamp);
     }
   }
 
@@ -186,11 +179,11 @@ void VoxgraphMapper::pointcloudCallback(
                                      << " to "
                                      << pointcloud_msg->header.frame_id);
     transformer_.lookupTransform(pointcloud_msg->header.frame_id, world_frame_,
-                                 pointcloud_msg->header.stamp, &T_world_sensor);
+                                 current_timestamp, &T_world_sensor);
     if (debug_) {
       TfHelper::publishTransform(T_world_sensor, world_frame_,
                                  "debug_T_world_sensor", false,
-                                 pointcloud_msg->header.stamp);
+                                 current_timestamp);
     }
   } else {
     // Get the pose of the sensor in world frame
@@ -198,17 +191,22 @@ void VoxgraphMapper::pointcloudCallback(
     if (debug_) {
       TfHelper::publishTransform(T_world_robot, world_frame_,
                                  "debug_T_world_robot", false,
-                                 pointcloud_msg->header.stamp);
+                                 current_timestamp);
       TfHelper::publishTransform(T_robot_sensor_, world_frame_,
                                  "debug_T_robot_sensor", false,
-                                 pointcloud_msg->header.stamp);
+                                 current_timestamp);
       TfHelper::publishTransform(T_world_sensor, world_frame_,
                                  "debug_T_world_sensor", false,
-                                 pointcloud_msg->header.stamp);
+                                 current_timestamp);
     }
   }
 
+  // Integrate the pointcloud
   pointcloud_processor_.integratePointcloud(pointcloud_msg, T_world_sensor);
+
+  // Add the current pose to the submap's pose history
+  submap_collection_->getActiveSubMapPtr()->addPoseToHistory(current_timestamp,
+                                                             T_world_robot);
 }
 
 bool VoxgraphMapper::lookup_T_world_robot(ros::Time timestamp,

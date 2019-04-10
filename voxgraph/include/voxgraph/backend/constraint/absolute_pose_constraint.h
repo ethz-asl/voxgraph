@@ -25,7 +25,7 @@ class AbsolutePoseConstraint : public Constraint {
                     ceres::Problem* problem) final;
 
  private:
-  Config config_;
+  const Config config_;
 };
 }  // namespace voxgraph
 

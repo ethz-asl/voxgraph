@@ -8,16 +8,17 @@
 #include <utility>
 #include "voxgraph/backend/pose_graph.h"
 #include "voxgraph/common.h"
-#include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
+#include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 
 namespace voxgraph {
 class PoseGraphInterface {
  public:
   explicit PoseGraphInterface(
-      cblox::SubmapCollection<VoxgraphSubmap>::Ptr submap_collection_ptr)
-      : submap_collection_ptr_(std::move(submap_collection_ptr)) {}
+      VoxgraphSubmapCollection::Ptr submap_collection_ptr, bool verbose = false)
+      : submap_collection_ptr_(std::move(submap_collection_ptr)),
+        verbose_(verbose) {}
 
-  void addSubmap(SubmapID submap_id);
+  void addSubmap(SubmapID submap_id, bool add_easy_odometry = false);
 
   void addOdometryMeasurement() {}
 
@@ -30,7 +31,9 @@ class PoseGraphInterface {
   void updateSubmapCollectionPoses();
 
  private:
-  cblox::SubmapCollection<VoxgraphSubmap>::Ptr submap_collection_ptr_;
+  bool verbose_;
+
+  VoxgraphSubmapCollection::Ptr submap_collection_ptr_;
   PoseGraph pose_graph_;
 
   void updateRegistrationConstraints();

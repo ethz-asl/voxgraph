@@ -90,9 +90,5 @@ void PointcloudProcessor::integratePointcloud(
       submap_collection_ptr_->getActiveTsdfMap()
           .getTsdfLayer()
           .getNumberOfAllocatedBlocks());
-
-  // Add the current pose to the submap's pose history
-  active_submap_ptr->addPoseToHistory(pointcloud_msg->header.stamp,
-                                      T_submap_sensor);
 }
 }  // namespace voxgraph

@@ -34,6 +34,7 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/backend/constraint/cost_functions/submap_registration/registration_cost_function_xyz.cpp
     src/backend/constraint/cost_functions/submap_registration/registration_cost_function_xyz_yaw.cpp
     src/tools/tf_helper.cpp
+    src/tools/rosbag_helper.cpp
     src/tools/visualization/cost_function_visuals.cpp
     src/tools/visualization/pose_graph_visuals.cpp
     src/tools/visualization/submap_visuals.cpp

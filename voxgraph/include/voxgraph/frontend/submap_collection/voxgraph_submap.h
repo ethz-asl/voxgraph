@@ -9,6 +9,7 @@
 #include <ros/ros.h>
 #include <map>
 #include <memory>
+#include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/bounding_box.h"
 
 namespace voxgraph {
@@ -33,10 +34,10 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   bool overlapsWith(const VoxgraphSubmap &otherSubmap) const;
 
-  void addPoseToHistory(ros::Time timestamp,
-                        voxblox::Transformation T_submap_sensor) {
-    pose_history_.emplace(timestamp, T_submap_sensor);
-  }
+  void addPoseToHistory(const ros::Time &timestamp,
+                        const voxblox::Transformation &T_world_robot);
+
+  const ros::Time getCreationTime() const;
 
   // TODO(victorr): Move RelevantVoxelList from registration_cost_function here
 

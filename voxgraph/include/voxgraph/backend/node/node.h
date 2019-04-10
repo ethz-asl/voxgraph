@@ -23,6 +23,7 @@ class Node {
   virtual ~Node() = default;
 
   Pose* getPosePtr() { return &world_node_pose_; }
+
   void setConstant(bool constant) { constant_ = constant; }
   bool isConstant() { return constant_; }
 

@@ -17,6 +17,7 @@
 #include "voxgraph/frontend/measurement_processors/pointcloud_processor.h"
 #include "voxgraph/frontend/pose_graph_interface.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+#include "voxgraph/tools/rosbag_helper.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
 
 namespace voxgraph {
@@ -50,6 +51,9 @@ class VoxgraphMapper {
   bool verbose_;
   bool debug_;
 
+  // Helper to pause/unpause rosbags during initial, non real-time testing
+  RosbagHelper rosbag_helper_;
+
   // Interaction with ROS
   void subscribeToTopics();
   void advertiseTopics();
@@ -78,7 +82,7 @@ class VoxgraphMapper {
   VoxgraphSubmap::Config submap_config_;
   VoxgraphSubmapCollection::Ptr submap_collection_;
 
-  // Instantiate the pose graph
+  // Interface to ease interaction with the pose graph
   PoseGraphInterface pose_graph_interface_;
 
   // Measurement processors

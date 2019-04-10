@@ -8,10 +8,18 @@
 namespace voxgraph {
 bool VoxgraphSubmapCollection::shouldCreateNewSubmap(
     const ros::Time &current_time) {
-  // TODO(victorr): Also take the pose uncertainty etc into account
-  ros::Time new_submap_creation_deadline =
-      current_submap_creation_stamp_ + submap_creation_interval_;
-  return current_time > new_submap_creation_deadline;
+  if (empty()) {
+    //    std::cout << "Empty -> create new submap" << std::endl;
+    return true;
+  } else {
+    // TODO(victorr): Also take the pose uncertainty etc into account
+    ros::Time new_submap_creation_deadline =
+        getActiveSubMap().getCreationTime() + submap_creation_interval_;
+    //    std::cout << "Current time: " << current_time << "\n"
+    //              << "Deadline: " << new_submap_creation_deadline << "\n"
+    //              << std::endl;
+    return current_time > new_submap_creation_deadline;
+  }
 }
 
 // Creates a gravity aligned new submap
@@ -28,9 +36,11 @@ void VoxgraphSubmapCollection::createNewSubmap(
   SubmapID new_submap_id =
       cblox::SubmapCollection<VoxgraphSubmap>::createNewSubMap(
           T_world__new_submap);
-  current_submap_creation_stamp_ = timestamp;
 
   ROS_INFO_STREAM("Created submap: " << new_submap_id << " with pose\n"
                                      << T_world__new_submap);
+
+  // Add the new submap to the timeline
+  submap_timeline_.addNextSubmap(timestamp, new_submap_id);
 }
 }  // namespace voxgraph

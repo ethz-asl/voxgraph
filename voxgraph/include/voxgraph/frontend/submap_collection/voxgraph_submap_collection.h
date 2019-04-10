@@ -12,6 +12,7 @@
 #include <memory>
 #include <utility>
 #include "voxgraph/common.h"
+#include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 
 namespace voxgraph {
@@ -22,9 +23,7 @@ class VoxgraphSubmapCollection
   typedef std::shared_ptr<const VoxgraphSubmapCollection> ConstPtr;
 
   explicit VoxgraphSubmapCollection(VoxgraphSubmap::Config submap_config)
-      : SubmapCollection(submap_config),
-        submap_creation_interval_(20),  // In seconds
-        current_submap_creation_stamp_(0) {}
+      : SubmapCollection(submap_config), submap_creation_interval_(20) {}
 
   void setSubmapCreationInterval(ros::Duration submap_creation_interval) {
     submap_creation_interval_ = std::move(submap_creation_interval);
@@ -35,10 +34,16 @@ class VoxgraphSubmapCollection
   void createNewSubmap(const Transformation &T_world_robot,
                        const ros::Time &timestamp);
 
+  SubmapID getPreviousSubmapId() {
+    return submap_timeline_.getPreviousSubmapId();
+  }
+
  private:
   // New submap creation stats
-  ros::Duration submap_creation_interval_;
-  ros::Time current_submap_creation_stamp_;
+  ros::Duration submap_creation_interval_;  // In seconds
+
+  // Timeline to enable lookups of submaps by time
+  SubmapTimeline submap_timeline_;
 };
 }  // namespace voxgraph
 

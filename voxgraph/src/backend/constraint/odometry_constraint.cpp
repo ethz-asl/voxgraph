@@ -31,5 +31,12 @@ void OdometryConstraint::addToProblem(const NodeCollection &node_collection,
       cost_function, loss_function,
       origin_submap_node_ptr->getPosePtr()->data(),
       destination_submap_node_ptr->getPosePtr()->data());
+
+  // Set the local parameterization s.t. yaw stays normalized
+  problem->SetParameterization(origin_submap_node_ptr->getPosePtr()->data(),
+                               node_collection.getLocalParameterization());
+  problem->SetParameterization(
+      destination_submap_node_ptr->getPosePtr()->data(),
+      node_collection.getLocalParameterization());
 }
 }  // namespace voxgraph

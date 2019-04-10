@@ -30,4 +30,9 @@ bool SubmapTimeline::lookupActiveSubmapByTime(const ros::Time &timestamp,
   *submap_id = iterator->second;
   return true;
 }
+
+cblox::SubmapID SubmapTimeline::getPreviousSubmapId() {
+  CHECK_GE(submap_timeline_.size(), 2);
+  return (--(--submap_timeline_.end()))->second;
+}
 }  // namespace voxgraph

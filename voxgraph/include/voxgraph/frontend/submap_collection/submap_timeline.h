@@ -22,6 +22,8 @@ class SubmapTimeline {
   bool lookupActiveSubmapByTime(const ros::Time &timestamp,
                                 cblox::SubmapID *submap_id);
 
+  cblox::SubmapID getPreviousSubmapId();
+
  private:
   // Map from each time interval's start time to the corresponding active submap
   std::map<const ros::Time, cblox::SubmapID> submap_timeline_;

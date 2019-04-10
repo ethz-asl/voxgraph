@@ -3,13 +3,13 @@
 // This function comes directly from the ceres::examples
 //
 
-#ifndef VOXGRAPH_BACKEND_ANGLE_LOCAL_PARAMETRIZATION_H_
-#define VOXGRAPH_BACKEND_ANGLE_LOCAL_PARAMETRIZATION_H_
+#ifndef VOXGRAPH_BACKEND_LOCAL_PARAMETERIZATION_ANGLE_LOCAL_PARAMETERIZATION_H_
+#define VOXGRAPH_BACKEND_LOCAL_PARAMETERIZATION_ANGLE_LOCAL_PARAMETERIZATION_H_
 
 #include <ceres/ceres.h>
+#include "voxgraph/backend/local_parameterization/normalize_angle.h"
 
 namespace voxgraph {
-// TODO(victorr): Update the pose graph to use this parametrization for yaw
 // Defines a local parameterization for updating the angle to be constrained in
 // [-pi to pi).
 class AngleLocalParameterization {
@@ -30,4 +30,4 @@ class AngleLocalParameterization {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_BACKEND_ANGLE_LOCAL_PARAMETRIZATION_H_
+#endif  // VOXGRAPH_BACKEND_LOCAL_PARAMETERIZATION_ANGLE_LOCAL_PARAMETERIZATION_H_
