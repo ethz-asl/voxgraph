@@ -22,8 +22,11 @@ class VoxgraphSubmapCollection
   typedef std::shared_ptr<VoxgraphSubmapCollection> Ptr;
   typedef std::shared_ptr<const VoxgraphSubmapCollection> ConstPtr;
 
-  explicit VoxgraphSubmapCollection(VoxgraphSubmap::Config submap_config)
-      : SubmapCollection(submap_config), submap_creation_interval_(20) {}
+  explicit VoxgraphSubmapCollection(VoxgraphSubmap::Config submap_config,
+                                    bool verbose = false)
+      : SubmapCollection(submap_config),
+        submap_creation_interval_(20),
+        verbose_(verbose) {}
 
   void setSubmapCreationInterval(ros::Duration submap_creation_interval) {
     submap_creation_interval_ = std::move(submap_creation_interval);
@@ -44,6 +47,8 @@ class VoxgraphSubmapCollection
   }
 
  private:
+  bool verbose_;
+
   // New submap creation stats
   ros::Duration submap_creation_interval_;  // In seconds
 

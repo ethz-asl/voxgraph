@@ -9,15 +9,19 @@ namespace voxgraph {
 bool VoxgraphSubmapCollection::shouldCreateNewSubmap(
     const ros::Time &current_time) {
   if (empty()) {
-    //    std::cout << "Empty -> create new submap" << std::endl;
+    if (verbose_) {
+      std::cout << "Empty -> create new submap" << std::endl;
+    }
     return true;
   } else {
     // TODO(victorr): Also take the pose uncertainty etc into account
     ros::Time new_submap_creation_deadline =
         getActiveSubMap().getCreationTime() + submap_creation_interval_;
-    //    std::cout << "Current time: " << current_time << "\n"
-    //              << "Deadline: " << new_submap_creation_deadline << "\n"
-    //              << std::endl;
+    if (verbose_) {
+      std::cout << "Current time: " << current_time << "\n"
+                << "Deadline: " << new_submap_creation_deadline << "\n"
+                << std::endl;
+    }
     return current_time > new_submap_creation_deadline;
   }
 }
