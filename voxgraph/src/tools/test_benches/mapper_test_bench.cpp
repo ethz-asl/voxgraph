@@ -6,15 +6,17 @@
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
 #include <rosgraph_msgs/Clock.h>
-#include <sensor_msgs/PointCloud2.h>
 #include <string>
 #include <vector>
 #include "voxgraph/frontend/voxgraph_mapper.h"
+#include "voxgraph/tools/evaluation/map_evaluation.h"
 #include "voxgraph/tools/odometry_simulator/odometry_simulator.h"
 
 int main(int argc, char** argv) {
   using voxgraph::VoxgraphMapper;
   using voxgraph::OdometrySimulator;
+  using voxgraph::VoxgraphSubmapCollection;
+  using voxgraph::MapEvaluation;
 
   // Start logging
   google::InitGoogleLogging(argv[0]);
@@ -26,11 +28,18 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
   ros::NodeHandle nh_private("~");
 
+  // Load ROS params
+  std::string rosbag_path, ground_truth_tsdf_layer_path;
+  CHECK(nh_private.getParam("rosbag_filepath", rosbag_path));
+  CHECK(nh_private.getParam("map_evaluation/ground_truth_tsdf_layer_filepath",
+                            ground_truth_tsdf_layer_path));
+  double skip_first_n_sec;
+  nh_private.param<double>("skip_first_n_sec", skip_first_n_sec, 0);
+
   // Open the rosbag
-  std::vector<std::string> topics_of_interest;
   rosbag::Bag bag;
-  bag.open(
-      "/home/victor/catkin_ws/bags/terrain_coverage_2019-01-21-23-26-31.bag");
+  bag.open(rosbag_path);
+  std::vector<std::string> topics_of_interest;
 
   // Setup the mapper
   VoxgraphMapper voxgraph_mapper(nh, nh_private);
@@ -41,11 +50,12 @@ int main(int argc, char** argv) {
   topics_of_interest.emplace_back("/firefly/ground_truth/odometry");
 
   // Setup the clock (used to skip the first n seconds)
-  ros::Time start_time(0);
   bool playback_started(false);
-  // TODO(victorr): Set this from ROS params
-  ros::Duration skip_first_n_sec(50);
+  ros::Time playback_start_time(0);
   topics_of_interest.emplace_back("/clock");
+
+  // Setup the map quality evaluation
+  MapEvaluation map_evaluation(nh_private, ground_truth_tsdf_layer_path);
 
   // Process the bag
   for (rosbag::MessageInstance const m :
@@ -77,10 +87,11 @@ int main(int argc, char** argv) {
       rosgraph_msgs::Clock::ConstPtr clock_msg =
           m.instantiate<rosgraph_msgs::Clock>();
       if (clock_msg != nullptr) {
-        if (start_time == ros::Time(0)) {
-          start_time = clock_msg->clock;
+        if (playback_start_time == ros::Time(0)) {
+          playback_start_time =
+              clock_msg->clock + ros::Duration(skip_first_n_sec);
         } else {
-          if (clock_msg->clock > start_time + skip_first_n_sec) {
+          if (clock_msg->clock > playback_start_time) {
             playback_started = true;
           }
         }
@@ -88,9 +99,11 @@ int main(int argc, char** argv) {
     }
   }
 
-  // Assess the map's quality
-  // TODO(victorr): Compute difference between voxgraph map and GT map
-  // TODO(victorr): Compute difference between voxgraph pose history and GT odom
+  // Evaluate the map by comparing it to ground truth
+  map_evaluation.evaluate(voxgraph_mapper.getSubmapCollection());
+
+  // Evalute the drift correction by comparing the pose history to ground truth
+  // TODO(victorr): Implement this
 
   // Write to log
   // TODO(victorr): Write experiment results to log file

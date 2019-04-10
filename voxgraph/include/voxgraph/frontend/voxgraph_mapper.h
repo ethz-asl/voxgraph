@@ -42,8 +42,8 @@ class VoxgraphMapper {
       voxblox_msgs::FilePath::Request &request,     // NOLINT
       voxblox_msgs::FilePath::Response &response);  // NOLINT
 
-  VoxgraphSubmapCollection::Ptr getSubmapCollectionPtr() {
-    return submap_collection_ptr_;
+  const VoxgraphSubmapCollection &getSubmapCollection() {
+    return *submap_collection_ptr_;
   }
 
  private:

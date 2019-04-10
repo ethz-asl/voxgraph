@@ -3,6 +3,12 @@
         <!--  launch-prefix="gdb -ex run &#45;&#45;args">-->
         <rosparam file="$(find voxgraph)/cfg/odometry_simulator.yaml"/>
         <rosparam file="$(find voxgraph)/cfg/voxgraph_mapper.yaml"/>
+        <rosparam>
+            rosbag_filepath: "/home/victor/catkin_ws/bags/terrain_coverage_2019-01-21-23-26-31.bag"
+            skip_first_n_sec: 50
+            map_evaluation:
+              ground_truth_tsdf_layer_filepath: "/home/victor/catkin_ws/voxgraph/ground_truth_maps/burning_building_rubble"
+        </rosparam>
     </node>
 
     <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen"/>
