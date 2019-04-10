@@ -44,18 +44,22 @@ cs_add_library(${PROJECT_NAME} STATIC
 ############
 # BINARIES #
 ############
-cs_add_executable(registration_test_bench
-    src/registration_test_bench.cpp)
-target_link_libraries(registration_test_bench ${PROJECT_NAME})
-
-cs_add_executable(pose_graph_test_bench
-    src/pose_graph_test_bench.cpp)
-target_link_libraries(pose_graph_test_bench ${PROJECT_NAME})
+cs_add_executable(voxgraph_mapping_node
+    src/voxgraph_mapping_node.cpp)
+target_link_libraries(voxgraph_mapping_node ${PROJECT_NAME})
 
 cs_add_executable(odometry_simulator
     src/odometry_simulator_node.cpp)
 target_link_libraries(odometry_simulator ${PROJECT_NAME})
 
-cs_add_executable(voxgraph_mapping_node
-    src/voxgraph_mapping_node.cpp)
-target_link_libraries(voxgraph_mapping_node ${PROJECT_NAME})
+cs_add_executable(registration_test_bench
+    src/tools/test_benches/registration_test_bench.cpp)
+target_link_libraries(registration_test_bench ${PROJECT_NAME})
+
+cs_add_executable(pose_graph_test_bench
+    src/tools/test_benches/pose_graph_test_bench.cpp)
+target_link_libraries(pose_graph_test_bench ${PROJECT_NAME})
+
+cs_add_executable(mapper_test_bench
+    src/tools/test_benches/mapper_test_bench.cpp)
+target_link_libraries(mapper_test_bench ${PROJECT_NAME})

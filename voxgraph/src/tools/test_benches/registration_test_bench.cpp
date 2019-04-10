@@ -18,7 +18,7 @@
 #include "voxgraph/tools/tf_helper.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   enum SolverReportStyle { kBrief, kFull, kNone };
 
   // Start logging
@@ -37,14 +37,14 @@ int main(int argc, char** argv) {
                             submap_collection_file_path))
       << "Rosparam submap_collection_file_path must be set" << std::endl;
   CHECK(nh_private.getParam("log_folder_path", log_folder_path))
-  << "Rosparam log_folder_path must be set" << std::endl;
+      << "Rosparam log_folder_path must be set" << std::endl;
   cblox::SubmapID reference_submap_id, reading_submap_id;
   {
     int fixed_submap_id_tmp, reading_submap_id_tmp;
     CHECK(nh_private.getParam("reference_submap_id", fixed_submap_id_tmp))
-    << "Rosparam reference_submap_id must be set" << std::endl;
+        << "Rosparam reference_submap_id must be set" << std::endl;
     CHECK(nh_private.getParam("reading_submap_id", reading_submap_id_tmp))
-    << "Rosparam reading_submap_id must be set" << std::endl;
+        << "Rosparam reading_submap_id must be set" << std::endl;
     reference_submap_id = static_cast<cblox::SubmapID>(fixed_submap_id_tmp);
     reading_submap_id = static_cast<cblox::SubmapID>(reading_submap_id_tmp);
   }
@@ -277,8 +277,8 @@ int main(int argc, char** argv) {
                   "yaw % 4.2f    pitch % 4.2f    roll % 4.2f\n",
                   counter, perturbed_position.x() - ground_truth_position.x(),
                   perturbed_position.y() - ground_truth_position.y(),
-                  perturbed_position.z() - ground_truth_position.z(),
-                  yaw, pitch, roll);
+                  perturbed_position.z() - ground_truth_position.z(), yaw,
+                  pitch, roll);
 
               // Publish the TF of perturbed mesh
               voxgraph::TfHelper::publishTransform(T_world__reading_perturbed,
@@ -321,10 +321,9 @@ int main(int argc, char** argv) {
                     optimized_position.x() - ground_truth_position.x(),
                     optimized_position.y() - ground_truth_position.y(),
                     optimized_position.z() - ground_truth_position.z(),
-                    T_world__reading_optimized.log()[5]
-                        - T_world__reading_original.log()[5],
-                    0.0,
-                    0.0, summary.total_time_in_seconds);
+                    T_world__reading_optimized.log()[5] -
+                        T_world__reading_original.log()[5],
+                    0.0, 0.0, summary.total_time_in_seconds);
 
                 // Append stats to log file
                 log_file << optimized_position.x() - ground_truth_position.x()
@@ -354,13 +353,14 @@ int main(int argc, char** argv) {
               }
             }
   }
-  endloop:
+endloop:
 
-  // Close the log file and exit normally
+  // Close the log file
   log_file.close();
 
   // Keep the ROS node alive in order to interact with its topics in Rviz
   ros::spin();
 
+  // Exit normally
   return 0;
 }

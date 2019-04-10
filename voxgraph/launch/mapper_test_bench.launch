@@ -1,0 +1,9 @@
+<launch>
+    <node name="mapper_test_bench" pkg="voxgraph" type="mapper_test_bench" output="screen">
+        <!--  launch-prefix="gdb -ex run &#45;&#45;args">-->
+        <rosparam file="$(find voxgraph)/cfg/odometry_simulator.yaml"/>
+        <rosparam file="$(find voxgraph)/cfg/voxgraph_mapper.yaml"/>
+    </node>
+
+    <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen"/>
+</launch>
