@@ -24,10 +24,10 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       odom_tf_frame_("odom"),
       world_frame_("world"),
       use_gt_ptcloud_pose_from_sensor_tf_(false),
-      submap_collection_(
+      submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
-      pose_graph_interface_(submap_collection_),
-      pointcloud_processor_(submap_collection_),
+      pose_graph_interface_(submap_collection_ptr_),
+      pointcloud_processor_(submap_collection_ptr_),
       submap_vis_(submap_config_),
       rosbag_helper_(nh) {
   // Setup interaction with ROS
@@ -52,7 +52,8 @@ void VoxgraphMapper::getParametersFromRos() {
   // Get the submap creation interval as a ros::Duration
   double interval_temp;
   if (nh_private_.getParam("submap_creation_interval", interval_temp)) {
-    submap_collection_->setSubmapCreationInterval(ros::Duration(interval_temp));
+    submap_collection_ptr_->setSubmapCreationInterval(
+        ros::Duration(interval_temp));
   }
 
   // Load the transform from the odometry frame to the sensor frame
@@ -95,14 +96,14 @@ void VoxgraphMapper::advertiseServices() {
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
     std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
-  submap_vis_.publishSeparatedMesh(*submap_collection_, world_frame_,
+  submap_vis_.publishSeparatedMesh(*submap_collection_ptr_, world_frame_,
                                    separated_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
 bool VoxgraphMapper::publishCombinedMeshCallback(
     std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
-  submap_vis_.publishCombinedMesh(*submap_collection_, world_frame_,
+  submap_vis_.publishCombinedMesh(*submap_collection_ptr_, world_frame_,
                                   combined_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
@@ -110,7 +111,7 @@ bool VoxgraphMapper::publishCombinedMeshCallback(
 bool VoxgraphMapper::saveToFileCallback(
     voxblox_msgs::FilePath::Request &request,
     voxblox_msgs::FilePath::Response &response) {
-  submap_collection_->saveToFile(request.file_path);
+  submap_collection_ptr_->saveToFile(request.file_path);
   return true;
 }
 
@@ -127,16 +128,16 @@ void VoxgraphMapper::pointcloudCallback(
   }
 
   // Check if it's time to create a new submap
-  if (submap_collection_->shouldCreateNewSubmap(current_timestamp)) {
+  if (submap_collection_ptr_->shouldCreateNewSubmap(current_timestamp)) {
     // Add the finished submap to the pose graph, optimize and correct for drift
     // NOTE: We only add submaps to the pose graph once they're finished to
     //       avoid generating their ESDF more than once
-    if (!submap_collection_->empty()) {
+    if (!submap_collection_ptr_->empty()) {
       // Pause the rosbag (remove this once the system runs in real-time)
       rosbag_helper_.pauseRosbag();
 
       // Add the finished submap to the pose graph, including an odometry link
-      SubmapID finished_submap_id = submap_collection_->getActiveSubMapID();
+      SubmapID finished_submap_id = submap_collection_ptr_->getActiveSubMapID();
       pose_graph_interface_.addSubmap(finished_submap_id, true);
 
       // Optimize the pose graph
@@ -144,18 +145,18 @@ void VoxgraphMapper::pointcloudCallback(
       pose_graph_interface_.optimize();
 
       // Remember the pose of the current submap (used later to eliminate drift)
-      Transformation T_W_S_old = submap_collection_->getActiveSubMapPose();
+      Transformation T_W_S_old = submap_collection_ptr_->getActiveSubMapPose();
 
       // Update the submap poses
       pose_graph_interface_.updateSubmapCollectionPoses();
 
       // Update the fictional odometry origin to cancel out drift
-      Transformation T_W_S_new = submap_collection_->getActiveSubMapPose();
+      Transformation T_W_S_new = submap_collection_ptr_->getActiveSubMapPose();
       T_W_D_ = T_W_S_new * T_W_S_old.inverse() * T_W_D_;
       T_world_robot = T_W_S_new * T_W_S_old.inverse() * T_world_robot;
 
       // Update the submap collection visualization in Rviz
-      submap_vis_.publishSeparatedMesh(*submap_collection_, world_frame_,
+      submap_vis_.publishSeparatedMesh(*submap_collection_ptr_, world_frame_,
                                        separated_mesh_pub_);
 
       // Play the rosbag (remove this once the system runs in real-time)
@@ -163,9 +164,9 @@ void VoxgraphMapper::pointcloudCallback(
     }
 
     // Create the new submap
-    submap_collection_->createNewSubmap(T_world_robot, current_timestamp);
+    submap_collection_ptr_->createNewSubmap(T_world_robot, current_timestamp);
     if (debug_) {
-      TfHelper::publishTransform(submap_collection_->getActiveSubMapPose(),
+      TfHelper::publishTransform(submap_collection_ptr_->getActiveSubMapPose(),
                                  world_frame_, "debug_T_world__new_submap",
                                  true, current_timestamp);
     }
@@ -205,8 +206,8 @@ void VoxgraphMapper::pointcloudCallback(
   pointcloud_processor_.integratePointcloud(pointcloud_msg, T_world_sensor);
 
   // Add the current pose to the submap's pose history
-  submap_collection_->getActiveSubMapPtr()->addPoseToHistory(current_timestamp,
-                                                             T_world_robot);
+  submap_collection_ptr_->getActiveSubMapPtr()->addPoseToHistory(
+      current_timestamp, T_world_robot);
 }
 
 bool VoxgraphMapper::lookup_T_world_robot(ros::Time timestamp,

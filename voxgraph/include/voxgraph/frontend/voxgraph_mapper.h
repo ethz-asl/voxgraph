@@ -42,6 +42,10 @@ class VoxgraphMapper {
       voxblox_msgs::FilePath::Request &request,     // NOLINT
       voxblox_msgs::FilePath::Response &response);  // NOLINT
 
+  VoxgraphSubmapCollection::Ptr getSubmapCollectionPtr() {
+    return submap_collection_ptr_;
+  }
+
  private:
   // Node handles
   ros::NodeHandle nh_;
@@ -80,7 +84,7 @@ class VoxgraphMapper {
 
   // Instantiate the submap collection
   VoxgraphSubmap::Config submap_config_;
-  VoxgraphSubmapCollection::Ptr submap_collection_;
+  VoxgraphSubmapCollection::Ptr submap_collection_ptr_;
 
   // Interface to ease interaction with the pose graph
   PoseGraphInterface pose_graph_interface_;
