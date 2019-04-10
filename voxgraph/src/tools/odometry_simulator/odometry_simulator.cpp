@@ -24,26 +24,30 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle &nh,
                     subscribe_to_odom_topic_);
   nh_private_.param("publish_to_tf_frame_id", publish_to_tf_frame_id_,
                     publish_to_tf_frame_id_);
-  nh_private_.param<double>("x_mean", noise_.x.mean(), 0);
-  nh_private_.param<double>("x_stddev", noise_.x.stddev(), 0);
-  nh_private_.param<double>("y_mean", noise_.y.mean(), 0);
-  nh_private_.param<double>("y_stddev", noise_.y.stddev(), 0);
-  nh_private_.param<double>("z_mean", noise_.z.mean(), 0);
-  nh_private_.param<double>("z_stddev", noise_.z.stddev(), 0);
-  nh_private_.param<double>("yaw_mean", noise_.yaw.mean(), 0);
-  nh_private_.param<double>("yaw_stddev", noise_.yaw.stddev(), 0);
-  nh_private_.param<double>("pitch_mean", noise_.pitch.mean(), 0);
-  nh_private_.param<double>("pitch_stddev", noise_.pitch.stddev(), 0);
-  nh_private_.param<double>("roll_mean", noise_.roll.mean(), 0);
-  nh_private_.param<double>("roll_stddev", noise_.roll.stddev(), 0);
-  nh_private_.param<double>("x_vel_mean", noise_.x_vel.mean(), 0);
-  nh_private_.param<double>("x_vel_stddev", noise_.x_vel.stddev(), 0);
-  nh_private_.param<double>("y_vel_mean", noise_.y_vel.mean(), 0);
-  nh_private_.param<double>("y_vel_stddev", noise_.y_vel.stddev(), 0);
-  nh_private_.param<double>("z_vel_mean", noise_.z_vel.mean(), 0);
-  nh_private_.param<double>("z_vel_stddev", noise_.z_vel.stddev(), 0);
-  nh_private_.param<double>("yaw_rate_mean", noise_.yaw_rate.mean(), 0);
-  nh_private_.param<double>("yaw_rate_stddev", noise_.yaw_rate.stddev(), 0);
+
+  ros::NodeHandle nh_velocity_noise_(nh_private_, "odometry_noise/velocity");
+  nh_velocity_noise_.param<double>("x/mean", noise_.x_vel.mean(), 0);
+  nh_velocity_noise_.param<double>("x/stddev", noise_.x_vel.stddev(), 0);
+  nh_velocity_noise_.param<double>("y/mean", noise_.y_vel.mean(), 0);
+  nh_velocity_noise_.param<double>("y/stddev", noise_.y_vel.stddev(), 0);
+  nh_velocity_noise_.param<double>("z/mean", noise_.z_vel.mean(), 0);
+  nh_velocity_noise_.param<double>("z/stddev", noise_.z_vel.stddev(), 0);
+  nh_velocity_noise_.param<double>("yaw/mean", noise_.yaw_rate.mean(), 0);
+  nh_velocity_noise_.param<double>("yaw/stddev", noise_.yaw_rate.stddev(), 0);
+
+  ros::NodeHandle nh_position_noise_(nh_private_, "odometry_noise/position");
+  nh_position_noise_.param<double>("x/mean", noise_.x.mean(), 0);
+  nh_position_noise_.param<double>("x/stddev", noise_.x.stddev(), 0);
+  nh_position_noise_.param<double>("y/mean", noise_.y.mean(), 0);
+  nh_position_noise_.param<double>("y/stddev", noise_.y.stddev(), 0);
+  nh_position_noise_.param<double>("z/mean", noise_.z.mean(), 0);
+  nh_position_noise_.param<double>("z/stddev", noise_.z.stddev(), 0);
+  nh_position_noise_.param<double>("yaw/mean", noise_.yaw.mean(), 0);
+  nh_position_noise_.param<double>("yaw/stddev", noise_.yaw.stddev(), 0);
+  nh_position_noise_.param<double>("pitch/mean", noise_.pitch.mean(), 0);
+  nh_position_noise_.param<double>("pitch/stddev", noise_.pitch.stddev(), 0);
+  nh_position_noise_.param<double>("roll/mean", noise_.roll.mean(), 0);
+  nh_position_noise_.param<double>("roll/stddev", noise_.roll.stddev(), 0);
 
   // Subscribe to the odometry ROS topic
   odometry_subscriber_ =
