@@ -14,23 +14,25 @@
 namespace voxgraph {
 class MapEvaluation {
  public:
+  using TsdfVoxel = voxblox::TsdfVoxel;
+  using TsdfLayer = voxblox::Layer<TsdfVoxel>;
+
   MapEvaluation(const ros::NodeHandle &nh,
                 const std::string &ground_truth_tsdf_file_path);
+
+  // Find and apply the best rigid body alignment of layer A to B
+  void alignLayerAtoLayerB(TsdfLayer *layer_A, const TsdfLayer &layer_B);
 
   void evaluate(const VoxgraphSubmapCollection &submap_collection);
 
  private:
-  using TsdfVoxel = voxblox::TsdfVoxel;
-  using TsdfLayer = voxblox::Layer<TsdfVoxel>;
   using VoxelEvaluationMode = voxblox::utils::VoxelEvaluationMode;
   using PointcloudMsg = pcl::PointCloud<pcl::PointXYZI>;
 
   ros::NodeHandle node_handle_;
 
-  // Ground Truth layer
+  // Ground Truth map
   TsdfLayer::Ptr ground_truth_tsdf_layer_ptr_;
-  voxblox::FloatingPoint voxel_size_;
-  size_t voxels_per_side_;
 
   // ROS publishers for visualization purposes
   ros::Publisher ground_truth_layer_pub_;
