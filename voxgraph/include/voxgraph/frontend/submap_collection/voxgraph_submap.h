@@ -19,8 +19,13 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   typedef std::shared_ptr<const VoxgraphSubmap> ConstPtr;
 
   VoxgraphSubmap(const voxblox::Transformation &T_M_S,
-                 cblox::SubmapID submap_id, Config config)
+                 const cblox::SubmapID &submap_id, const Config &config)
       : cblox::TsdfEsdfSubmap(T_M_S, submap_id, config) {}
+
+  // Create a VoxgraphSubmap based on a COPY of a TsdfLayer
+  VoxgraphSubmap(const voxblox::Transformation &T_M_S,
+                 const cblox::SubmapID &submap_id,
+                 const voxblox::Layer<voxblox::TsdfVoxel> &tsdf_layer);
 
   // Bounding Boxes used to check for overlap
   const BoundingBox getSubmapFrameSurfaceObb() const;

@@ -5,6 +5,23 @@
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 
 namespace voxgraph {
+VoxgraphSubmap::VoxgraphSubmap(
+    const voxblox::Transformation &T_M_S, const cblox::SubmapID &submap_id,
+    const voxblox::Layer<voxblox::TsdfVoxel> &tsdf_layer)
+    : cblox::TsdfEsdfSubmap(T_M_S, submap_id, Config()) {
+  // Update the inherited TsdfEsdfSubmap config
+  config_.tsdf_voxel_size = tsdf_layer.voxel_size();
+  config_.tsdf_voxels_per_side = tsdf_layer.voxels_per_side();
+  config_.esdf_voxel_size = tsdf_layer.voxel_size();
+  config_.esdf_voxels_per_side = tsdf_layer.voxels_per_side();
+
+  // Reset the inherited EsdfMap
+  esdf_map_.reset(new voxblox::EsdfMap(config_));
+
+  // Reset the inherited TsdfMap to contain a copy of the provided tsdf_layer
+  tsdf_map_.reset(new voxblox::TsdfMap(tsdf_layer));
+}
+
 const BoundingBox VoxgraphSubmap::getSubmapFrameSurfaceObb() const {
   // Check if the OBB has yet been measured
   if ((surface_obb_.min.array() > surface_obb_.max.array()).any()) {
