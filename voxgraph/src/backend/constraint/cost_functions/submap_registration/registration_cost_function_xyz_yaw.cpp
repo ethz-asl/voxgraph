@@ -217,11 +217,7 @@ bool RegistrationCostFunctionXYZYaw::Evaluate(double const *const *parameters,
         Eigen::Matrix<float, 1, 4> pResidual_pParamRef, pResidual_pParamRead;
         if (interp_possible) {
           // Calculate q_vector derivatives
-          double inv = reference_tsdf_layer_.voxel_size_inv();
-          // TODO(victorr): Inv should come from reading_tsdf_layer_,
-          //                but when duplicating submaps in cblox
-          //                voxel_size_inv doesn't get initialized.
-          //                Revert this once duplication works well.
+          double inv = reading_tsdf_layer_.voxel_size_inv();
 
           // Build the Jacobian of the interpolation function
           // over its input vector, evaluated at reading_coordinate
