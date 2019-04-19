@@ -78,9 +78,9 @@ void VoxgraphMapper::subscribeToTopics() {
 
 void VoxgraphMapper::advertiseTopics() {
   separated_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
-      "separated_mesh", subscriber_queue_length_);
+      "separated_mesh", subscriber_queue_length_, true);
   combined_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
-      "combined_mesh", subscriber_queue_length_);
+      "combined_mesh", subscriber_queue_length_, true);
 }
 
 void VoxgraphMapper::advertiseServices() {
@@ -156,8 +156,8 @@ void VoxgraphMapper::pointcloudCallback(
       T_world_robot = T_W_S_new * T_W_S_old.inverse() * T_world_robot;
 
       // Update the submap collection visualization in Rviz
-      submap_vis_.publishSeparatedMesh(*submap_collection_ptr_, world_frame_,
-                                       separated_mesh_pub_);
+      submap_vis_.publishCombinedMesh(*submap_collection_ptr_, world_frame_,
+                                      combined_mesh_pub_);
 
       // Play the rosbag (remove this once the system runs in real-time)
       rosbag_helper_.playRosbag();
