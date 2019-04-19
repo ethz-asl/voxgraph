@@ -54,6 +54,6 @@
 
   <!-- To generate the combined_mesh, please call: -->
   <!-- rosservice call /jay/voxgraph_mapper/publish_combined_mesh "{}" -->
-  <arg name="rviz_file" default="$(find voxgraph)/cfg/voxgraph_mapper.rviz" />
+  <arg name="rviz_file" default="$(find voxgraph)/config/voxgraph_mapper.rviz" />
   <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" args="-d $(arg rviz_file)" output="screen"/>
 </launch>
