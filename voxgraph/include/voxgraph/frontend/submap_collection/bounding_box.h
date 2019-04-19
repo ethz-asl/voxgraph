@@ -15,6 +15,8 @@ class BoundingBox {
   voxblox::Point min = {INFINITY, INFINITY, INFINITY};
   voxblox::Point max = {-INFINITY, -INFINITY, -INFINITY};
 
+  void reset();
+
   const BoxCornerMatrix getCornerCoordinates() const;
 
   static const BoundingBox getAabbFromObbAndPose(

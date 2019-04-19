@@ -7,6 +7,11 @@
 #include <memory>
 
 namespace voxgraph {
+void BoundingBox::reset() {
+  min = {INFINITY, INFINITY, INFINITY};
+  max = {-INFINITY, -INFINITY, -INFINITY};
+}
+
 const BoxCornerMatrix BoundingBox::getCornerCoordinates() const {
   BoxCornerMatrix box_corners;
   // The set of box corners is composed by taking all combinations of

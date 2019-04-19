@@ -9,7 +9,6 @@
 #include <ros/ros.h>
 #include <map>
 #include <memory>
-#include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/bounding_box.h"
 
 namespace voxgraph {
@@ -44,7 +43,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   const ros::Time getCreationTime() const;
 
-  // TODO(victorr): Move RelevantVoxelList from registration_cost_function here
+  void transformSubmap(const voxblox::Transformation &T_new_old);
 
  private:
   // Oriented Bounding Boxes in submap frame

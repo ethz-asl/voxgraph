@@ -3,6 +3,9 @@
 //
 
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
+#include <voxblox/integrator/merge_integration.h>
+#include <voxblox/interpolator/interpolator.h>
+#include <utility>
 
 namespace voxgraph {
 VoxgraphSubmap::VoxgraphSubmap(
@@ -163,5 +166,28 @@ const ros::Time VoxgraphSubmap::getCreationTime() const {
   } else {
     return (pose_history_.begin())->first;
   }
+}
+
+void VoxgraphSubmap::transformSubmap(const voxblox::Transformation &T_new_old) {
+  // Transform TSDF
+  voxblox::Layer<voxblox::TsdfVoxel> old_tsdf_layer(tsdf_map_->getTsdfLayer());
+  voxblox::transformLayer(old_tsdf_layer, T_new_old,
+                          tsdf_map_->getTsdfLayerPtr());
+
+  // Regenerate the ESDF
+  generateEsdf();
+
+  // Reset cached Oriented Bounding Boxes
+  surface_obb_.reset();
+  map_obb_.reset();
+
+  // Transform pose history
+  for (std::pair<const ros::Time, voxblox::Transformation> &kv :
+       pose_history_) {
+    kv.second = T_new_old * kv.second;
+  }
+
+  // Transform the submap pose
+  setPose(getPose() * T_new_old.inverse());
 }
 }  // namespace voxgraph
