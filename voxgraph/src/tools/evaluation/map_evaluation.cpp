@@ -5,7 +5,6 @@
 #include "voxgraph/tools/evaluation/map_evaluation.h"
 #include <ceres/ceres.h>
 #include <ros/ros.h>
-#include <voxblox/integrator/merge_integration.h>
 #include <voxblox/io/layer_io.h>
 #include <memory>
 #include <string>
@@ -17,42 +16,114 @@ MapEvaluation::MapEvaluation(const ros::NodeHandle &node_handle,
     : node_handle_(node_handle) {
   // Load the ground truth TSDF layer
   // NOTE: The initial layer will be overwritten but the ptr cannot be null
-  ground_truth_tsdf_layer_ptr_ = std::make_shared<TsdfLayer>(1, 1);
+  auto ground_truth_tsdf_layer_ptr = std::make_shared<TsdfLayer>(1, 1);
   voxblox::io::LoadLayer<TsdfVoxel>(ground_truth_tsdf_file_path,
-                                    &ground_truth_tsdf_layer_ptr_);
+                                    &ground_truth_tsdf_layer_ptr);
+  ground_truth_map_ptr_ = std::make_shared<VoxgraphSubmap>(
+      Transformation(), 0, *ground_truth_tsdf_layer_ptr);
 
   // Advertise the visualization topics
   ground_truth_layer_pub_ =
       node_handle_.advertise<pcl::PointCloud<pcl::PointXYZI>>(
-          "tsdf_ground_truth", 1, true);
+          "tsdf_ground_truth_ptcloud", 1, true);
+  ground_truth_mesh_pub_ = node_handle_.advertise<visualization_msgs::Marker>(
+      "tsdf_ground_truth_mesh", 1, true);
   rmse_error_pub_ = node_handle_.advertise<pcl::PointCloud<pcl::PointXYZI>>(
       "tsdf_rmse_error", 1, true);
   rmse_error_slice_pub_ =
       node_handle_.advertise<pcl::PointCloud<pcl::PointXYZI>>(
           "tsdf_rmse_error_slice", 1, true);
-  rmse_error_surface_distance_pub_ =
-      node_handle_.advertise<pcl::PointCloud<pcl::PointXYZI>>(
-          "tsdf_rmse_error_surface_distance", 1, true);
 
-  // Publish the ground truth TSDF layer visualization
-  pcl::PointCloud<pcl::PointXYZI> ground_truth_layer_msg;
-  ground_truth_layer_msg.header.frame_id = "world";
+  // Publish the ground truth TSDF pointcloud
+  pcl::PointCloud<pcl::PointXYZI> ground_truth_layer_ptcloud_msg;
+  ground_truth_layer_ptcloud_msg.header.frame_id = "world";
   voxblox::createSurfaceDistancePointcloudFromTsdfLayer(
-      *ground_truth_tsdf_layer_ptr_, 0.6, &ground_truth_layer_msg);
-  ground_truth_layer_pub_.publish(ground_truth_layer_msg);
+      *ground_truth_tsdf_layer_ptr, 0.6, &ground_truth_layer_ptcloud_msg);
+  ground_truth_layer_pub_.publish(ground_truth_layer_ptcloud_msg);
+
+  // Generate the ground truth TSDF mesh
+  auto ground_truth_mesh_layer_ptr = std::make_shared<cblox::MeshLayer>(
+      ground_truth_tsdf_layer_ptr->block_size());
+  voxblox::MeshIntegrator<voxblox::TsdfVoxel> mesh_integrator(
+      voxblox::MeshIntegratorConfig(), *ground_truth_tsdf_layer_ptr,
+      ground_truth_mesh_layer_ptr.get());
+  mesh_integrator.generateMesh(false, false);
+
+  // Publish the ground truth TSDF mesh
+  visualization_msgs::Marker marker;
+  voxblox::fillMarkerWithMesh(ground_truth_mesh_layer_ptr,
+                              voxblox::ColorMode::kNormals, &marker);
+  marker.header.frame_id = "world";
+  ground_truth_mesh_pub_.publish(marker);
 }
 
-void MapEvaluation::alignLayerAtoLayerB(TsdfLayer *layer_A,
-                                        const TsdfLayer &layer_B) {
-  CHECK_NOTNULL(layer_A);
+void MapEvaluation::evaluate(
+    const VoxgraphSubmapCollection &submap_collection) {
+  // Get the voxel size and number of voxels per side
+  voxblox::FloatingPoint voxel_size =
+      ground_truth_map_ptr_->getTsdfMap().voxel_size();
+  size_t voxels_per_side =
+      ground_truth_map_ptr_->getTsdfMap().getTsdfLayer().voxels_per_side();
+  CHECK_EQ(submap_collection.getConfig().tsdf_voxel_size, voxel_size)
+      << "Submap collection and ground truth must have equal voxel size.";
+
+  // Load the submap collection's projected TSDF map into a VoxgraphSubmap
+  // NOTE: This is done in order to use voxgraph's SubmapRegisterer (see below)
+  Transformation T_identity;
+  TsdfLayer projected_tsdf_layer(
+      submap_collection.getProjectedMap()->getTsdfLayer());
+  VoxgraphSubmap::Ptr projected_map_ptr =
+      std::make_shared<VoxgraphSubmap>(T_identity, 1, projected_tsdf_layer);
+
+  // Align the ground truth map to the submap collection's projected map
+  // NOTE: Moving the submap collection would be more intuitive, but that would
+  //       require updating all visuals published during the mapping stage
+  projected_map_ptr->generateEsdf();
+  ground_truth_map_ptr_->generateEsdf();
+  alignSubmapAtoSubmapB(ground_truth_map_ptr_, projected_map_ptr);
+  // Apply the transform (interpolate TSDF and ESDF layers into world frame)
+  ground_truth_map_ptr_->transformSubmap(ground_truth_map_ptr_->getPose());
+
+  // Compute RMSE of the projected w.r.t. the ground truth map
+  EsdfLayer error_layer(voxel_size, voxels_per_side);
+  voxblox::utils::VoxelEvaluationDetails evaluation_details;
+  voxblox::utils::evaluateLayersRmse(
+      ground_truth_map_ptr_->getEsdfMap().getEsdfLayer(),
+      projected_map_ptr->getEsdfMap().getEsdfLayer(),
+      VoxelEvaluationMode::kIgnoreErrorBehindTestSurface, &evaluation_details,
+      &error_layer);
+  std::cout << evaluation_details.toString() << std::endl;
+
+  // Publish the RMSE error layer for visualization in Rviz
+  PointcloudMsg rmse_error_msg;
+  PointcloudMsg rmse_error_slice_msg;
+
+  rmse_error_msg.header.frame_id = "world";
+  rmse_error_slice_msg.header.frame_id = "world";
+
+  voxblox::createDistancePointcloudFromEsdfLayer(error_layer, &rmse_error_msg);
+  voxblox::createDistancePointcloudFromEsdfLayerSlice(
+      error_layer, 2, 3 * voxel_size, &rmse_error_slice_msg);
+
+  rmse_error_pub_.publish(rmse_error_msg);
+  rmse_error_slice_pub_.publish(rmse_error_slice_msg);
+}
+
+void MapEvaluation::alignSubmapAtoSubmapB(
+    voxgraph::VoxgraphSubmap::Ptr submap_A,
+    voxgraph::VoxgraphSubmap::ConstPtr submap_B) {
+  CHECK_NOTNULL(submap_A);
+  CHECK_NOTNULL(submap_B);
 
   // Create and configure Ceres the problem
   ceres::Problem problem;
   ceres::LossFunction *loss_function = nullptr;
   ceres::Solver::Summary summary;
   ceres::Solver::Options ceres_options;
+  ceres_options.max_num_iterations = 200;
+  ceres_options.parameter_tolerance = 1e-12;
   SubmapRegisterer::Options::CostFunction cost_function_options;
-  cost_function_options.use_esdf_distance = false;
+  cost_function_options.use_esdf_distance = true;
 
   // Add the parameter blocks to the optimization
   double layer_B_pose[4] = {0, 0, 0, 0};
@@ -61,79 +132,24 @@ void MapEvaluation::alignLayerAtoLayerB(TsdfLayer *layer_A,
   double layer_A_pose[4] = {0, 0, 0, 0};
   problem.AddParameterBlock(layer_A_pose, 4);
 
-  // Create a VoxgraphSubmap for each layer, to interface
-  // with voxgraph::RegistrationCostFunctionXYZYaw()
-  auto map_A_ptr =
-      std::make_shared<VoxgraphSubmap>(Transformation(), 0, *layer_A);
-  auto map_B_ptr =
-      std::make_shared<VoxgraphSubmap>(Transformation(), 0, layer_B);
-
   // Create and add the submap alignment cost function to the problem
   ceres::CostFunction *cost_function = new RegistrationCostFunctionXYZYaw(
-      map_B_ptr, map_A_ptr, cost_function_options);
+      submap_B, submap_A, cost_function_options);
   problem.AddResidualBlock(cost_function, loss_function, layer_B_pose,
                            layer_A_pose);
 
   // Run the solver
   ceres::Solve(ceres_options, &problem, &summary);
   std::cout << summary.FullReport() << std::endl;
-  //  std::cout << "Ground truth pose: " << layer_B_pose[0] << ", "
-  //            << layer_B_pose[1] << ", " << layer_B_pose[2] << ", "
-  //            << layer_B_pose[3] << std::endl;
-  std::cout << "Projected map pose: " << layer_A_pose[0] << ", "
-            << layer_A_pose[1] << ", " << layer_A_pose[2] << ", "
-            << layer_A_pose[3] << std::endl;
+  std::cout << "Aligned pose: " << layer_A_pose[0] << ", " << layer_A_pose[1]
+            << ", " << layer_A_pose[2] << ", " << layer_A_pose[3] << std::endl;
 
-  // Align layer A
+  // Update the pose of submap A
   // clang-format off
-  Transformation::Vector6 T_vec;
-  T_vec << layer_A_pose[0], layer_A_pose[1], layer_A_pose[2],
-           0, 0, layer_A_pose[3];
-  Transformation T_before_after = Transformation::exp(T_vec);
-  voxblox::transformLayer(map_A_ptr->getTsdfMap().getTsdfLayer(),
-                          T_before_after.inverse(), layer_A);
+  Transformation::Vector6 T_before_after_vec;
+  T_before_after_vec << layer_A_pose[0], layer_A_pose[1], layer_A_pose[2],
+                        0, 0, layer_A_pose[3];
+  submap_A->setPose(Transformation::exp(T_before_after_vec));
   // clang-format on
-}
-
-void MapEvaluation::evaluate(
-    const VoxgraphSubmapCollection &submap_collection) {
-  // Load the submap collection's projected TSDF map into a VoxgraphSubmap
-  // NOTE: This is done in order to use voxgraph's SubmapRegisterer (see below)
-  TsdfLayer projected_tsdf_layer(
-      submap_collection.getProjectedMap()->getTsdfLayer());
-
-  // Align the submap collection's projected map to the ground truth
-  alignLayerAtoLayerB(&projected_tsdf_layer, *ground_truth_tsdf_layer_ptr_);
-
-  // Compute RMSE of the projected w.r.t. the ground truth map
-  voxblox::FloatingPoint voxel_size =
-      ground_truth_tsdf_layer_ptr_->voxel_size();
-  size_t voxels_per_side = ground_truth_tsdf_layer_ptr_->voxels_per_side();
-  TsdfLayer error_layer(voxel_size, voxels_per_side);
-  voxblox::utils::VoxelEvaluationDetails evaluation_details;
-  voxblox::utils::evaluateLayersRmse(*ground_truth_tsdf_layer_ptr_,
-                                     projected_tsdf_layer,
-                                     VoxelEvaluationMode::kEvaluateAllVoxels,
-                                     &evaluation_details, &error_layer);
-  std::cout << evaluation_details.toString() << std::endl;
-
-  // Publish the RMSE error layer for visualization in Rviz
-  PointcloudMsg rmse_error_msg;
-  PointcloudMsg rmse_error_slice_msg;
-  PointcloudMsg rmse_error_surface_distance_msg;
-
-  rmse_error_msg.header.frame_id = "world";
-  rmse_error_slice_msg.header.frame_id = "world";
-  rmse_error_surface_distance_msg.header.frame_id = "world";
-
-  voxblox::createDistancePointcloudFromTsdfLayer(error_layer, &rmse_error_msg);
-  voxblox::createDistancePointcloudFromTsdfLayerSlice(
-      error_layer, 2, 3 * voxel_size, &rmse_error_slice_msg);
-  voxblox::createSurfaceDistancePointcloudFromTsdfLayer(
-      error_layer, 3 * voxel_size, &rmse_error_surface_distance_msg);
-
-  rmse_error_pub_.publish(rmse_error_msg);
-  rmse_error_slice_pub_.publish(rmse_error_slice_msg);
-  rmse_error_surface_distance_pub_.publish(rmse_error_surface_distance_msg);
 }
 }  // namespace voxgraph

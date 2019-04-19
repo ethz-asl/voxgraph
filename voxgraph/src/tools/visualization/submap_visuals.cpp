@@ -13,7 +13,7 @@
 namespace voxgraph {
 SubmapVisuals::SubmapVisuals(const VoxgraphSubmap::Config &submap_config) {
   // TODO(victorr): Read this from ROS params
-  mesh_config_.min_weight = 2;
+  mesh_config_.min_weight = 0.9;
   submap_mesher_.reset(new cblox::SubmapMesher(submap_config, mesh_config_));
 }
 

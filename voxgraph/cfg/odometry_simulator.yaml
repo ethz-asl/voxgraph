@@ -6,7 +6,7 @@ publish_to_tf_frame_id: "simulated_odometry"
 odometry_noise:
   velocity:
     x:
-      mean: 0.1
+      mean: 0
       stddev: 0.4
     y:
       mean: 0

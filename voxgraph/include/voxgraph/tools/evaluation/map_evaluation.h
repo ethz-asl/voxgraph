@@ -10,20 +10,23 @@
 #include <voxblox_ros/ptcloud_vis.h>
 #include <string>
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+#include "voxgraph/tools/visualization/submap_visuals.h"
 
 namespace voxgraph {
 class MapEvaluation {
  public:
   using TsdfVoxel = voxblox::TsdfVoxel;
   using TsdfLayer = voxblox::Layer<TsdfVoxel>;
+  using EsdfLayer = voxblox::Layer<voxblox::EsdfVoxel>;
 
   MapEvaluation(const ros::NodeHandle &nh,
                 const std::string &ground_truth_tsdf_file_path);
 
-  // Find and apply the best rigid body alignment of layer A to B
-  void alignLayerAtoLayerB(TsdfLayer *layer_A, const TsdfLayer &layer_B);
-
   void evaluate(const VoxgraphSubmapCollection &submap_collection);
+
+  // Find and apply the best rigid body alignment of layer A to B
+  void alignSubmapAtoSubmapB(VoxgraphSubmap::Ptr submap_A,
+                             VoxgraphSubmap::ConstPtr submap_B);
 
  private:
   using VoxelEvaluationMode = voxblox::utils::VoxelEvaluationMode;
@@ -32,13 +35,13 @@ class MapEvaluation {
   ros::NodeHandle node_handle_;
 
   // Ground Truth map
-  TsdfLayer::Ptr ground_truth_tsdf_layer_ptr_;
+  VoxgraphSubmap::Ptr ground_truth_map_ptr_;
 
   // ROS publishers for visualization purposes
   ros::Publisher ground_truth_layer_pub_;
+  ros::Publisher ground_truth_mesh_pub_;
   ros::Publisher rmse_error_pub_;
   ros::Publisher rmse_error_slice_pub_;
-  ros::Publisher rmse_error_surface_distance_pub_;
 };
 }  // namespace voxgraph
 
