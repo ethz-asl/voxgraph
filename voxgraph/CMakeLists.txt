@@ -64,3 +64,8 @@ target_link_libraries(pose_graph_test_bench ${PROJECT_NAME})
 cs_add_executable(mapper_test_bench
     src/tools/test_benches/mapper_test_bench.cpp)
 target_link_libraries(mapper_test_bench ${PROJECT_NAME})
+
+##########
+# EXPORT #
+##########
+cs_export()
