@@ -31,8 +31,8 @@ Constraint::Constraint(Constraint::ConstraintId constraint_id,
 
     sqrt_information_matrix_ =
         information_ldlt.transpositionsP().transpose() *
-        information_ldlt.vectorD().cwiseSqrt().asDiagonal().toDenseMatrix() *
-        information_ldlt.matrixL().adjoint() *
+        information_ldlt.matrixL().toDenseMatrix() *
+        information_ldlt.vectorD().cwiseSqrt().asDiagonal() *
         information_ldlt.transpositionsP();
     // NOTE: The first permutation term (transpositionsP.transpose) could
     //       be left out, since it cancels once the residual is squared.
