@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
     SubmapNode::Config node_config;
     node_config.submap_id = submap_id;
     CHECK(submap_collection_ptr->getSubMapPose(
-        submap_id, &node_config.initial_submap_pose));
+        submap_id, &node_config.T_world_node_initial));
     if (submap_id == 0) {
       ROS_INFO("Setting pose of submap 0 to constant");
       node_config.set_constant = true;

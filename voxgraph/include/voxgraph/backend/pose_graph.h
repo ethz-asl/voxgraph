@@ -20,10 +20,12 @@ class PoseGraph {
   PoseGraph() = default;
 
   void addSubmapNode(const SubmapNode::Config &config);
+  bool hasSubmapNode(const SubmapNode::SubmapId &submap_id);
+  void addReferenceFrameNode(const ReferenceFrameNode::Config &config);
+  bool hasReferenceFrameNode(const ReferenceFrameNode::FrameId &frame_id);
 
   void addAbsolutePoseConstraint(const AbsolutePoseConstraint::Config &config);
-  void addLoopClosureConstraint(const LoopClosureConstraint::Config &config);
-  void addOdometryConstraint(const OdometryConstraint::Config &config);
+  void addRelativePoseConstraint(const RelativePoseConstraint::Config &config);
   void addRegistrationConstraint(const RegistrationConstraint::Config &config);
 
   void resetRegistrationConstraints() {

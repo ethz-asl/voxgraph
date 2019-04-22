@@ -13,11 +13,8 @@ void ConstraintCollection::addAllToProblem(
   for (Constraint &absolute_pose_constraint : absolute_pose_constraints_) {
     absolute_pose_constraint.addToProblem(node_collection, problem_ptr);
   }
-  for (Constraint &loop_closure_constraint : loop_closure_constraints_) {
-    loop_closure_constraint.addToProblem(node_collection, problem_ptr);
-  }
-  for (Constraint &odometry_constraint : odometry_constraints_) {
-    odometry_constraint.addToProblem(node_collection, problem_ptr);
+  for (Constraint &relative_pose_constraint : relative_pose_constraints_) {
+    relative_pose_constraint.addToProblem(node_collection, problem_ptr);
   }
   for (Constraint &registration_constraint : registration_constraints_) {
     registration_constraint.addToProblem(node_collection, problem_ptr);

@@ -6,6 +6,7 @@
 #define VOXGRAPH_BACKEND_NODE_NODE_H_
 
 #include <ceres/ceres.h>
+#include <voxblox/core/common.h>
 #include <memory>
 
 namespace voxgraph {
@@ -17,22 +18,26 @@ class Node {
 
   struct Config {
     bool set_constant;
+    voxblox::Transformation T_world_node_initial;
   };
 
-  explicit Node(NodeId node_id) : node_id_(node_id) {}
+  explicit Node(const NodeId &node_id, const Config &config);
   virtual ~Node() = default;
 
-  Pose* getPosePtr() { return &world_node_pose_; }
+  const voxblox::Transformation getPose() const;
+  Pose *getPosePtr() { return &optimized_pose_; }
 
-  void setConstant(bool constant) { constant_ = constant; }
-  bool isConstant() { return constant_; }
+  void setConstant(bool constant) { config_.set_constant = constant; }
+  bool isConstant() { return config_.set_constant; }
 
-  void addToProblem(ceres::Problem* problem);
+  void addToProblem(ceres::Problem *problem,
+                    ceres::LocalParameterization *local_parameterization);
 
  protected:
   const NodeId node_id_;
-  Pose world_node_pose_;
-  bool constant_ = false;
+  Config config_;
+
+  Pose optimized_pose_{};
 };
 }  // namespace voxgraph
 

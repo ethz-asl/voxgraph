@@ -13,16 +13,18 @@ void AbsolutePoseConstraint::addToProblem(const NodeCollection &node_collection,
   ceres::LossFunction *loss_function = nullptr;
 
   // Get pointers to both submap nodes
-  SubmapNode::Ptr reference_frame_node_ptr =
-      node_collection.getNodePtrBySubmapId(config_.reference_frame_id);
+  ReferenceFrameNode::Ptr reference_frame_node_ptr =
+      node_collection.getReferenceFrameNodePtrById(config_.reference_frame_id);
   SubmapNode::Ptr submap_node_ptr =
-      node_collection.getNodePtrBySubmapId(config_.submap_id);
+      node_collection.getSubmapNodePtrById(config_.submap_id);
   CHECK_NOTNULL(reference_frame_node_ptr);
   CHECK_NOTNULL(submap_node_ptr);
 
   // Add the submap parameters to the problem
-  reference_frame_node_ptr->addToProblem(problem);
-  submap_node_ptr->addToProblem(problem);
+  reference_frame_node_ptr->addToProblem(
+      problem, node_collection.getLocalParameterization());
+  submap_node_ptr->addToProblem(problem,
+                                node_collection.getLocalParameterization());
 
   // Add the constraint to the optimization and keep track of it
   ceres::CostFunction *cost_function = RelativePoseCostFunction::Create(

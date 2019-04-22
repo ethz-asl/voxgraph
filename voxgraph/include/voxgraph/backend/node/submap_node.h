@@ -13,16 +13,16 @@ namespace voxgraph {
 class SubmapNode : public Node {
  public:
   typedef std::shared_ptr<SubmapNode> Ptr;
+  typedef cblox::SubmapID SubmapId;
+
   struct Config : Node::Config {
-    cblox::SubmapID submap_id;
-    voxblox::Transformation initial_submap_pose;
+    SubmapId submap_id;
   };
 
-  SubmapNode(NodeId node_id, Config config);
+  SubmapNode(const NodeId &node_id, const Config &config)
+      : Node(node_id, config), config_(config) {}
 
   const cblox::SubmapID getSubmapId() const { return config_.submap_id; }
-
-  const voxblox::Transformation getSubmapPose() const;
 
  private:
   Config config_;

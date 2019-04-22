@@ -1,24 +1,24 @@
 //
-// Created by victor on 03.04.19.
+// Created by victor on 16.01.19.
 //
 
-#ifndef VOXGRAPH_BACKEND_CONSTRAINT_LOOP_CLOSURE_CONSTRAINT_H_
-#define VOXGRAPH_BACKEND_CONSTRAINT_LOOP_CLOSURE_CONSTRAINT_H_
+#ifndef VOXGRAPH_BACKEND_CONSTRAINT_RELATIVE_POSE_CONSTRAINT_H_
+#define VOXGRAPH_BACKEND_CONSTRAINT_RELATIVE_POSE_CONSTRAINT_H_
 
 #include <memory>
 #include "voxgraph/backend/constraint/constraint.h"
 
 namespace voxgraph {
-class LoopClosureConstraint : public Constraint {
+class RelativePoseConstraint : public Constraint {
  public:
-  typedef std::shared_ptr<LoopClosureConstraint> Ptr;
+  typedef std::shared_ptr<RelativePoseConstraint> Ptr;
   struct Config : Constraint::Config {
     cblox::SubmapID origin_submap_id;
     cblox::SubmapID destination_submap_id;
     voxblox::Transformation T_origin_destination;
   };
 
-  LoopClosureConstraint(ConstraintId constraint_id, const Config& config)
+  RelativePoseConstraint(ConstraintId constraint_id, const Config& config)
       : Constraint(constraint_id, config), config_(config) {}
 
   void addToProblem(const NodeCollection& node_collection,
@@ -29,4 +29,4 @@ class LoopClosureConstraint : public Constraint {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_BACKEND_CONSTRAINT_LOOP_CLOSURE_CONSTRAINT_H_
+#endif  // VOXGRAPH_BACKEND_CONSTRAINT_RELATIVE_POSE_CONSTRAINT_H_

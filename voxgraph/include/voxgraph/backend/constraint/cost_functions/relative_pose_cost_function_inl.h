@@ -30,8 +30,6 @@ bool RelativePoseCostFunction::operator()(const T *const pose_A,
   residuals_map(3) = NormalizeAngle((yaw_world_B - yaw_world_A) -
                                     static_cast<T>(observed_relative_yaw_));
 
-  // Scale the residuals by the square root information matrix to account for
-  // the measurement uncertainty
   if (verbose_ && std::is_same<T, double>::value) {
     std::cout << "t_world_A: " << t_world_A(0) << ", " << t_world_A(1) << ", "
               << t_world_A(2) << "\n"
@@ -50,10 +48,20 @@ bool RelativePoseCostFunction::operator()(const T *const pose_A,
               << "observed_relative_yaw: " << observed_relative_yaw_ << "\n"
               << "Error:" << residuals_map(0) << ", " << residuals_map(1)
               << ", " << residuals_map(2) << ", " << residuals_map(3) << "\n"
+              << std::endl;
+  }
+
+  // Scale the residuals by the square root information matrix to account for
+  // the measurement uncertainty
+  residuals_map = sqrt_information_matrix_.cast<T>() * residuals_map;
+
+  if (verbose_ && std::is_same<T, double>::value) {
+    std::cout << "Error scaled by information: " << residuals_map(0) << ", "
+              << residuals_map(1) << ", " << residuals_map(2) << ", "
+              << residuals_map(3) << "\n"
               << "------------------------------------------" << std::endl;
   }
 
-  residuals_map = sqrt_information_matrix_.cast<T>() * residuals_map;
   return true;
 }
 

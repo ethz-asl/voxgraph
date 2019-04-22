@@ -22,12 +22,9 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/backend/pose_graph.cpp
     src/backend/node/node.cpp
     src/backend/node/node_collection.cpp
-    src/backend/node/submap_node.cpp
-    src/backend/node/reference_frame_node.cpp
     src/backend/constraint/constraint.cpp
     src/backend/constraint/constraint_collection.cpp
-    src/backend/constraint/odometry_constraint.cpp
-    src/backend/constraint/loop_closure_constraint.cpp
+    src/backend/constraint/relative_pose_constraint.cpp
     src/backend/constraint/absolute_pose_constraint.cpp
     src/backend/constraint/registration_constraint.cpp
     src/backend/constraint/cost_functions/submap_registration/submap_registerer.cpp

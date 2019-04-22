@@ -5,7 +5,6 @@
 #ifndef VOXGRAPH_BACKEND_NODE_REFERENCE_FRAME_NODE_H_
 #define VOXGRAPH_BACKEND_NODE_REFERENCE_FRAME_NODE_H_
 
-#include <voxblox/core/common.h>
 #include <memory>
 #include "voxgraph/backend/node/node.h"
 
@@ -13,20 +12,18 @@ namespace voxgraph {
 class ReferenceFrameNode : public Node {
  public:
   typedef std::shared_ptr<ReferenceFrameNode> Ptr;
-  typedef unsigned int ReferenceFrameId;
+  typedef unsigned int FrameId;
 
   struct Config : Node::Config {
-    ReferenceFrameId reference_frame_id;
-    voxblox::Transformation initial_reference_frame_pose;
+    FrameId reference_frame_id;
   };
 
-  ReferenceFrameNode(NodeId node_id, Config config);
+  ReferenceFrameNode(const NodeId &node_id, const Config &config)
+      : Node(node_id, config), config_(config) {}
 
-  const ReferenceFrameId getReferenceFrameId() const {
+  const FrameId getReferenceFrameId() const {
     return config_.reference_frame_id;
   }
-
-  const voxblox::Transformation getReferenceFramePose() const;
 
  private:
   Config config_;

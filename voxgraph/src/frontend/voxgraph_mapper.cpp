@@ -29,6 +29,9 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       pose_graph_interface_(submap_collection_ptr_),
       pointcloud_processor_(submap_collection_ptr_),
       submap_vis_(submap_config_),
+      registration_constraints_enabled_(false),
+      odometry_constraints_enabled_(false),
+      height_constraints_enabled_(false),
       rosbag_helper_(nh) {
   // Setup interaction with ROS
   getParametersFromRos();
@@ -38,8 +41,10 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
 }
 
 void VoxgraphMapper::getParametersFromRos() {
-  nh_private_.param("verbose", verbose_, verbose_);
   nh_private_.param("debug", debug_, debug_);
+  nh_private_.param("verbose", verbose_, verbose_);
+  pose_graph_interface_.setVerbosity(verbose_);
+
   nh_private_.param("subscriber_queue_length", subscriber_queue_length_,
                     subscriber_queue_length_);
   nh_private_.param("pointcloud_topic", pointcloud_topic_, pointcloud_topic_);
@@ -63,11 +68,31 @@ void VoxgraphMapper::getParametersFromRos() {
       << "T_odom_sensor is required but was not set.";
   kindr::minimal::xmlRpcToKindr(T_odom_sensor_xml, &T_robot_sensor_);
 
-  // Read TSDF integrator params from ROS (stored in their own sub-namespace)
-  ros::NodeHandle nh_tsdf_integrator(nh_private_, "tsdf_integrator");
-  pointcloud_processor_.setTsdfIntegratorConfigFromRosParam(nh_tsdf_integrator);
-  //  tsdf_integrator_config_ =
-  //      voxblox::getTsdfIntegratorConfigFromRosParam(nh_tsdf_integrator);
+  // Read the measurement params from their sub-namespace
+  ros::NodeHandle nh_measurement_params(nh_private_, "measurements");
+  nh_measurement_params.param("submap_registration/enabled",
+                              registration_constraints_enabled_,
+                              registration_constraints_enabled_);
+  ROS_INFO_STREAM_COND(
+      verbose_,
+      "Submap registration constraints: "
+          << (registration_constraints_enabled_ ? "enabled" : "disabled"));
+  nh_measurement_params.param("odometry/enabled", odometry_constraints_enabled_,
+                              odometry_constraints_enabled_);
+  ROS_INFO_STREAM_COND(
+      verbose_,
+      "Odometry constraints: " << (odometry_constraints_enabled_ ? "enabled"
+                                                                 : "disabled"));
+  nh_measurement_params.param("height/enabled", height_constraints_enabled_,
+                              height_constraints_enabled_);
+  ROS_INFO_STREAM_COND(
+      verbose_, "Height constraints: "
+                    << (height_constraints_enabled_ ? "enabled" : "disabled"));
+  pose_graph_interface_.setPoseGraphConfigFromRosParams(nh_measurement_params);
+
+  // Read TSDF integrator params from their sub-namespace
+  ros::NodeHandle nh_tsdf_params(nh_private_, "tsdf_integrator");
+  pointcloud_processor_.setTsdfIntegratorConfigFromRosParam(nh_tsdf_params);
 }
 
 void VoxgraphMapper::subscribeToTopics() {
@@ -138,10 +163,20 @@ void VoxgraphMapper::pointcloudCallback(
 
       // Add the finished submap to the pose graph, including an odometry link
       SubmapID finished_submap_id = submap_collection_ptr_->getActiveSubMapID();
-      pose_graph_interface_.addSubmap(finished_submap_id, true);
+      pose_graph_interface_.addSubmap(finished_submap_id,
+                                      odometry_constraints_enabled_);
+
+      // Constrain the height
+      // NOTE: No constraint is added for the 1st since its pose is fixed
+      if (height_constraints_enabled_ && submap_collection_ptr_->size() > 1) {
+        pose_graph_interface_.addHeightMeasurement(finished_submap_id, 0.7);
+      }
 
       // Optimize the pose graph
       ROS_INFO("Optimizing the pose graph");
+      if (registration_constraints_enabled_) {
+        pose_graph_interface_.updateRegistrationConstraints();
+      }
       pose_graph_interface_.optimize();
 
       // Remember the pose of the current submap (used later to eliminate drift)
@@ -154,6 +189,8 @@ void VoxgraphMapper::pointcloudCallback(
       Transformation T_W_S_new = submap_collection_ptr_->getActiveSubMapPose();
       T_W_D_ = T_W_S_new * T_W_S_old.inverse() * T_W_D_;
       T_world_robot = T_W_S_new * T_W_S_old.inverse() * T_world_robot;
+      ROS_INFO_STREAM("Applying pose correction:\n"
+                      << T_W_S_new * T_W_S_old.inverse());
 
       // Update the submap collection visualization in Rviz
       submap_vis_.publishCombinedMesh(*submap_collection_ptr_, world_frame_,

@@ -18,6 +18,7 @@ class Constraint {
 
   struct Config {
     InformationMatrix information_matrix;
+    bool allow_semi_definite_information_matrix = false;
   };
 
   explicit Constraint(ConstraintId constraint_id, const Config &config);

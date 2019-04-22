@@ -14,7 +14,8 @@ namespace voxgraph {
 class NodeCollection {
  public:
   typedef std::map<cblox::SubmapID, SubmapNode::Ptr> SubmapNodeMap;
-  typedef std::map<Node::NodeId, ReferenceFrameNode::Ptr> ReferenceFrameNodeMap;
+  typedef std::map<ReferenceFrameNode::FrameId, ReferenceFrameNode::Ptr>
+      ReferenceFrameNodeMap;
 
   NodeCollection();
 
@@ -25,15 +26,15 @@ class NodeCollection {
     return local_parameterization_.get();
   }
 
-  SubmapNode::Ptr getNodePtrBySubmapId(cblox::SubmapID submap_id) const;
-  ReferenceFrameNode::Ptr getNodePtrByReferenceFrameId(
-      ReferenceFrameNode::ReferenceFrameId) const;
+  SubmapNode::Ptr getSubmapNodePtrById(const cblox::SubmapID &submap_id) const;
+  ReferenceFrameNode::Ptr getReferenceFrameNodePtrById(
+      const ReferenceFrameNode::FrameId &frame_id) const;
 
   const SubmapNodeMap &getSubmapNodes() { return submap_nodes_; }
 
  private:
-  Node::NodeId constraint_id_counter_ = 0;
-  const Node::NodeId newConstraintId() { return constraint_id_counter_++; }
+  Node::NodeId node_id_counter_ = 0;
+  const Node::NodeId newNodeId() { return node_id_counter_++; }
 
   SubmapNodeMap submap_nodes_;
   ReferenceFrameNodeMap reference_frame_nodes_;

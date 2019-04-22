@@ -9,19 +9,18 @@ namespace voxgraph {
 bool VoxgraphSubmapCollection::shouldCreateNewSubmap(
     const ros::Time &current_time) {
   if (empty()) {
-    if (verbose_) {
-      std::cout << "Empty -> create new submap" << std::endl;
-    }
+    ROS_INFO_COND(verbose_,
+                  "Submap collection is empty."
+                  "Should create first submap");
     return true;
   } else {
     // TODO(victorr): Also take the pose uncertainty etc into account
     ros::Time new_submap_creation_deadline =
         getActiveSubMap().getCreationTime() + submap_creation_interval_;
-    if (verbose_) {
-      std::cout << "Current time: " << current_time << "\n"
-                << "Deadline: " << new_submap_creation_deadline << "\n"
-                << std::endl;
-    }
+    ROS_INFO_STREAM_COND(verbose_,
+                         "Current time: " << current_time << "\n"
+                                          << "New creation submap deadline: "
+                                          << new_submap_creation_deadline);
     return current_time > new_submap_creation_deadline;
   }
 }
@@ -32,6 +31,20 @@ void VoxgraphSubmapCollection::createNewSubmap(
   // Define the new submap frame to be at the current robot pose
   // and have its Z-axis aligned with gravity
   Transformation::Vector6 T_vec = T_world_robot.log();
+  ROS_WARN_STREAM_COND(
+      T_vec[3] > 0.05,
+      "New submap creation called with proposed roll: "
+          << T_vec[3] << "[rad]."
+          << "Note that this angle is ignored since we work in XYZ+Yaw only. "
+             "Please"
+          << " provide submap poses whose Z-axis is roughly gravity aligned.");
+  ROS_WARN_STREAM_COND(
+      T_vec[4] > 0.05,
+      "New submap creation called with proposed pitch: "
+          << T_vec[4] << "[rad]."
+          << "Note that this angle is ignored since we work in XYZ+Yaw only. "
+             "Please"
+          << " provide submap poses whose Z-axis is roughly gravity aligned.");
   T_vec[3] = 0;  // Set roll to zero
   T_vec[4] = 0;  // Set pitch to zero
   Transformation T_world__new_submap = Transformation::exp(T_vec);

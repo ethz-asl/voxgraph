@@ -13,15 +13,17 @@ void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
 
   // Get pointers to both submap nodes
   SubmapNode::Ptr first_submap_node_ptr =
-      node_collection.getNodePtrBySubmapId(config_.first_submap_id);
+      node_collection.getSubmapNodePtrById(config_.first_submap_id);
   SubmapNode::Ptr second_submap_node_ptr =
-      node_collection.getNodePtrBySubmapId(config_.second_submap_id);
+      node_collection.getSubmapNodePtrById(config_.second_submap_id);
   CHECK_NOTNULL(first_submap_node_ptr);
   CHECK_NOTNULL(second_submap_node_ptr);
 
   // Add the submap parameters to the problem
-  first_submap_node_ptr->addToProblem(problem);
-  second_submap_node_ptr->addToProblem(problem);
+  first_submap_node_ptr->addToProblem(
+      problem, node_collection.getLocalParameterization());
+  second_submap_node_ptr->addToProblem(
+      problem, node_collection.getLocalParameterization());
 
   // TODO(victorr): Load cost options from ROS params instead of using default
   SubmapRegisterer::Options::CostFunction cost_options;

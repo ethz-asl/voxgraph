@@ -27,10 +27,11 @@ class RelativePoseCostFunction {
 
   static ceres::CostFunction* Create(
       const voxblox::Transformation& observed_relative_pose,
-      const Constraint::InformationMatrix& sqrt_information_matrix) {
+      const Constraint::InformationMatrix& sqrt_information_matrix,
+      bool verbose = false) {
     return (new ceres::AutoDiffCostFunction<RelativePoseCostFunction, 4, 4, 4>(
         new RelativePoseCostFunction(observed_relative_pose,
-                                     sqrt_information_matrix)));
+                                     sqrt_information_matrix, verbose)));
   }
 
  private:

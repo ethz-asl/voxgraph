@@ -14,6 +14,22 @@ void PoseGraph::addSubmapNode(const SubmapNode::Config &config) {
   node_collection_.addSubmapNode(config);
 }
 
+bool PoseGraph::hasSubmapNode(const voxgraph::SubmapNode::SubmapId &submap_id) {
+  auto ptr = node_collection_.getSubmapNodePtrById(submap_id);
+  return ptr != nullptr;
+}
+
+void PoseGraph::addReferenceFrameNode(
+    const ReferenceFrameNode::Config &config) {
+  node_collection_.addReferenceFrameNode(config);
+}
+
+bool PoseGraph::hasReferenceFrameNode(
+    const ReferenceFrameNode::FrameId &frame_id) {
+  auto ptr = node_collection_.getReferenceFrameNodePtrById(frame_id);
+  return ptr != nullptr;
+}
+
 void PoseGraph::addAbsolutePoseConstraint(
     const voxgraph::AbsolutePoseConstraint::Config &config) {
   // TODO(victorr): Add check on whether both endpoints exist
@@ -22,20 +38,12 @@ void PoseGraph::addAbsolutePoseConstraint(
   constraints_collection_.addAbsolutePoseConstraint(config);
 }
 
-void PoseGraph::addLoopClosureConstraint(
-    const voxgraph::LoopClosureConstraint::Config &config) {
+void PoseGraph::addRelativePoseConstraint(
+    const RelativePoseConstraint::Config &config) {
   // TODO(victorr): Add check on whether both endpoints exist
 
   // Add to the constraint set
-  constraints_collection_.addLoopClosureConstraint(config);
-}
-
-void PoseGraph::addOdometryConstraint(
-    const OdometryConstraint::Config &config) {
-  // TODO(victorr): Add check on whether both endpoints exist
-
-  // Add to the constraint set
-  constraints_collection_.addOdometryConstraint(config);
+  constraints_collection_.addRelativePoseConstraint(config);
 }
 
 void PoseGraph::addRegistrationConstraint(
@@ -44,9 +52,9 @@ void PoseGraph::addRegistrationConstraint(
       << "Cannot constrain submap " << config.first_submap_id << " to itself";
 
   // Check if there're submap nodes corresponding to both submap IDs
-  CHECK(node_collection_.getNodePtrBySubmapId(config.first_submap_id))
+  CHECK(node_collection_.getSubmapNodePtrById(config.first_submap_id))
       << "Graph contains no node for submap " << config.first_submap_id;
-  CHECK(node_collection_.getNodePtrBySubmapId(config.second_submap_id))
+  CHECK(node_collection_.getSubmapNodePtrById(config.second_submap_id))
       << "Graph contains no node for submap " << config.second_submap_id;
 
   // Add to the constraint set
@@ -69,7 +77,8 @@ void PoseGraph::optimize() {
   ceres::Solver::Options ceres_options;
   // TODO(victorr): Set these from parameters
   ceres_options.parameter_tolerance = 3e-4;
-  ceres_options.max_solver_time_in_seconds = 10;
+  ceres_options.max_num_iterations = 2;
+  ceres_options.max_solver_time_in_seconds = 16;
   ceres_options.num_threads = std::thread::hardware_concurrency();
   ceres::Solver::Summary summary;
   ceres::Solve(ceres_options, problem_ptr_.get(), &summary);
@@ -82,7 +91,7 @@ PoseGraph::getSubmapPoses() {
   std::map<const cblox::SubmapID, const voxblox::Transformation> submap_poses;
   for (auto submap_node_kv : node_collection_.getSubmapNodes()) {
     submap_poses.emplace(submap_node_kv.second->getSubmapId(),
-                         submap_node_kv.second->getSubmapPose());
+                         submap_node_kv.second->getPose());
   }
   return submap_poses;
 }

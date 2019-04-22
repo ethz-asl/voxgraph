@@ -79,6 +79,11 @@ class VoxgraphMapper {
   ros::ServiceServer save_to_file_srv_;
   // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
 
+  // Constraints to be used
+  bool registration_constraints_enabled_;
+  bool odometry_constraints_enabled_;
+  bool height_constraints_enabled_;
+
   // Visualization tools
   SubmapVisuals submap_vis_;
 
