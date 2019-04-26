@@ -35,7 +35,7 @@ void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
     cost_function = nullptr;
     LOG(FATAL) << "Numeric cost not yet implemented";
   } else {
-    cost_function = new RegistrationCostFunctionXYZYaw(
+    cost_function = new CorrelativeCostFunction4DoF(
         config_.first_submap_ptr, config_.second_submap_ptr, cost_options);
   }
 

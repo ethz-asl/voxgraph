@@ -2,8 +2,8 @@
 // Created by victor on 24.01.19.
 //
 
-#ifndef VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
-#define VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
+#ifndef VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_CORRELATIVE_COST_FUNCTION_4_DOF_H_
+#define VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_CORRELATIVE_COST_FUNCTION_4_DOF_H_
 
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
@@ -20,12 +20,11 @@
 namespace voxgraph {
 // TODO(victorr): Create and inherint from parent class
 //                to reduce code duplication w.r.t. xyz version
-class RegistrationCostFunctionXYZYaw : public ceres::CostFunction {
+class CorrelativeCostFunction4DoF : public ceres::CostFunction {
  public:
-  RegistrationCostFunctionXYZYaw(
-      VoxgraphSubmap::ConstPtr reference_submap_ptr,
-      VoxgraphSubmap::ConstPtr reading_submap_ptr,
-      SubmapRegisterer::Options::CostFunction options);
+  CorrelativeCostFunction4DoF(VoxgraphSubmap::ConstPtr reference_submap_ptr,
+                              VoxgraphSubmap::ConstPtr reading_submap_ptr,
+                              SubmapRegisterer::Options::CostFunction options);
 
   bool Evaluate(double const *const *parameters, double *residuals,
                 double **jacobians) const override;
@@ -74,4 +73,4 @@ class RegistrationCostFunctionXYZYaw : public ceres::CostFunction {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_YAW_H_
+#endif  // VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_CORRELATIVE_COST_FUNCTION_4_DOF_H_

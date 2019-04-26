@@ -2,7 +2,7 @@
 // Created by victor on 24.01.19.
 //
 
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/registration_cost_function_xyz_yaw.h"
+#include "voxgraph/backend/constraint/cost_functions/submap_registration/correlative_cost_function_4_dof.h"
 #include <minkindr_conversions/kindr_tf.h>
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
@@ -10,7 +10,7 @@
 #include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {
-RegistrationCostFunctionXYZYaw::RegistrationCostFunctionXYZYaw(
+CorrelativeCostFunction4DoF::CorrelativeCostFunction4DoF(
     VoxgraphSubmap::ConstPtr reference_submap_ptr,
     VoxgraphSubmap::ConstPtr reading_submap_ptr,
     SubmapRegisterer::Options::CostFunction options)
@@ -76,9 +76,9 @@ RegistrationCostFunctionXYZYaw::RegistrationCostFunctionXYZYaw(
   set_num_residuals(num_relevant_reference_voxels_);
 }
 
-bool RegistrationCostFunctionXYZYaw::Evaluate(double const *const *parameters,
-                                              double *residuals,
-                                              double **jacobians) const {
+bool CorrelativeCostFunction4DoF::Evaluate(double const *const *parameters,
+                                           double *residuals,
+                                           double **jacobians) const {
   unsigned int residual_idx = 0;
   double summed_reference_weight = 0;
 

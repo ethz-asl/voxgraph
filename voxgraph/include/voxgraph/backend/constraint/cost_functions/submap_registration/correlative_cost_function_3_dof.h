@@ -2,8 +2,8 @@
 // Created by victor on 15.12.18.
 //
 
-#ifndef VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_H_
-#define VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_H_
+#ifndef VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_CORRELATIVE_COST_FUNCTION_3_DOF_H_
+#define VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_CORRELATIVE_COST_FUNCTION_3_DOF_H_
 
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
@@ -20,9 +20,9 @@
 namespace voxgraph {
 // TODO(victorr): Create and inherint from parent class
 //                to reduce code duplication w.r.t. xyz_yaw version
-class RegistrationCostFunctionXYZ : public ceres::CostFunction {
+class CorrelativeCostFunction3DoF : public ceres::CostFunction {
  public:
-  RegistrationCostFunctionXYZ(VoxgraphSubmap::ConstPtr reference_submap_ptr,
+  CorrelativeCostFunction3DoF(VoxgraphSubmap::ConstPtr reference_submap_ptr,
                               VoxgraphSubmap::ConstPtr reading_submap_ptr,
                               SubmapRegisterer::Options::CostFunction options);
 
@@ -73,4 +73,4 @@ class RegistrationCostFunctionXYZ : public ceres::CostFunction {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_FUNCTION_XYZ_H_
+#endif  // VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_CORRELATIVE_COST_FUNCTION_3_DOF_H_

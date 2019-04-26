@@ -5,8 +5,8 @@
 #include "voxgraph/backend/constraint/cost_functions/submap_registration/submap_registerer.h"
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/registration_cost_function_xyz.h"
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/registration_cost_function_xyz_yaw.h"
+#include "voxgraph/backend/constraint/cost_functions/submap_registration/correlative_cost_function_3_dof.h"
+#include "voxgraph/backend/constraint/cost_functions/submap_registration/correlative_cost_function_4_dof.h"
 
 namespace voxgraph {
 SubmapRegisterer::SubmapRegisterer(
@@ -53,30 +53,30 @@ bool SubmapRegisterer::testRegistration(
       Options::CostFunction::Type::kNumeric) {
     // Create cost function with one residual per voxel
     if (options_.param.optimize_yaw) {
-      RegistrationCostFunctionXYZYaw *analytic_cost_function_ptr =
-          new RegistrationCostFunctionXYZYaw(reference_submap_ptr,
-                                             reading_submap_ptr, options_.cost);
+      CorrelativeCostFunction4DoF *analytic_cost_function_ptr =
+          new CorrelativeCostFunction4DoF(reference_submap_ptr,
+                                          reading_submap_ptr, options_.cost);
       cost_function = new ceres::NumericDiffCostFunction<
-          RegistrationCostFunctionXYZYaw, ceres::CENTRAL,
+          CorrelativeCostFunction4DoF, ceres::CENTRAL,
           ceres::DYNAMIC /* residuals */, 4 /* pose variables */>(
           analytic_cost_function_ptr, ceres::TAKE_OWNERSHIP,
           static_cast<int>(analytic_cost_function_ptr->getNumRelevantVoxels()));
     } else {
-      RegistrationCostFunctionXYZ *analytic_cost_function_ptr =
-          new RegistrationCostFunctionXYZ(reference_submap_ptr,
+      CorrelativeCostFunction3DoF *analytic_cost_function_ptr =
+          new CorrelativeCostFunction3DoF(reference_submap_ptr,
                                           reading_submap_ptr, options_.cost);
       cost_function = new ceres::NumericDiffCostFunction<
-          RegistrationCostFunctionXYZ, ceres::CENTRAL,
+          CorrelativeCostFunction3DoF, ceres::CENTRAL,
           ceres::DYNAMIC /* residuals */, 3 /* translation variables */>(
           analytic_cost_function_ptr, ceres::TAKE_OWNERSHIP,
           static_cast<int>(analytic_cost_function_ptr->getNumRelevantVoxels()));
     }
   } else {
     if (options_.param.optimize_yaw) {
-      cost_function = new RegistrationCostFunctionXYZYaw(
+      cost_function = new CorrelativeCostFunction4DoF(
           reference_submap_ptr, reading_submap_ptr, options_.cost);
     } else {
-      cost_function = new RegistrationCostFunctionXYZ(
+      cost_function = new CorrelativeCostFunction3DoF(
           reference_submap_ptr, reading_submap_ptr, options_.cost);
     }
   }
