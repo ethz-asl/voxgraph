@@ -30,12 +30,13 @@ void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
 
   // Create submap alignment cost function
   ceres::CostFunction *cost_function;
-  if (cost_options.cost_function_type ==
-      SubmapRegisterer::Options::CostFunction::Type::kNumeric) {
+  if (cost_options.jacobian_evaluation_method ==
+      SubmapRegisterer::Options::CostFunction::JacobianEvaluationMethod::
+          kNumeric) {
     cost_function = nullptr;
     LOG(FATAL) << "Numeric cost not yet implemented";
   } else {
-    cost_function = new CorrelativeCostFunction4DoF(
+    cost_function = new ImplicitImplicitRegistrationCostFn(
         config_.first_submap_ptr, config_.second_submap_ptr, cost_options);
   }
 

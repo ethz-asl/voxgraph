@@ -5,8 +5,7 @@
 #include "voxgraph/backend/constraint/cost_functions/submap_registration/submap_registerer.h"
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/correlative_cost_function_3_dof.h"
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/correlative_cost_function_4_dof.h"
+#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost_fn.h"
 
 namespace voxgraph {
 SubmapRegisterer::SubmapRegisterer(
@@ -36,49 +35,29 @@ bool SubmapRegisterer::testRegistration(
       reference_submap_ptr->getPose().log();
   double world_pose_ref[4] = {T_vec_ref[0], T_vec_ref[1], T_vec_ref[2],
                               T_vec_ref[5]};
+
   // Add the parameter blocks to the optimization
-  if (options_.param.optimize_yaw) {
-    problem.AddParameterBlock(world_pose_ref, 4);
-    problem.SetParameterBlockConstant(world_pose_ref);
-    problem.AddParameterBlock(world_pose_reading, 4);
-  } else {
-    problem.AddParameterBlock(world_pose_ref, 3);
-    problem.SetParameterBlockConstant(world_pose_ref);
-    problem.AddParameterBlock(world_pose_reading, 3);
-  }
+  problem.AddParameterBlock(world_pose_ref, 4);
+  problem.SetParameterBlockConstant(world_pose_ref);
+  problem.AddParameterBlock(world_pose_reading, 4);
 
   // Create and add submap alignment cost function
   ceres::CostFunction *cost_function;
-  if (options_.cost.cost_function_type ==
-      Options::CostFunction::Type::kNumeric) {
+  if (options_.cost.jacobian_evaluation_method ==
+      Options::CostFunction::JacobianEvaluationMethod::kNumeric) {
     // Create cost function with one residual per voxel
-    if (options_.param.optimize_yaw) {
-      CorrelativeCostFunction4DoF *analytic_cost_function_ptr =
-          new CorrelativeCostFunction4DoF(reference_submap_ptr,
-                                          reading_submap_ptr, options_.cost);
-      cost_function = new ceres::NumericDiffCostFunction<
-          CorrelativeCostFunction4DoF, ceres::CENTRAL,
-          ceres::DYNAMIC /* residuals */, 4 /* pose variables */>(
-          analytic_cost_function_ptr, ceres::TAKE_OWNERSHIP,
-          static_cast<int>(analytic_cost_function_ptr->getNumRelevantVoxels()));
-    } else {
-      CorrelativeCostFunction3DoF *analytic_cost_function_ptr =
-          new CorrelativeCostFunction3DoF(reference_submap_ptr,
-                                          reading_submap_ptr, options_.cost);
-      cost_function = new ceres::NumericDiffCostFunction<
-          CorrelativeCostFunction3DoF, ceres::CENTRAL,
-          ceres::DYNAMIC /* residuals */, 3 /* translation variables */>(
-          analytic_cost_function_ptr, ceres::TAKE_OWNERSHIP,
-          static_cast<int>(analytic_cost_function_ptr->getNumRelevantVoxels()));
-    }
+    ImplicitImplicitRegistrationCostFn *analytic_cost_function_ptr =
+        new ImplicitImplicitRegistrationCostFn(
+            reference_submap_ptr, reading_submap_ptr, options_.cost);
+    cost_function =
+        new ceres::NumericDiffCostFunction<ImplicitImplicitRegistrationCostFn,
+                                           ceres::CENTRAL, ceres::DYNAMIC, 4,
+                                           4>(
+            analytic_cost_function_ptr, ceres::TAKE_OWNERSHIP,
+            reference_submap_ptr->getNumRelevantVoxels());
   } else {
-    if (options_.param.optimize_yaw) {
-      cost_function = new CorrelativeCostFunction4DoF(
-          reference_submap_ptr, reading_submap_ptr, options_.cost);
-    } else {
-      cost_function = new CorrelativeCostFunction3DoF(
-          reference_submap_ptr, reading_submap_ptr, options_.cost);
-    }
+    cost_function = new ImplicitImplicitRegistrationCostFn(
+        reference_submap_ptr, reading_submap_ptr, options_.cost);
   }
   problem.AddResidualBlock(cost_function, loss_function, world_pose_ref,
                            world_pose_reading);

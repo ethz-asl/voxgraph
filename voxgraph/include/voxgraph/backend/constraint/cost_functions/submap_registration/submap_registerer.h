@@ -18,9 +18,14 @@ class SubmapRegisterer {
   struct Options {
     ceres::Solver::Options solver;
     struct CostFunction {
-      enum Type { kAnalytic = 0, kNumeric } cost_function_type;
-      double min_voxel_weight = 1e-6;
-      double max_voxel_distance = 0.6;
+      enum RegistrationMethod {
+        kImplicitToImplicit = 0,
+        kExplicitToImplicit
+      } registration_method;
+      enum JacobianEvaluationMethod {
+        kAnalytic = 0,
+        kNumeric
+      } jacobian_evaluation_method;
       // Cost to assign for voxels that can't be interpolated
       // i.e. that don't exist in the other submap
       double no_correspondence_cost = 0;
@@ -29,9 +34,6 @@ class SubmapRegisterer {
       bool visualize_gradients = false;
       bool visualize_transforms_ = false;
     } cost;
-    struct Parametrization {
-      bool optimize_yaw = true;
-    } param;
   };
 
   SubmapRegisterer(

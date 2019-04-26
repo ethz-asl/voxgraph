@@ -84,10 +84,12 @@ void PoseGraphInterface::setInformationMatrixFromRosParams(
 }
 
 void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
-  // Generate the submap's ESDF
-  submap_collection_ptr_->generateEsdfById(submap_id);
-  // TODO(victorr): Parametrize this s.t. it doesn't happen
-  //                when using TSDF registration
+  // Indicate that the submap is finished s.t. its cached members are generated
+  {
+    VoxgraphSubmap::Ptr submap_ptr =
+        submap_collection_ptr_->getSubMapPtrById(submap_id);
+    CHECK_NOTNULL(submap_ptr)->finishSubmap();
+  }
 
   // Configure the submap node and add it to the pose graph
   SubmapNode::Config submap_node_config;

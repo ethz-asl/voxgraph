@@ -2,7 +2,7 @@
 // Created by victor on 24.01.19.
 //
 
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/correlative_cost_function_4_dof.h"
+#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost_fn.h"
 #include <minkindr_conversions/kindr_tf.h>
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
@@ -10,7 +10,7 @@
 #include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {
-CorrelativeCostFunction4DoF::CorrelativeCostFunction4DoF(
+ImplicitImplicitRegistrationCostFn::ImplicitImplicitRegistrationCostFn(
     VoxgraphSubmap::ConstPtr reference_submap_ptr,
     VoxgraphSubmap::ConstPtr reading_submap_ptr,
     SubmapRegisterer::Options::CostFunction options)
@@ -22,11 +22,11 @@ CorrelativeCostFunction4DoF::CorrelativeCostFunction4DoF(
       reading_esdf_layer_(reading_submap_ptr->getEsdfMap().getEsdfLayer()),
       tsdf_interpolator_(&reading_submap_ptr->getTsdfMap().getTsdfLayer()),
       esdf_interpolator_(&reading_submap_ptr->getEsdfMap().getEsdfLayer()),
+      relevant_reference_voxel_indices_(
+          reference_submap_ptr->getRelevantBlockVoxelIndices()),
+      num_relevant_reference_voxels_(
+          reference_submap_ptr->getNumRelevantVoxels()),
       options_(options) {
-  // Get list of all allocated voxel blocks in the reference submap
-  voxblox::BlockIndexList ref_block_list;
-  reference_tsdf_layer_.getAllAllocatedBlocks(&ref_block_list);
-
   // Ensure that the reference and reading submaps have gravity aligned Z-axes
   voxblox::Transformation::Vector6 T_vec_reference =
       ref_submap_ptr_->getPose().log();
@@ -41,32 +41,6 @@ CorrelativeCostFunction4DoF::CorrelativeCostFunction4DoF(
       << reading_submap_ptr_->getID() << " had non-zero roll & pitch: ["
       << T_vec_reading[3] << ", " << T_vec_reading[4] << "]";
 
-  // Calculate the number of voxels per block
-  size_t vps = reference_tsdf_layer_.voxels_per_side();
-  size_t num_voxels_per_block = vps * vps * vps;
-
-  // Create a list containing only reference voxels that matter
-  // i.e. that have been observed and fall within a truncation band
-  // Iterate over all allocated blocks in the reference submap
-  for (const voxblox::BlockIndex &ref_block_index : ref_block_list) {
-    const voxblox::Block<voxblox::TsdfVoxel> &reference_block =
-        reference_tsdf_layer_.getBlockByIndex(ref_block_index);
-    // Iterate over all voxels in block
-    for (size_t linear_index = 0u; linear_index < num_voxels_per_block;
-         ++linear_index) {
-      const voxblox::TsdfVoxel &ref_voxel =
-          reference_block.getVoxelByLinearIndex(linear_index);
-      // Select the observed voxels within the truncation band
-      if (ref_voxel.weight > options_.min_voxel_weight &&
-          std::abs(ref_voxel.distance) < options_.max_voxel_distance) {
-        num_relevant_reference_voxels_++;
-        voxblox::VoxelIndex voxel_index =
-            reference_block.computeVoxelIndexFromLinearIndex(linear_index);
-        reference_block_voxel_list_[ref_block_index].push_back(voxel_index);
-      }
-    }
-  }
-
   // Set number of parameters: namely 2 poses, each having 4 params (X,Y,Z,Yaw)
   mutable_parameter_block_sizes()->clear();
   mutable_parameter_block_sizes()->push_back(4);
@@ -76,9 +50,9 @@ CorrelativeCostFunction4DoF::CorrelativeCostFunction4DoF(
   set_num_residuals(num_relevant_reference_voxels_);
 }
 
-bool CorrelativeCostFunction4DoF::Evaluate(double const *const *parameters,
-                                           double *residuals,
-                                           double **jacobians) const {
+bool ImplicitImplicitRegistrationCostFn::Evaluate(
+    double const *const *parameters, double *residuals,
+    double **jacobians) const {
   unsigned int residual_idx = 0;
   double summed_reference_weight = 0;
 
@@ -131,7 +105,7 @@ bool CorrelativeCostFunction4DoF::Evaluate(double const *const *parameters,
       T_world__reading.inverse() * T_world__reference;
 
   // Iterate over all reference submap blocks that contain relevant voxels
-  for (const auto &kv : reference_block_voxel_list_) {
+  for (const auto &kv : relevant_reference_voxel_indices_) {
     // Get a const ref to the current reference submap tsdf block
     const voxblox::Block<voxblox::TsdfVoxel> &reference_tsdf_block =
         reference_tsdf_layer_.getBlockByIndex(kv.first);
@@ -309,7 +283,7 @@ bool CorrelativeCostFunction4DoF::Evaluate(double const *const *parameters,
 
   // Scale residuals by sum of reference voxel weights
   if (summed_reference_weight == 0) return false;
-  double factor = (num_relevant_reference_voxels_ / summed_reference_weight);
+  double factor = num_relevant_reference_voxels_ / summed_reference_weight;
   for (int i = 0; i < num_relevant_reference_voxels_; i++) {
     residuals[i] *= factor;
     if (jacobians != nullptr) {

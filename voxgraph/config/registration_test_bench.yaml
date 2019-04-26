@@ -1,7 +1,7 @@
 submap_collection_file_path: "/home/victor/catkin_ws/voxgraph/submap_collections/burning_house_rubble_gt_truncdist06_z-aligned"
 log_folder_path: "/home/victor/catkin_ws/voxgraph/registration_test_bench_stats"
 
-reference_submap_id: 2
+reference_submap_id: 3
 reading_submap_id: 3
 
 solver_report_style: "brief"  # "brief", "full" or "none"
@@ -15,8 +15,6 @@ test_range:
   # roll: [-0.17, 0, 0.17]
 
 submap_registration:
-  param:
-    optimize_yaw: true
   solver:
     max_num_iterations: 40
     parameter_tolerance: 3e-9
@@ -28,3 +26,4 @@ submap_registration:
     no_correspondence_cost: 0.0
     visualize_residuals: false
     visualize_gradients: false
+    visualize_transforms: true

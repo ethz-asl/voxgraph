@@ -2,8 +2,8 @@
 // Created by victor on 24.01.19.
 //
 
-#ifndef VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_CORRELATIVE_COST_FUNCTION_4_DOF_H_
-#define VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_CORRELATIVE_COST_FUNCTION_4_DOF_H_
+#ifndef VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_IMPLICIT_IMPLICIT_REGISTRATION_COST_FN_H_
+#define VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_IMPLICIT_IMPLICIT_REGISTRATION_COST_FN_H_
 
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
@@ -20,18 +20,15 @@
 namespace voxgraph {
 // TODO(victorr): Create and inherint from parent class
 //                to reduce code duplication w.r.t. xyz version
-class CorrelativeCostFunction4DoF : public ceres::CostFunction {
+class ImplicitImplicitRegistrationCostFn : public ceres::CostFunction {
  public:
-  CorrelativeCostFunction4DoF(VoxgraphSubmap::ConstPtr reference_submap_ptr,
-                              VoxgraphSubmap::ConstPtr reading_submap_ptr,
-                              SubmapRegisterer::Options::CostFunction options);
+  ImplicitImplicitRegistrationCostFn(
+      VoxgraphSubmap::ConstPtr reference_submap_ptr,
+      VoxgraphSubmap::ConstPtr reading_submap_ptr,
+      SubmapRegisterer::Options::CostFunction options);
 
   bool Evaluate(double const *const *parameters, double *residuals,
                 double **jacobians) const override;
-
-  const unsigned int getNumRelevantVoxels() const {
-    return num_relevant_reference_voxels_;
-  }
 
  private:
   // Cost function options
@@ -51,8 +48,8 @@ class CorrelativeCostFunction4DoF : public ceres::CostFunction {
 
   // Block and voxel index hash map storing
   // only the relevant voxels (observed and within truncation distance)
-  voxblox::HierarchicalIndexMap reference_block_voxel_list_;
-  unsigned int num_relevant_reference_voxels_ = 0;
+  const voxblox::HierarchicalIndexMap &relevant_reference_voxel_indices_;
+  unsigned int num_relevant_reference_voxels_;
 
   // Used for residual and Jacobian visualization
   mutable CostFunctionVisuals cost_function_visuals_;
@@ -73,4 +70,4 @@ class CorrelativeCostFunction4DoF : public ceres::CostFunction {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_CORRELATIVE_COST_FUNCTION_4_DOF_H_
+#endif  // VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_IMPLICIT_IMPLICIT_REGISTRATION_COST_FN_H_

@@ -108,9 +108,11 @@ int main(int argc, char** argv) {
     }
   }
 
-  // Generate the ESDFs for the submaps
+  // Finish the submaps such that their cached members are generated
   for (const cblox::SubmapID& submap_id : submap_ids) {
-    CHECK(submap_collection_ptr->generateEsdfById(submap_id));
+    VoxgraphSubmap::Ptr submap_ptr =
+        submap_collection_ptr->getSubMapPtrById(submap_id);
+    CHECK_NOTNULL(submap_ptr)->finishSubmap();
   }
 
   // Setup Rviz visualizations

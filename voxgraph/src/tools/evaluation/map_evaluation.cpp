@@ -8,7 +8,7 @@
 #include <voxblox/io/layer_io.h>
 #include <memory>
 #include <string>
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/correlative_cost_function_4_dof.h"
+#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost_fn.h"
 
 namespace voxgraph {
 MapEvaluation::MapEvaluation(const ros::NodeHandle &node_handle,
@@ -133,7 +133,7 @@ void MapEvaluation::alignSubmapAtoSubmapB(
   problem.AddParameterBlock(layer_A_pose, 4);
 
   // Create and add the submap alignment cost function to the problem
-  ceres::CostFunction *cost_function = new CorrelativeCostFunction4DoF(
+  ceres::CostFunction *cost_function = new ImplicitImplicitRegistrationCostFn(
       submap_B, submap_A, cost_function_options);
   problem.AddResidualBlock(cost_function, loss_function, layer_B_pose,
                            layer_A_pose);

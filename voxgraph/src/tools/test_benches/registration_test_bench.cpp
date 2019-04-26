@@ -79,16 +79,10 @@ int main(int argc, char **argv) {
   // Read ROS params: Submap registration settings
   ros::NodeHandle nh_registration(nh_private, "submap_registration");
   voxgraph::SubmapRegisterer::Options registerer_options;
-  nh_registration.param("param/optimize_yaw",
-                        registerer_options.param.optimize_yaw, true);
   nh_registration.param("solver/max_num_iterations",
                         registerer_options.solver.max_num_iterations, 40);
   nh_registration.param("solver/parameter_tolerance",
                         registerer_options.solver.parameter_tolerance, 3e-9);
-  nh_registration.param("cost/min_voxel_weight",
-                        registerer_options.cost.min_voxel_weight, 1e-6);
-  nh_registration.param("cost/max_voxel_distance",
-                        registerer_options.cost.max_voxel_distance, 0.6);
   nh_registration.param("cost/no_correspondence_cost",
                         registerer_options.cost.no_correspondence_cost, 0.0);
   nh_registration.param("cost/use_esdf_distance",
@@ -97,16 +91,20 @@ int main(int argc, char **argv) {
                         registerer_options.cost.visualize_residuals, false);
   nh_registration.param("cost/visualize_gradients",
                         registerer_options.cost.visualize_gradients, false);
+  nh_registration.param("cost/visualize_transforms",
+                        registerer_options.cost.visualize_transforms_, false);
   {
     std::string cost_function_type_str;
     nh_registration.param<std::string>("cost/cost_function_type",
                                        cost_function_type_str, "analytic");
     if (cost_function_type_str == "analytic") {
-      registerer_options.cost.cost_function_type =
-          voxgraph::SubmapRegisterer::Options::CostFunction::Type::kAnalytic;
+      registerer_options.cost.jacobian_evaluation_method =
+          voxgraph::SubmapRegisterer::Options::CostFunction::
+              JacobianEvaluationMethod::kAnalytic;
     } else if (cost_function_type_str == "numeric") {
-      registerer_options.cost.cost_function_type =
-          voxgraph::SubmapRegisterer::Options::CostFunction::Type::kNumeric;
+      registerer_options.cost.jacobian_evaluation_method =
+          voxgraph::SubmapRegisterer::Options::CostFunction::
+              JacobianEvaluationMethod::kNumeric;
     } else {
       ROS_FATAL(
           "Param \"submap_registration/cost/cost_function_type\" "
@@ -115,6 +113,12 @@ int main(int argc, char **argv) {
       return -1;
     }
   }
+
+  // TODO(victorr): Reintroduce these
+  // nh_registration.param("cost/min_voxel_weight",
+  //                       registerer_options.cost.min_voxel_weight, 1e-6);
+  // nh_registration.param("cost/max_voxel_distance",
+  //                       registerer_options.cost.max_voxel_distance, 0.6);
 
   // Announce ROS topics for Rviz debug visuals
   ros::Publisher reference_mesh_pub =
@@ -199,10 +203,14 @@ int main(int argc, char **argv) {
                            optimized_reading_mesh_pub);
   }
 
-  // Generate the ESDFs for the submaps
-  if (registerer_options.cost.use_esdf_distance) {
-    CHECK(submap_collection_ptr->generateEsdfById(reference_submap_id));
-    CHECK(submap_collection_ptr->generateEsdfById(reading_submap_id));
+  // Finish the submaps such that their cached members are generated
+  {
+    voxgraph::VoxgraphSubmap::Ptr reference_submap_ptr =
+        submap_collection_ptr->getSubMapPtrById(reference_submap_id);
+    voxgraph::VoxgraphSubmap::Ptr reading_submap_ptr =
+        submap_collection_ptr->getSubMapPtrById(reading_submap_id);
+    CHECK_NOTNULL(reference_submap_ptr)->finishSubmap();
+    CHECK_NOTNULL(reading_submap_ptr)->finishSubmap();
   }
 
   // Format log file path containing current time stamp
@@ -301,9 +309,7 @@ int main(int argc, char **argv) {
                 T_vec_read[0] = world_pose_reading[0];
                 T_vec_read[1] = world_pose_reading[1];
                 T_vec_read[2] = world_pose_reading[2];
-                if (registerer_options.param.optimize_yaw) {
-                  T_vec_read[5] = world_pose_reading[3];
-                }
+                T_vec_read[5] = world_pose_reading[3];
                 const voxblox::Transformation T_world__reading_optimized =
                     voxblox::Transformation::exp(T_vec_read);
                 submap_collection_ptr->setSubMapPose(
