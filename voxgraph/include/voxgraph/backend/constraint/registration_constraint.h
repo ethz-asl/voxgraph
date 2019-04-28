@@ -27,9 +27,14 @@ class RegistrationConstraint : public Constraint {
     // Check whether both submap pointers have been provided
     CHECK_NOTNULL(config_.first_submap_ptr);
     CHECK_NOTNULL(config_.second_submap_ptr);
+
+    // Registration constraints do not yet support non-identity information
+    // matrices, therefore assert this
+    CHECK(sqrt_information_matrix_.isIdentity())
+        << "Registration constraint information matrices that differ "
+           "from the identity matrix are not yet supported.";
   }
 
-  // TODO(victorr): Use the sqrt_information_matrix_ when computing the residual
   void addToProblem(const NodeCollection& node_collection,
                     ceres::Problem* problem) final;
 

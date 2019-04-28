@@ -69,11 +69,12 @@ void VoxgraphSubmap::finishSubmap() {
 
   // Populate the relevant block voxel index hash map
   findRelevantVoxelIndices();
-  std::cout << "# relevant voxels: " << num_relevant_voxels_ << std::endl;
+  std::cout << "# relevant voxels: " << num_relevant_voxels_ << "\n"
+            << std::endl;
 
   // Populate the isosurface vertex vector
   findIsosurfaceVertices();
-  std::cout << "# isosurface vertices: " << num_isosurface_vertices_
+  std::cout << "# isosurface vertices: " << num_isosurface_vertices_ << "\n"
             << std::endl;
 
   // Set the finished flag
