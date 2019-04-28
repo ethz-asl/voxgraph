@@ -3,9 +3,27 @@
 //
 
 #include "voxgraph/frontend/pose_graph_interface.h"
+#include <utility>
 #include <vector>
 
 namespace voxgraph {
+PoseGraphInterface::PoseGraphInterface(
+    ros::NodeHandle node_handle,
+    VoxgraphSubmapCollection::Ptr submap_collection_ptr, bool verbose)
+    : submap_collection_ptr_(std::move(submap_collection_ptr)),
+      verbose_(verbose) {
+  // Zero initialize all information matrices
+  odometry_information_matrix_.setZero();
+  loop_closure_information_matrix_.setZero();
+  gps_information_matrix_.setZero();
+  height_information_matrix_.setZero();
+  registration_information_matrix_.setZero();
+
+  // Advertise the pose graph visuals publisher
+  pose_graph_pub_ = node_handle.advertise<visualization_msgs::Marker>(
+      "pose_graph", 100, true);
+}
+
 void PoseGraphInterface::setPoseGraphConfigFromRosParams(
     const ros::NodeHandle &node_handle) {
   if (node_handle.hasParam("odometry")) {
@@ -103,6 +121,9 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
     submap_node_config.set_constant = false;
   }
   pose_graph_.addSubmapNode(submap_node_config);
+  if (verbose_) {
+    std::cout << "Added node to graph for submap: " << submap_id << std::endl;
+  }
 
   // Easy way to add an odometry constraint between the previous and new submap
   // NOTE: This method assumes that the current submap pose purely comes from
@@ -133,6 +154,8 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
                 << "From: " << odom_constraint_config.origin_submap_id << "\n"
                 << "To: " << odom_constraint_config.destination_submap_id
                 << "\n"
+                << "Submap currently being built in submap collection: "
+                << submap_collection_ptr_->getActiveSubMapID() << "\n"
                 << "T_w_s1:\n"
                 << T_world__previous_submap << "\n"
                 << "yaw_w_s1:" << T_world__previous_submap.log()[5] << "\n"
@@ -207,7 +230,14 @@ void PoseGraphInterface::updateRegistrationConstraints() {
   }
 }
 
-void PoseGraphInterface::optimize() { pose_graph_.optimize(); }
+void PoseGraphInterface::optimize() {
+  // Optimize the graph
+  pose_graph_.optimize();
+
+  // Publish debug visuals
+  pose_graph_vis_.publishPoseGraph(pose_graph_, "world", "optimized",
+                                   pose_graph_pub_);
+}
 
 void PoseGraphInterface::updateSubmapCollectionPoses() {
   for (const auto &submap_pose_kv : pose_graph_.getSubmapPoses()) {

@@ -9,21 +9,15 @@
 #include "voxgraph/backend/pose_graph.h"
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+#include "voxgraph/tools/visualization/pose_graph_visuals.h"
 
 namespace voxgraph {
 class PoseGraphInterface {
  public:
   explicit PoseGraphInterface(
-      VoxgraphSubmapCollection::Ptr submap_collection_ptr, bool verbose = false)
-      : submap_collection_ptr_(std::move(submap_collection_ptr)),
-        verbose_(verbose) {
-    // Zero initialize all information matrices
-    odometry_information_matrix_.setZero();
-    loop_closure_information_matrix_.setZero();
-    gps_information_matrix_.setZero();
-    height_information_matrix_.setZero();
-    registration_information_matrix_.setZero();
-  }
+      ros::NodeHandle node_handle,
+      VoxgraphSubmapCollection::Ptr submap_collection_ptr,
+      bool verbose = false);
 
   void setVerbosity(bool verbose) { verbose_ = verbose; }
 
@@ -48,7 +42,11 @@ class PoseGraphInterface {
   bool verbose_;
 
   VoxgraphSubmapCollection::Ptr submap_collection_ptr_;
+
+  // Pose graph and visualization tools
   PoseGraph pose_graph_;
+  PoseGraphVisuals pose_graph_vis_;
+  ros::Publisher pose_graph_pub_;
 
   // Information matrices for each measurement type
   Constraint::InformationMatrix odometry_information_matrix_;
