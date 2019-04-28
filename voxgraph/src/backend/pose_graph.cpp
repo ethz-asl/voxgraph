@@ -78,7 +78,7 @@ void PoseGraph::optimize() {
   // TODO(victorr): Set these from parameters
   // TODO(victorr): Look into manual parameter block ordering
   ceres_options.parameter_tolerance = 3e-4;
-  ceres_options.max_num_iterations = 4;
+  //  ceres_options.max_num_iterations = 4;
   ceres_options.max_solver_time_in_seconds = 12;
   ceres_options.num_threads = std::thread::hardware_concurrency();
   ceres_options.linear_solver_type = ceres::LinearSolverType::SPARSE_SCHUR;

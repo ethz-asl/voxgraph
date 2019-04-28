@@ -20,8 +20,8 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   struct Config : cblox::TsdfEsdfSubmap::Config {
     // TODO(victorr): Read these from ROS params
-    double min_voxel_weight = 1e-1;
-    double max_voxel_distance = 0.5;
+    double min_voxel_weight = 1;
+    double max_voxel_distance = 0.3;
   };
 
   VoxgraphSubmap(const voxblox::Transformation &T_M_S,
