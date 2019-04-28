@@ -23,29 +23,37 @@ bool RelativePoseCostFunction::operator()(const T *const pose_A,
 
   // Compute translation error
   residuals_map.template head<3>() =
-      rotationMatrixFromYaw(yaw_world_A).transpose() * (t_world_B - t_world_A) -
+      rotationMatrixFromYaw<T>(yaw_world_A).transpose() *
+          (t_world_B - t_world_A) -
       observed_relative_translation_.cast<T>();
 
   // Compute yaw error and normalize the angle
   residuals_map(3) = NormalizeAngle((yaw_world_B - yaw_world_A) -
                                     static_cast<T>(observed_relative_yaw_));
 
-  if (verbose_ && std::is_same<T, double>::value) {
+  if (verbose_) {
     std::cout << "t_world_A: " << t_world_A(0) << ", " << t_world_A(1) << ", "
               << t_world_A(2) << "\n"
               << "t_world_B: " << t_world_B(0) << ", " << t_world_B(1) << ", "
               << t_world_B(2) << "\n"
-              << "Rotated(t_world_B - t_world_A): "
-              << residuals_map(0) + observed_relative_translation_(0) << ", "
-              << residuals_map(1) + observed_relative_translation_(1) << ", "
-              << residuals_map(2) + observed_relative_translation_(2) << "\n"
+              << "Rotated(t_world_B - t_world_A):\n"
+              << (rotationMatrixFromYaw(yaw_world_A).transpose() *
+                  (t_world_B - t_world_A))(0)
+              << "\n"
+              << (rotationMatrixFromYaw(yaw_world_A).transpose() *
+                  (t_world_B - t_world_A))(1)
+              << "\n"
+              << (rotationMatrixFromYaw(yaw_world_A).transpose() *
+                  (t_world_B - t_world_A))(2)
+              << "\n"
               << "observed_relative_translation: "
-              << observed_relative_translation_(0) << ", "
-              << observed_relative_translation_(1) << ", "
-              << observed_relative_translation_(2) << "\n"
+              << observed_relative_translation_.cast<T>()(0) << ", "
+              << observed_relative_translation_.cast<T>()(1) << ", "
+              << observed_relative_translation_.cast<T>()(2) << "\n"
               << "yaw_world_A: " << yaw_world_A << "\n"
               << "yaw_world_B: " << yaw_world_B << "\n"
-              << "observed_relative_yaw: " << observed_relative_yaw_ << "\n"
+              << "observed_relative_yaw: "
+              << static_cast<T>(observed_relative_yaw_) << "\n"
               << "Error:" << residuals_map(0) << ", " << residuals_map(1)
               << ", " << residuals_map(2) << ", " << residuals_map(3) << "\n"
               << std::endl;
@@ -53,9 +61,9 @@ bool RelativePoseCostFunction::operator()(const T *const pose_A,
 
   // Scale the residuals by the square root information matrix to account for
   // the measurement uncertainty
-  residuals_map = sqrt_information_matrix_.cast<T>() * residuals_map;
+  residuals_map = sqrt_information_matrix_.template cast<T>() * residuals_map;
 
-  if (verbose_ && std::is_same<T, double>::value) {
+  if (verbose_) {
     std::cout << "Error scaled by information: " << residuals_map(0) << ", "
               << residuals_map(1) << ", " << residuals_map(2) << ", "
               << residuals_map(3) << "\n"
@@ -70,9 +78,12 @@ const Eigen::Matrix<T, 3, 3> RelativePoseCostFunction::rotationMatrixFromYaw(
     T yaw_radians) const {
   const T cos_yaw = ceres::cos(yaw_radians);
   const T sin_yaw = ceres::sin(yaw_radians);
+  const T zero = static_cast<T>(0);
+  const T one = static_cast<T>(1);
 
   Eigen::Matrix<T, 3, 3> rotation_matrix;
-  rotation_matrix << cos_yaw, -sin_yaw, 0, sin_yaw, cos_yaw, 0, 0, 0, 1;
+  rotation_matrix << cos_yaw, -sin_yaw, zero, sin_yaw, cos_yaw, zero, zero,
+      zero, one;
   return rotation_matrix;
 }
 }  // namespace voxgraph
