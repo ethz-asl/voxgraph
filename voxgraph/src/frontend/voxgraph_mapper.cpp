@@ -7,6 +7,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <memory>
 #include <string>
+#include <thread>
 #include "voxgraph/backend/constraint/cost_functions/submap_registration/submap_registerer.h"
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/tools/tf_helper.h"
@@ -21,12 +22,13 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       subscriber_queue_length_(100),
       pointcloud_topic_("pointcloud"),
       transformer_(nh, nh_private),
-      odom_tf_frame_("odom"),
       world_frame_("world"),
+      odom_frame_("odom"),
+      robot_frame_("robot"),
       use_gt_ptcloud_pose_from_sensor_tf_(false),
       submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
-      pose_graph_interface_(submap_collection_ptr_),
+      pose_graph_interface_(nh_private, submap_collection_ptr_),
       pointcloud_processor_(submap_collection_ptr_),
       submap_vis_(submap_config_),
       registration_constraints_enabled_(false),
@@ -38,6 +40,10 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
   subscribeToTopics();
   advertiseTopics();
   advertiseServices();
+
+  // Publish the initial transform from the world to the drifting odom frame
+  TfHelper::publishTransform(voxblox::Transformation(), world_frame_,
+                             odom_frame_corrected_, true);
 }
 
 void VoxgraphMapper::getParametersFromRos() {
@@ -48,8 +54,15 @@ void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("subscriber_queue_length", subscriber_queue_length_,
                     subscriber_queue_length_);
   nh_private_.param("pointcloud_topic", pointcloud_topic_, pointcloud_topic_);
-  nh_private_.param("odom_tf_frame", odom_tf_frame_, odom_tf_frame_);
   nh_private_.param("world_frame", world_frame_, world_frame_);
+  nh_private_.param("odom_frame", odom_frame_, odom_frame_);
+  nh_private_.param("robot_frame", robot_frame_, robot_frame_);
+  nh_private_.param("odom_frame_corrected", odom_frame_corrected_,
+                    odom_frame_corrected_);
+  nh_private_.param("robot_frame_corrected", robot_frame_corrected_,
+                    robot_frame_corrected_);
+  nh_private_.param("sensor_frame_corrected", sensor_frame_corrected_,
+                    sensor_frame_corrected_);
   nh_private_.param("use_gt_ptcloud_pose_from_sensor_tf",
                     use_gt_ptcloud_pose_from_sensor_tf_,
                     use_gt_ptcloud_pose_from_sensor_tf_);
@@ -61,12 +74,12 @@ void VoxgraphMapper::getParametersFromRos() {
         ros::Duration(interval_temp));
   }
 
-  // Load the transform from the odometry frame to the sensor frame
-  XmlRpc::XmlRpcValue T_odom_sensor_xml;
-  CHECK(nh_private_.getParam("T_odom_sensor", T_odom_sensor_xml))
-      << "The transform from the odom frame to the sensor frame "
-      << "T_odom_sensor is required but was not set.";
-  kindr::minimal::xmlRpcToKindr(T_odom_sensor_xml, &T_robot_sensor_);
+  // Load the transform from the robot frame to the sensor frame
+  XmlRpc::XmlRpcValue T_robot_sensor_xml;
+  CHECK(nh_private_.getParam("T_robot_sensor", T_robot_sensor_xml))
+      << "The transform from the robot frame to the sensor frame "
+      << "T_robot_sensor is required but was not set.";
+  kindr::minimal::xmlRpcToKindr(T_robot_sensor_xml, &T_robot_sensor_);
 
   // Read the measurement params from their sub-namespace
   ros::NodeHandle nh_measurement_params(nh_private_, "measurements");
@@ -144,13 +157,14 @@ void VoxgraphMapper::pointcloudCallback(
     const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg) {
   // Lookup the robot pose at the time of the pointcloud message
   ros::Time current_timestamp = pointcloud_msg->header.stamp;
-  Transformation T_world_robot;
-  if (!lookup_T_world_robot(current_timestamp, &T_world_robot)) {
+  Transformation T_odom_robot;
+  if (!lookup_T_odom_robot(current_timestamp, &T_odom_robot)) {
     // If the pose cannot be found, the pointcloud is skipped
     ROS_WARN_STREAM("Skipping pointcloud since the robot pose at time "
                     << current_timestamp << " is unknown.");
     return;
   }
+  Transformation T_world_robot = T_world_odom_corrected_ * T_odom_robot;
 
   // Check if it's time to create a new submap
   if (submap_collection_ptr_->shouldCreateNewSubmap(current_timestamp)) {
@@ -159,7 +173,10 @@ void VoxgraphMapper::pointcloudCallback(
     //       avoid generating their ESDF more than once
     if (!submap_collection_ptr_->empty()) {
       // Pause the rosbag (remove this once the system runs in real-time)
-      rosbag_helper_.pauseRosbag();
+      // TODO(victorr): Parametrize this
+      if (false) {
+        rosbag_helper_.pauseRosbag();
+      }
 
       // Add the finished submap to the pose graph, including an odometry link
       SubmapID finished_submap_id = submap_collection_ptr_->getActiveSubMapID();
@@ -169,7 +186,11 @@ void VoxgraphMapper::pointcloudCallback(
       // Constrain the height
       // NOTE: No constraint is added for the 1st since its pose is fixed
       if (height_constraints_enabled_ && submap_collection_ptr_->size() > 1) {
-        pose_graph_interface_.addHeightMeasurement(finished_submap_id, 0.7);
+        // This assumes that the height estimate from the odometry source is
+        // really good (e.g. when it fuses an altimeter)
+        double current_height = T_odom_robot.getPosition().z();
+        pose_graph_interface_.addHeightMeasurement(finished_submap_id,
+                                                   current_height);
       }
 
       // Optimize the pose graph
@@ -187,25 +208,36 @@ void VoxgraphMapper::pointcloudCallback(
 
       // Update the fictional odometry origin to cancel out drift
       Transformation T_W_S_new = submap_collection_ptr_->getActiveSubMapPose();
-      T_W_D_ = T_W_S_new * T_W_S_old.inverse() * T_W_D_;
+      T_world_odom_corrected_ =
+          T_W_S_new * T_W_S_old.inverse() * T_world_odom_corrected_,
       T_world_robot = T_W_S_new * T_W_S_old.inverse() * T_world_robot;
       ROS_INFO_STREAM("Applying pose correction:\n"
                       << T_W_S_new * T_W_S_old.inverse());
 
+      // Publish the new corrected odom frame
+      TfHelper::publishTransform(T_world_odom_corrected_, world_frame_,
+                                 odom_frame_corrected_, true,
+                                 current_timestamp);
+
       // Update the submap collection visualization in Rviz
-      submap_vis_.publishCombinedMesh(*submap_collection_ptr_, world_frame_,
-                                      combined_mesh_pub_);
+      std::thread meshing_thread(&SubmapVisuals::publishCombinedMesh,
+                                 &submap_vis_, *submap_collection_ptr_,
+                                 world_frame_, combined_mesh_pub_);
+      meshing_thread.detach();
 
       // Play the rosbag (remove this once the system runs in real-time)
-      rosbag_helper_.playRosbag();
+      // TODO(victorr): Parametrize this
+      if (false) {
+        rosbag_helper_.playRosbag();
+      }
     }
 
     // Create the new submap
     submap_collection_ptr_->createNewSubmap(T_world_robot, current_timestamp);
     if (debug_) {
       TfHelper::publishTransform(submap_collection_ptr_->getActiveSubMapPose(),
-                                 world_frame_, "debug_T_world__new_submap",
-                                 true, current_timestamp);
+                                 world_frame_, "new_submap_origin", true,
+                                 current_timestamp);
     }
   }
 
@@ -219,8 +251,7 @@ void VoxgraphMapper::pointcloudCallback(
     transformer_.lookupTransform(pointcloud_msg->header.frame_id, world_frame_,
                                  current_timestamp, &T_world_sensor);
     if (debug_) {
-      TfHelper::publishTransform(T_world_sensor, world_frame_,
-                                 "debug_T_world_sensor", false,
+      TfHelper::publishTransform(T_world_sensor, world_frame_, "sensor", false,
                                  current_timestamp);
     }
   } else {
@@ -228,13 +259,10 @@ void VoxgraphMapper::pointcloudCallback(
     T_world_sensor = T_world_robot * T_robot_sensor_;
     if (debug_) {
       TfHelper::publishTransform(T_world_robot, world_frame_,
-                                 "debug_T_world_robot", false,
+                                 robot_frame_corrected_, false,
                                  current_timestamp);
-      TfHelper::publishTransform(T_robot_sensor_, world_frame_,
-                                 "debug_T_robot_sensor", false,
-                                 current_timestamp);
-      TfHelper::publishTransform(T_world_sensor, world_frame_,
-                                 "debug_T_world_sensor", false,
+      TfHelper::publishTransform(T_robot_sensor_, robot_frame_corrected_,
+                                 sensor_frame_corrected_, true,
                                  current_timestamp);
     }
   }
@@ -247,17 +275,17 @@ void VoxgraphMapper::pointcloudCallback(
       current_timestamp, T_world_robot);
 }
 
-bool VoxgraphMapper::lookup_T_world_robot(ros::Time timestamp,
-                                          Transformation *T_world_robot) {
-  CHECK_NOTNULL(T_world_robot);
-  Transformation T_D_R;  // Transform corresponding to the received odometry TF
+bool VoxgraphMapper::lookup_T_odom_robot(ros::Time timestamp,
+                                         Transformation *T_odom_robot) {
+  CHECK_NOTNULL(T_odom_robot);
+  Transformation T_odom_robot_received;
   double t_waited = 0;   // Total time spent waiting for the updated pose
-  double t_max = 0.08;   // Maximum time to wait before giving up
+  double t_max = 0.20;   // Maximum time to wait before giving up
   const ros::Duration timeout(0.005);  // Timeout between each update attempt
   while (t_waited < t_max) {
-    if (transformer_.lookupTransform(odom_tf_frame_, world_frame_, timestamp,
-                                     &T_D_R)) {
-      *T_world_robot = T_W_D_ * T_D_R;
+    if (transformer_.lookupTransform(robot_frame_, odom_frame_, timestamp,
+                                     &T_odom_robot_received)) {
+      *T_odom_robot = T_odom_robot_received;
       return true;
     }
     timeout.sleep();

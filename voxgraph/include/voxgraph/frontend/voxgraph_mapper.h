@@ -100,24 +100,28 @@ class VoxgraphMapper {
   // Voxblox transformer used to lookup transforms from the TF tree or rosparams
   voxblox::Transformer transformer_;
 
-  // Coordinate frame naming convention:
-  // W: World frame
-  // R: The body frame of the robot
-  // D: A fictional frame that is used cancel out the odometry drift
+  // Coordinate frame naming convention
+  // - world: the fixed world frame
+  // - odom: the "odometry's world frame" which is not corrected for drift
+  // - odom_corrected: the drift corrected odom frame
+  // - robot: the body frame of the robot
+  // - sensor: the pointcloud sensor's frame
+  // NOTE: T_world_odom_corrected gets initialized to the identity transform and
+  //       is updated after each pose graph optimization step
   std::string world_frame_;
-  bool lookup_T_world_robot(ros::Time timestamp,
-                            Transformation *T_world_robot_ptr);
+  std::string odom_frame_;
+  std::string robot_frame_;
+  Transformation T_world_odom_corrected_;
+  Transformation T_robot_sensor_;  // This transform is static
 
-  // Static transform from body to sensor frame
-  Transformation T_robot_sensor_;
+  // Publish the drift corrected TFs to the following frame names
+  std::string odom_frame_corrected_;
+  std::string robot_frame_corrected_;
+  std::string sensor_frame_corrected_;
 
-  // Transform from the world frame to the fictional drifting odometry origin
-  // such that T_W_D * T_D_R = the drift free robot pose in world frame,
-  // where T_D_R corresponds to the received odometry TF
-  // NOTE: T_W_D is initialized to the robot's starting pose and gets updated
-  //       when the active submap jumps following a pose graph optimization step
-  Transformation T_W_D_;
-  std::string odom_tf_frame_;
+  // Transform lookup method that sleeps and retries a few times if the TF from
+  // the robot to the odom frame is not immediately available
+  bool lookup_T_odom_robot(ros::Time timestamp, Transformation *T_odom_robot);
 
   // Whether to use ground truth T_world__sensor,
   // instead of its estimated pose (for validation purposes)
