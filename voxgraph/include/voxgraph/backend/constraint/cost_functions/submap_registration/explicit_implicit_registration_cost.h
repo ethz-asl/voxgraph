@@ -8,8 +8,6 @@
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
 #include <cblox/core/tsdf_esdf_submap.h>
-#include <cblox/core/tsdf_submap.h>
-#include <ceres/ceres.h>
 #include <voxblox/interpolator/interpolator.h>
 #include "voxgraph/backend/constraint/cost_functions/submap_registration/registration_cost.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
@@ -25,9 +23,8 @@ class ExplicitImplicitRegistrationCost : public RegistrationCost {
                 double **jacobians) const override;
 
  private:
-  // Reference to the submap's isosurface vertex vector
-  const voxblox::AlignedVector<IsosurfaceVertex> &isosurface_vertices_;
-  unsigned int num_isosurface_vertices_;
+  // Reference to the submap's isosurface vertex sampler
+  const WeightedSampler<WeightedVertex> &isosurface_vertex_sampler_;
 };
 }  // namespace voxgraph
 

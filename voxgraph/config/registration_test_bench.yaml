@@ -20,10 +20,11 @@ submap_registration:
     parameter_tolerance: 3e-9
   cost:
     use_esdf_distance: true
-    cost_function_type: "analytic"  # "analytic" or "numeric"
-    # TODO(victorr): Reimplement these
-    #    min_voxel_weight: 1e-1
-    #    max_voxel_distance: 0.4
+    jacobian_evaluation_method: "analytic"  # "analytic" or "numeric"
+    registration_method: "explicit_to_implicit"  # "implicit_to_implicit" or "explicit_to_implicit"
+    min_voxel_weight: 1
+    max_voxel_distance: 0.4
+    sampling_ratio: 0.2  # Set to -1 or leave out to disable
     no_correspondence_cost: 0.0
     visualize_residuals: false
     visualize_gradients: false

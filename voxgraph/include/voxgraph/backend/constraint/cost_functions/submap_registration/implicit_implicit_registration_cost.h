@@ -8,8 +8,6 @@
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
 #include <cblox/core/tsdf_esdf_submap.h>
-#include <cblox/core/tsdf_submap.h>
-#include <ceres/ceres.h>
 #include <voxblox/interpolator/interpolator.h>
 #include "voxgraph/backend/constraint/cost_functions/submap_registration/registration_cost.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
@@ -25,10 +23,9 @@ class ImplicitImplicitRegistrationCost : public RegistrationCost {
                 double **jacobians) const override;
 
  private:
-  // Block and voxel index hash map storing
-  // only the relevant voxels (observed and within truncation distance)
+  // Reference to the block and voxel index hash map storing
+  // the relevant voxels (observed and within truncation distance)
   const voxblox::HierarchicalIndexMap &relevant_reference_voxel_indices_;
-  unsigned int num_relevant_reference_voxels_;
 };
 }  // namespace voxgraph
 

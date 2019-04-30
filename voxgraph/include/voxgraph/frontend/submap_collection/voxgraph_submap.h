@@ -11,7 +11,8 @@
 #include <memory>
 #include <vector>
 #include "voxgraph/frontend/submap_collection/bounding_box.h"
-#include "voxgraph/frontend/submap_collection/isosurface_vertex.h"
+#include "voxgraph/frontend/submap_collection/weighted_sampler.h"
+#include "voxgraph/frontend/submap_collection/weighted_vertex.h"
 
 namespace voxgraph {
 class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
@@ -20,9 +21,10 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   typedef std::shared_ptr<const VoxgraphSubmap> ConstPtr;
 
   struct Config : cblox::TsdfEsdfSubmap::Config {
-    // TODO(victorr): Read these from ROS params
-    double min_voxel_weight = 1;
-    double max_voxel_distance = 0.3;
+    struct RegistrationFilter {
+      double min_voxel_weight = 1;
+      double max_voxel_distance = 0.3;
+    } registration_filter;
   };
 
   VoxgraphSubmap(const voxblox::Transformation &T_M_S,
@@ -42,11 +44,18 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   // NOTE: These cached members are mainly used in the registration cost funcs
   void finishSubmap();
 
+  // Setter method for the registration filter config
+  // NOTE: This method is mainly useful for copy or proto constructed submaps
+  void setRegistrationFilterConfig(
+      const Config::RegistrationFilter &registration_filter_config);
+
   const ros::Time getCreationTime() const;
+
   const voxblox::HierarchicalIndexMap &getRelevantBlockVoxelIndices() const;
   const unsigned int getNumRelevantVoxels() const;
-  const voxblox::AlignedVector<IsosurfaceVertex> &getIsosurfaceVertices() const;
-  const unsigned int getNumIsosurfaceVertices() const;
+
+  const WeightedSampler<WeightedVertex> &getIsosurfacePoints() const;
+  const unsigned int getNumIsosurfacePoints() const;
 
   // Overlap and Bounding Box related methods
   bool overlapsWith(const VoxgraphSubmap &otherSubmap) const;
@@ -77,13 +86,13 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   // Hash map containing the block and voxel indices of the observed voxels
   // that fall within the truncation distance
+  // TODO(victorr): Use WeightedSampler as container
   voxblox::HierarchicalIndexMap relevant_block_voxel_indices_;
   unsigned int num_relevant_voxels_ = 0;
   void findRelevantVoxelIndices();
 
   // Vector containing all isosurface vertices stored as [x, y, z, weight]
-  voxblox::AlignedVector<IsosurfaceVertex> isosurface_vertices_;
-  unsigned int num_isosurface_vertices_ = 0;
+  WeightedSampler<WeightedVertex> isosurface_vertices_;
   void findIsosurfaceVertices();
 
   // History of how the robot moved through the submap

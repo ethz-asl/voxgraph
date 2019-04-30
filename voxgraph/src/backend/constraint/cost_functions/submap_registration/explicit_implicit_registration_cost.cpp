@@ -14,11 +14,20 @@ ExplicitImplicitRegistrationCost::ExplicitImplicitRegistrationCost(
     VoxgraphSubmap::ConstPtr reference_submap_ptr,
     VoxgraphSubmap::ConstPtr reading_submap_ptr, const Config &config)
     : RegistrationCost(reference_submap_ptr, reading_submap_ptr, config),
-      isosurface_vertices_(reference_submap_ptr->getIsosurfaceVertices()),
-      num_isosurface_vertices_(
-          reference_submap_ptr->getNumIsosurfaceVertices()) {
-  // Set number of residuals (one per isosurface vertex)
-  set_num_residuals(num_isosurface_vertices_);
+      isosurface_vertex_sampler_(reference_submap_ptr->getIsosurfacePoints()) {
+  // Set number of residuals
+  int num_registration_residuals;
+  if (config_.sampling_ratio != -1) {
+    // Up/down sample the reference submap isosurface points
+    // according to the sampling ratio
+    num_registration_residuals =
+        static_cast<int>(config_.sampling_ratio *
+                         reference_submap_ptr->getNumIsosurfacePoints());
+  } else {
+    // Deterministically use all isosurface vertices
+    num_registration_residuals = reference_submap_ptr->getNumIsosurfacePoints();
+  }
+  set_num_residuals(num_registration_residuals);
 }
 
 // TODO(victorr): Gradually move all common code to the base class
@@ -76,8 +85,19 @@ bool ExplicitImplicitRegistrationCost::Evaluate(double const *const *parameters,
   const voxblox::Transformation T_reading__reference =
       T_world__reading.inverse() * T_world__reference;
 
-  // Iterate over all isosurface vertices
-  for (const auto &reference_isosurface_vertex : isosurface_vertices_) {
+  // Iterate over the isosurface vertex samples
+  for (unsigned int sample_i = 0; sample_i < num_residuals(); sample_i++) {
+    WeightedVertex reference_isosurface_vertex;
+    if (config_.sampling_ratio == -1) {
+      // We deterministically use all isosurface vertices
+      reference_isosurface_vertex = isosurface_vertex_sampler_[sample_i];
+    } else {
+      // Draw an isosurface vertex sample at random
+      reference_isosurface_vertex.position =
+          isosurface_vertex_sampler_.getRandomItem().position;
+      reference_isosurface_vertex.weight = 1;
+    }
+
     summed_reference_weight += reference_isosurface_vertex.weight;
     voxblox::Point reference_coordinate = reference_isosurface_vertex.position;
 
@@ -227,8 +247,8 @@ bool ExplicitImplicitRegistrationCost::Evaluate(double const *const *parameters,
 
   // Scale residuals by sum of reference voxel weights
   if (summed_reference_weight == 0) return false;
-  double factor = num_isosurface_vertices_ / summed_reference_weight;
-  for (int i = 0; i < num_isosurface_vertices_; i++) {
+  double factor = num_residuals() / summed_reference_weight;
+  for (int i = 0; i < num_residuals(); i++) {
     residuals[i] *= factor;
     if (jacobians != nullptr) {
       if (jacobians[0] != nullptr) {

@@ -20,6 +20,11 @@
 
 int main(int argc, char **argv) {
   enum SolverReportStyle { kBrief, kFull, kNone };
+  using voxblox::Transformation;
+  using voxgraph::VoxgraphSubmap;
+  using voxgraph::RegistrationCost;
+  using voxgraph::SubmapRegistrationHelper;
+  using voxgraph::TfHelper;
 
   // Start logging
   google::InitGoogleLogging(argv[0]);
@@ -78,54 +83,77 @@ int main(int argc, char **argv) {
 
   // Read ROS params: Submap registration settings
   ros::NodeHandle nh_registration(nh_private, "submap_registration");
-  voxgraph::SubmapRegistrationHelper::Options registerer_options;
+  VoxgraphSubmap::Config::RegistrationFilter registration_filter_config;
+  SubmapRegistrationHelper::Options registerer_options;
   nh_registration.param("solver/max_num_iterations",
                         registerer_options.solver.max_num_iterations, 40);
   nh_registration.param("solver/parameter_tolerance",
                         registerer_options.solver.parameter_tolerance, 3e-9);
   nh_registration.param("cost/no_correspondence_cost",
                         registerer_options.registration.no_correspondence_cost,
-                        0.0);
+                        registerer_options.registration.no_correspondence_cost);
   nh_registration.param("cost/use_esdf_distance",
                         registerer_options.registration.use_esdf_distance,
-                        true);
+                        registerer_options.registration.use_esdf_distance);
   nh_registration.param("cost/visualize_residuals",
                         registerer_options.registration.visualize_residuals,
-                        false);
+                        registerer_options.registration.visualize_residuals);
   nh_registration.param("cost/visualize_gradients",
                         registerer_options.registration.visualize_gradients,
-                        false);
+                        registerer_options.registration.visualize_gradients);
   nh_registration.param("cost/visualize_transforms",
                         registerer_options.registration.visualize_transforms_,
-                        false);
+                        registerer_options.registration.visualize_transforms_);
+  nh_registration.param("cost/sampling_ratio",
+                        registerer_options.registration.sampling_ratio,
+                        registerer_options.registration.sampling_ratio);
+  // Get the registration method (from string)
   {
-    std::string cost_function_type_str;
-    nh_registration.param<std::string>("cost/cost_function_type",
-                                       cost_function_type_str, "analytic");
-    if (cost_function_type_str == "analytic") {
-      registerer_options.registration.jacobian_evaluation_method =
-          voxgraph::RegistrationCost::JacobianEvaluationMethod::kAnalytic;
-    } else if (cost_function_type_str == "numeric") {
-      registerer_options.registration.jacobian_evaluation_method =
-          voxgraph::RegistrationCost::JacobianEvaluationMethod::kNumeric;
+    std::string registration_method_str;
+    nh_registration.param<std::string>("cost/registration_method",
+                                       registration_method_str,
+                                       "implicit_to_implicit");
+    if (registration_method_str == "implicit_to_implicit") {
+      registerer_options.registration.registration_method =
+          RegistrationCost::RegistrationMethod::kImplicitToImplicit;
+    } else if (registration_method_str == "explicit_to_implicit") {
+      registerer_options.registration.registration_method =
+          RegistrationCost::RegistrationMethod::kExplicitToImplicit;
     } else {
       ROS_FATAL(
-          "Param \"submap_registration/cost/cost_function_type\" "
+          "Param \"submap_registration/cost/registration_method\" must be "
+          "\"implicit_to_implicit\" (default) or \"explicit_to_implicit\"");
+      ros::shutdown();
+      return -1;
+    }
+  }
+  // Get the Jacobian evaluation method (from string)
+  {
+    std::string jacobian_evaluation_method_str;
+    nh_registration.param<std::string>("cost/jacobian_evaluation_method",
+                                       jacobian_evaluation_method_str,
+                                       "analytic");
+    if (jacobian_evaluation_method_str == "analytic") {
+      registerer_options.registration.jacobian_evaluation_method =
+          RegistrationCost::JacobianEvaluationMethod::kAnalytic;
+    } else if (jacobian_evaluation_method_str == "numeric") {
+      registerer_options.registration.jacobian_evaluation_method =
+          RegistrationCost::JacobianEvaluationMethod::kNumeric;
+    } else {
+      ROS_FATAL(
+          "Param \"submap_registration/cost/jacobian_evaluation_method\" "
           "must be \"analytic\" (default) or \"numeric\"");
       ros::shutdown();
       return -1;
     }
   }
-
-  // TODO(victorr): Read this from ROS params
-  registerer_options.registration.registration_method =
-      voxgraph::RegistrationCost::RegistrationMethod::kExplicitToImplicit;
-
-  // TODO(victorr): Reintroduce these
-  // nh_registration.param("cost/min_voxel_weight",
-  //                       registerer_options.cost.min_voxel_weight, 1e-6);
-  // nh_registration.param("cost/max_voxel_distance",
-  //                       registerer_options.cost.max_voxel_distance, 0.6);
+  // Get the submap relevant voxel thresholds
+  nh_registration.param("cost/min_voxel_weight",
+                        registration_filter_config.min_voxel_weight,
+                        registration_filter_config.min_voxel_weight);
+  nh_registration.param("cost/max_voxel_distance",
+                        registration_filter_config.max_voxel_distance,
+                        registration_filter_config.max_voxel_distance);
 
   // Announce ROS topics for Rviz debug visuals
   ros::Publisher reference_mesh_pub =
@@ -142,9 +170,9 @@ int main(int argc, char **argv) {
           "optimized_reading_mesh_pub", 1, true);
 
   // Load the submap collection
-  cblox::SubmapCollection<voxgraph::VoxgraphSubmap>::Ptr submap_collection_ptr;
-  cblox::io::LoadSubmapCollection<voxgraph::VoxgraphSubmap>(
-      submap_collection_file_path, &submap_collection_ptr);
+  cblox::SubmapCollection<VoxgraphSubmap>::Ptr submap_collection_ptr;
+  cblox::io::LoadSubmapCollection<VoxgraphSubmap>(submap_collection_file_path,
+                                                  &submap_collection_ptr);
 
   // If both submaps IDs are the same, duplicate the reference submap
   if (reference_submap_id == reading_submap_id) {
@@ -157,28 +185,28 @@ int main(int argc, char **argv) {
   }
 
   // Setup the submap to submap registerer
-  voxgraph::SubmapRegistrationHelper submap_registerer(submap_collection_ptr,
-                                                       registerer_options);
+  SubmapRegistrationHelper submap_registerer(submap_collection_ptr,
+                                             registerer_options);
 
   // Setup visualization tools
   voxgraph::SubmapVisuals submap_vis(submap_collection_ptr->getConfig());
 
   // Save the reference submap pose and the original reading submap pose
-  voxblox::Transformation transform_getter;
+  Transformation transform_getter;
   CHECK(submap_collection_ptr->getSubMapPose(reference_submap_id,
                                              &transform_getter));
-  const voxblox::Transformation T_world__reference = transform_getter;
+  const Transformation T_world__reference = transform_getter;
   CHECK(submap_collection_ptr->getSubMapPose(reading_submap_id,
                                              &transform_getter));
-  const voxblox::Transformation T_world__reading_original = transform_getter;
+  const Transformation T_world__reading_original = transform_getter;
   const Eigen::Vector3f &ground_truth_position =
       T_world__reading_original.getPosition();
 
   // Publish TFs for the reference and reading submap
-  voxgraph::TfHelper::publishTransform(T_world__reference, "world",
-                                       "reference_submap", true);
-  voxgraph::TfHelper::publishTransform(T_world__reading_original, "world",
-                                       "reading_submap", true);
+  TfHelper::publishTransform(T_world__reference, "world", "reference_submap",
+                             true);
+  TfHelper::publishTransform(T_world__reading_original, "world",
+                             "reading_submap", true);
 
   // Publish the meshes used to visualize the submaps
   {
@@ -196,10 +224,10 @@ int main(int argc, char **argv) {
                            reference_mesh_pub);
     // Publish temporary TFs for the moving meshes, such that Rviz
     // doesn't discard them due to missing frame position information
-    voxgraph::TfHelper::publishTransform(T_world__reading_original, "world",
-                                         "perturbed_submap", true);
-    voxgraph::TfHelper::publishTransform(T_world__reading_original, "world",
-                                         "optimized_submap", true);
+    TfHelper::publishTransform(T_world__reading_original, "world",
+                               "perturbed_submap", true);
+    TfHelper::publishTransform(T_world__reading_original, "world",
+                               "optimized_submap", true);
     // Publish the reading submap mesh used to indicate its perturbed pose
     submap_vis.publishMesh(*submap_collection_ptr, reading_submap_id,
                            voxblox::Color::Red(), "perturbed_submap",
@@ -212,12 +240,16 @@ int main(int argc, char **argv) {
 
   // Finish the submaps such that their cached members are generated
   {
-    voxgraph::VoxgraphSubmap::Ptr reference_submap_ptr =
+    VoxgraphSubmap::Ptr ref_submap_ptr =
         submap_collection_ptr->getSubMapPtrById(reference_submap_id);
-    voxgraph::VoxgraphSubmap::Ptr reading_submap_ptr =
+    VoxgraphSubmap::Ptr reading_submap_ptr =
         submap_collection_ptr->getSubMapPtrById(reading_submap_id);
-    CHECK_NOTNULL(reference_submap_ptr)->finishSubmap();
-    CHECK_NOTNULL(reading_submap_ptr)->finishSubmap();
+    CHECK_NOTNULL(ref_submap_ptr);
+    CHECK_NOTNULL(reading_submap_ptr);
+    ref_submap_ptr->setRegistrationFilterConfig(registration_filter_config);
+    reading_submap_ptr->setRegistrationFilterConfig(registration_filter_config);
+    ref_submap_ptr->finishSubmap();
+    reading_submap_ptr->finishSubmap();
   }
 
   // Format log file path containing current time stamp
@@ -272,12 +304,12 @@ int main(int argc, char **argv) {
 
               // Move reading_submap to T(x,y,z,yaw,pitch,roll)
               // TODO(victorr): Implement disturbance over pitch & roll
-              voxblox::Transformation::Vector3 rot_vec(0, 0, yaw);
+              Transformation::Vector3 rot_vec(0, 0, yaw);
               voxblox::Rotation rotation(rot_vec);
-              voxblox::Transformation T_world__reading_perturbed;
+              Transformation T_world__reading_perturbed;
               T_world__reading_perturbed.getRotation() =
                   T_world__reading_original.getRotation() * rotation;
-              voxblox::Transformation::Vector3 translation(x, y, z);
+              Transformation::Vector3 translation(x, y, z);
               T_world__reading_perturbed.getPosition() =
                   T_world__reading_original.getPosition() + translation;
               submap_collection_ptr->setSubMapPose(reading_submap_id,
@@ -296,13 +328,12 @@ int main(int argc, char **argv) {
                   pitch, roll);
 
               // Publish the TF of perturbed mesh
-              voxgraph::TfHelper::publishTransform(T_world__reading_perturbed,
-                                                   "world", "perturbed_submap",
-                                                   true);
+              TfHelper::publishTransform(T_world__reading_perturbed, "world",
+                                         "perturbed_submap", true);
 
               // Set initial conditions
               ceres::Solver::Summary summary;
-              voxblox::Transformation::Vector6 T_vec_read =
+              Transformation::Vector6 T_vec_read =
                   T_world__reading_perturbed.log();
               double world_pose_reading[4] = {T_vec_read[0], T_vec_read[1],
                                               T_vec_read[2], T_vec_read[5]};
@@ -317,8 +348,8 @@ int main(int argc, char **argv) {
                 T_vec_read[1] = world_pose_reading[1];
                 T_vec_read[2] = world_pose_reading[2];
                 T_vec_read[5] = world_pose_reading[3];
-                const voxblox::Transformation T_world__reading_optimized =
-                    voxblox::Transformation::exp(T_vec_read);
+                const Transformation T_world__reading_optimized =
+                    Transformation::exp(T_vec_read);
                 submap_collection_ptr->setSubMapPose(
                     reading_submap_id, T_world__reading_optimized);
 

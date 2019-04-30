@@ -15,11 +15,11 @@ ImplicitImplicitRegistrationCost::ImplicitImplicitRegistrationCost(
     VoxgraphSubmap::ConstPtr reading_submap_ptr, const Config &config)
     : RegistrationCost(reference_submap_ptr, reading_submap_ptr, config),
       relevant_reference_voxel_indices_(
-          reference_submap_ptr->getRelevantBlockVoxelIndices()),
-      num_relevant_reference_voxels_(
-          reference_submap_ptr->getNumRelevantVoxels()) {
-  // Set number of residuals (one per reference submap voxel)
-  set_num_residuals(num_relevant_reference_voxels_);
+          reference_submap_ptr->getRelevantBlockVoxelIndices()) {
+  // Set number of residuals (one per reference submap voxel sample)
+  CHECK(config_.sampling_ratio == -1)
+      << "Sampling not yet implemented for implicit to implicit registration";
+  set_num_residuals(reference_submap_ptr->getNumRelevantVoxels());
 }
 
 // TODO(victorr): Gradually move all common code to the base class
@@ -256,8 +256,8 @@ bool ImplicitImplicitRegistrationCost::Evaluate(double const *const *parameters,
 
   // Scale residuals by sum of reference voxel weights
   if (summed_reference_weight == 0) return false;
-  double factor = num_relevant_reference_voxels_ / summed_reference_weight;
-  for (int i = 0; i < num_relevant_reference_voxels_; i++) {
+  double factor = num_residuals() / summed_reference_weight;
+  for (int i = 0; i < num_residuals(); i++) {
     residuals[i] *= factor;
     if (jacobians != nullptr) {
       if (jacobians[0] != nullptr) {

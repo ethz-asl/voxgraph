@@ -74,11 +74,17 @@ void VoxgraphSubmap::finishSubmap() {
 
   // Populate the isosurface vertex vector
   findIsosurfaceVertices();
-  std::cout << "\n# isosurface vertices: " << num_isosurface_vertices_
+  std::cout << "\n# isosurface vertices: " << isosurface_vertices_.size()
             << std::endl;
 
   // Set the finished flag
   finished_ = true;
+}
+
+void VoxgraphSubmap::setRegistrationFilterConfig(
+    const Config::RegistrationFilter &registration_filter_config) {
+  // Update registration filter config
+  config_.registration_filter = registration_filter_config;
 }
 
 const ros::Time VoxgraphSubmap::getCreationTime() const {
@@ -120,6 +126,8 @@ void VoxgraphSubmap::findRelevantVoxelIndices() {
   // Create a list containing only reference voxels that matter
   // i.e. that have been observed and fall within a truncation band
   // Iterate over all allocated blocks in the reference submap
+  double min_voxel_weight = config_.registration_filter.min_voxel_weight;
+  double max_voxel_distance = config_.registration_filter.max_voxel_distance;
   for (const voxblox::BlockIndex &block_index : block_list) {
     const voxblox::Block<voxblox::TsdfVoxel> &reference_block =
         tsdf_layer.getBlockByIndex(block_index);
@@ -129,8 +137,8 @@ void VoxgraphSubmap::findRelevantVoxelIndices() {
       const voxblox::TsdfVoxel &ref_voxel =
           reference_block.getVoxelByLinearIndex(linear_index);
       // Select the observed voxels within the truncation band
-      if (ref_voxel.weight > config_.min_voxel_weight &&
-          std::abs(ref_voxel.distance) < config_.max_voxel_distance) {
+      if (ref_voxel.weight > min_voxel_weight &&
+          std::abs(ref_voxel.distance) < max_voxel_distance) {
         voxblox::VoxelIndex voxel_index =
             reference_block.computeVoxelIndexFromLinearIndex(linear_index);
         relevant_block_voxel_indices_[block_index].push_back(voxel_index);
@@ -140,27 +148,27 @@ void VoxgraphSubmap::findRelevantVoxelIndices() {
   }
 }
 
-const voxblox::AlignedVector<IsosurfaceVertex>
-    &VoxgraphSubmap::getIsosurfaceVertices() const {
+const WeightedSampler<WeightedVertex> &VoxgraphSubmap::getIsosurfacePoints()
+    const {
   CHECK(finished_) << "The cached isosurface vertex vector is only available"
                       " once the submap has been declared finished.";
   return isosurface_vertices_;
 }
 
-const unsigned int VoxgraphSubmap::getNumIsosurfaceVertices() const {
-  return num_isosurface_vertices_;
+const unsigned int VoxgraphSubmap::getNumIsosurfacePoints() const {
+  return isosurface_vertices_.size();
 }
 
 void VoxgraphSubmap::findIsosurfaceVertices() {
-  // Reset the cached isosurface vertex vector
+  // Reset the cached isosurface vertex sample container
   isosurface_vertices_.clear();
-  num_isosurface_vertices_ = 0;
 
   // Generate the mesh layer
   voxblox::MeshLayer mesh_layer(tsdf_map_->block_size());
   voxblox::MeshIntegratorConfig mesh_integrator_config;
   mesh_integrator_config.use_color = false;
-  mesh_integrator_config.min_weight = config_.min_voxel_weight;
+  mesh_integrator_config.min_weight =
+      config_.registration_filter.min_voxel_weight;
   voxblox::MeshIntegrator<voxblox::TsdfVoxel> mesh_integrator(
       mesh_integrator_config, tsdf_map_->getTsdfLayer(), &mesh_layer);
   mesh_integrator.generateMesh(false, false);
@@ -181,9 +189,8 @@ void VoxgraphSubmap::findIsosurfaceVertices() {
       CHECK_LE(voxel.distance, 1e-3 * tsdf_map_->voxel_size());
 
       // Store the isosurface vertex
-      IsosurfaceVertex isosurface_vertex{mesh_vertex, voxel.weight};
-      isosurface_vertices_.push_back(isosurface_vertex);
-      num_isosurface_vertices_++;
+      WeightedVertex isosurface_vertex{mesh_vertex, voxel.weight};
+      isosurface_vertices_.addItem(isosurface_vertex, voxel.weight);
     }
   }
 }
@@ -222,6 +229,8 @@ const BoundingBox VoxgraphSubmap::getSubmapFrameSurfaceObb() const {
         0.5 * tsdf_map_->getTsdfLayer().voxel_size() * voxblox::Point::Ones();
 
     // Iterate over all allocated blocks in the submap
+    double min_voxel_weight = config_.registration_filter.min_voxel_weight;
+    double max_voxel_distance = config_.registration_filter.max_voxel_distance;
     for (const voxblox::BlockIndex &block_index : block_list) {
       const voxblox::Block<voxblox::TsdfVoxel> &block =
           tsdf_map_->getTsdfLayer().getBlockByIndex(block_index);
@@ -231,8 +240,8 @@ const BoundingBox VoxgraphSubmap::getSubmapFrameSurfaceObb() const {
         const voxblox::TsdfVoxel &voxel =
             block.getVoxelByLinearIndex(linear_index);
         // Select the observed voxels within the truncation band
-        if (voxel.weight > config_.min_voxel_weight &&
-            std::abs(voxel.distance) < config_.max_voxel_distance) {
+        if (voxel.weight > min_voxel_weight &&
+            std::abs(voxel.distance) < max_voxel_distance) {
           // Update the min and max points of the OBB
           voxblox::Point voxel_coordinates =
               block.computeCoordinatesFromLinearIndex(linear_index);
