@@ -30,7 +30,7 @@ void PointcloudProcessor::integratePointcloud(
       T_world_submap.inverse() * T_world_sensor;
 
   // Convert pointcloud_msg into voxblox::Pointcloud
-  pcl::PointCloud<pcl::PointXYZI> pointcloud_pcl;
+  pcl::PointCloud<pcl::PointXYZ> pointcloud_pcl;
   pcl::fromROSMsg(*pointcloud_msg, pointcloud_pcl);
   voxblox::Pointcloud pointcloud;
   voxblox::Colors colors;
@@ -46,18 +46,7 @@ void PointcloudProcessor::integratePointcloud(
 
     // Store the point's coordinates
     pointcloud.push_back(voxblox::Point(point.x, point.y, point.z));
-
-    // Map the intensity to a color
-    // NOTE: The intensity is a float whose maximum value is sensor dependent.
-    //       A scaled 'fast sigmoid' function is therefore used to smoothly map
-    //       it's [-Inf, Inf] range to the blue channel with range [0, 255].
-    //       Note that other mappings might be better suited, especially when
-    //       using a sensor whose intensity is guaranteed to be positive.
-    //       This is just quick solution.
-    double I = point.intensity;
-    I = I / (1 + std::abs(I)) * 127.5 + 127.5;
-    auto blue = static_cast<uint8_t>(I);
-    colors.push_back(voxblox::Color(0, 0, blue, 1));
+    colors.push_back(voxblox::Color(0, 0, 0, 1));
   }
 
   // Initialize the TSDF integrator if this has not yet been done
