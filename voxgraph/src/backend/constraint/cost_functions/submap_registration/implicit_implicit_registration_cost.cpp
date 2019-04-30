@@ -2,7 +2,7 @@
 // Created by victor on 24.01.19.
 //
 
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost_fn.h"
+#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost.h"
 #include <minkindr_conversions/kindr_tf.h>
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
@@ -10,49 +10,22 @@
 #include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {
-ImplicitImplicitRegistrationCostFn::ImplicitImplicitRegistrationCostFn(
+ImplicitImplicitRegistrationCost::ImplicitImplicitRegistrationCost(
     VoxgraphSubmap::ConstPtr reference_submap_ptr,
-    VoxgraphSubmap::ConstPtr reading_submap_ptr,
-    SubmapRegisterer::Options::CostFunction options)
-    : ref_submap_ptr_(reference_submap_ptr),
-      reading_submap_ptr_(reading_submap_ptr),
-      reference_tsdf_layer_(reference_submap_ptr->getTsdfMap().getTsdfLayer()),
-      reading_tsdf_layer_(reading_submap_ptr->getTsdfMap().getTsdfLayer()),
-      reference_esdf_layer_(reference_submap_ptr->getEsdfMap().getEsdfLayer()),
-      reading_esdf_layer_(reading_submap_ptr->getEsdfMap().getEsdfLayer()),
-      tsdf_interpolator_(&reading_submap_ptr->getTsdfMap().getTsdfLayer()),
-      esdf_interpolator_(&reading_submap_ptr->getEsdfMap().getEsdfLayer()),
+    VoxgraphSubmap::ConstPtr reading_submap_ptr, const Config &config)
+    : RegistrationCost(reference_submap_ptr, reading_submap_ptr, config),
       relevant_reference_voxel_indices_(
           reference_submap_ptr->getRelevantBlockVoxelIndices()),
       num_relevant_reference_voxels_(
-          reference_submap_ptr->getNumRelevantVoxels()),
-      options_(options) {
-  // Ensure that the reference and reading submaps have gravity aligned Z-axes
-  voxblox::Transformation::Vector6 T_vec_reference =
-      ref_submap_ptr_->getPose().log();
-  voxblox::Transformation::Vector6 T_vec_reading =
-      reading_submap_ptr->getPose().log();
-  CHECK(T_vec_reference[3] < 1e-6 && T_vec_reference[4] < 1e-6)
-      << "Submap Z axes should be gravity aligned, yet submap "
-      << ref_submap_ptr_->getID() << " had non-zero roll & pitch: ["
-      << T_vec_reference[3] << ", " << T_vec_reference[4] << "]";
-  CHECK(T_vec_reading[3] < 1e-6 && T_vec_reading[4] < 1e-6)
-      << "Submap Z axes should be gravity aligned, yet submap "
-      << reading_submap_ptr_->getID() << " had non-zero roll & pitch: ["
-      << T_vec_reading[3] << ", " << T_vec_reading[4] << "]";
-
-  // Set number of parameters: namely 2 poses, each having 4 params (X,Y,Z,Yaw)
-  mutable_parameter_block_sizes()->clear();
-  mutable_parameter_block_sizes()->push_back(4);
-  mutable_parameter_block_sizes()->push_back(4);
-
+          reference_submap_ptr->getNumRelevantVoxels()) {
   // Set number of residuals (one per reference submap voxel)
   set_num_residuals(num_relevant_reference_voxels_);
 }
 
-bool ImplicitImplicitRegistrationCostFn::Evaluate(
-    double const *const *parameters, double *residuals,
-    double **jacobians) const {
+// TODO(victorr): Gradually move all common code to the base class
+bool ImplicitImplicitRegistrationCost::Evaluate(double const *const *parameters,
+                                                double *residuals,
+                                                double **jacobians) const {
   unsigned int residual_idx = 0;
   double summed_reference_weight = 0;
 
@@ -95,7 +68,7 @@ bool ImplicitImplicitRegistrationCostFn::Evaluate(
   float yo = T_vec_reference[1];  // y_reference
 
   // Publish the TF corresponding to the current optimized submap pose
-  if (options_.visualize_transforms_) {
+  if (config_.visualize_transforms_) {
     TfHelper::publishTransform(T_world__reading, "world", "optimized_submap",
                                true);
   }
@@ -111,7 +84,7 @@ bool ImplicitImplicitRegistrationCostFn::Evaluate(
         reference_tsdf_layer_.getBlockByIndex(kv.first);
     // Get a const pointer to the current reference submap esdf block, if needed
     voxblox::Block<voxblox::EsdfVoxel>::ConstPtr reference_esdf_block;
-    if (options_.use_esdf_distance) {
+    if (config_.use_esdf_distance) {
       reference_esdf_block = reference_esdf_layer_.getBlockPtrByIndex(kv.first);
     }
 
@@ -127,7 +100,7 @@ bool ImplicitImplicitRegistrationCostFn::Evaluate(
           reference_tsdf_block.computeCoordinatesFromVoxelIndex(voxel_index);
       // Find distance in reference submap
       double reference_distance;
-      if (options_.use_esdf_distance) {
+      if (config_.use_esdf_distance) {
         CHECK(reference_esdf_block->isValidVoxelIndex(voxel_index));
         const voxblox::EsdfVoxel &reference_esdf_voxel =
             reference_esdf_block->getVoxelByVoxelIndex(voxel_index);
@@ -142,7 +115,7 @@ bool ImplicitImplicitRegistrationCostFn::Evaluate(
       bool interp_possible;
       voxblox::InterpVector distances;
       voxblox::InterpVector q_vector;
-      if (options_.use_esdf_distance) {
+      if (config_.use_esdf_distance) {
         const voxblox::EsdfVoxel *neighboring_voxels[8];
         interp_possible = esdf_interpolator_.getVoxelsAndQVector(
             reading_coordinate, neighboring_voxels, &q_vector);
@@ -174,11 +147,11 @@ bool ImplicitImplicitRegistrationCostFn::Evaluate(
             (reference_distance - reading_distance) * reference_weight;
       } else {
         residuals[residual_idx] =
-            reference_weight * options_.no_correspondence_cost;
+            reference_weight * config_.no_correspondence_cost;
       }
 
       // Add residual to visualization pointcloud
-      if (options_.visualize_residuals) {
+      if (config_.visualize_residuals) {
         // Transform the current point into the world frame
         voxblox::Point world_t_world__point =
             T_world__reading * reading_coordinate;
@@ -253,7 +226,7 @@ bool ImplicitImplicitRegistrationCostFn::Evaluate(
           pResidual_pParamRead.setZero();
         }
         // Add Jacobian to visualization
-        if (options_.visualize_gradients) {
+        if (config_.visualize_gradients) {
           // Transform the current point and Jacobian into the world frame
           const voxblox::Point world_t_world__point =
               T_world__reading * reading_coordinate;

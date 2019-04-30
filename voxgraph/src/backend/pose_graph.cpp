@@ -93,7 +93,7 @@ void PoseGraph::optimize() {
 std::map<const cblox::SubmapID, const voxblox::Transformation>
 PoseGraph::getSubmapPoses() {
   std::map<const cblox::SubmapID, const voxblox::Transformation> submap_poses;
-  for (auto submap_node_kv : node_collection_.getSubmapNodes()) {
+  for (const auto &submap_node_kv : node_collection_.getSubmapNodes()) {
     submap_poses.emplace(submap_node_kv.second->getSubmapId(),
                          submap_node_kv.second->getPose());
   }

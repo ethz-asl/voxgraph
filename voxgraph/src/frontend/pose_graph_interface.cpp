@@ -191,8 +191,10 @@ void PoseGraphInterface::addHeightMeasurement(const SubmapID &submap_id,
 }
 
 void PoseGraphInterface::updateRegistrationConstraints() {
-  // Constrain all overlapping submaps to each other
+  // Remove the previous iteration's registration constraints
   pose_graph_.resetRegistrationConstraints();
+
+  // Add a constraint for each overlapping submap pair
   std::vector<cblox::SubmapID> submap_ids = submap_collection_ptr_->getIDs();
   for (unsigned int i = 0; i < submap_ids.size(); i++) {
     // Get a pointer to the first submap
@@ -213,6 +215,9 @@ void PoseGraphInterface::updateRegistrationConstraints() {
         constraint_config.first_submap_id = first_submap_id;
         constraint_config.second_submap_id = second_submap_id;
         constraint_config.information_matrix = registration_information_matrix_;
+        // TODO(victorr): Read this from ROS params
+        constraint_config.registration.registration_method =
+            RegistrationCost::RegistrationMethod::kExplicitToImplicit;
 
         // Add pointers to both submaps
         constraint_config.first_submap_ptr =
@@ -235,7 +240,7 @@ void PoseGraphInterface::optimize() {
   pose_graph_.optimize();
 
   // Publish debug visuals
-  pose_graph_vis_.publishPoseGraph(pose_graph_, "world", "optimized",
+  pose_graph_vis_.publishPoseGraph(pose_graph_, "odom", "optimized",
                                    pose_graph_pub_);
 }
 

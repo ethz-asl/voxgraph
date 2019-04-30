@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 #include "voxgraph/frontend/submap_collection/bounding_box.h"
+#include "voxgraph/frontend/submap_collection/isosurface_vertex.h"
 
 namespace voxgraph {
 class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
@@ -44,7 +45,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   const ros::Time getCreationTime() const;
   const voxblox::HierarchicalIndexMap &getRelevantBlockVoxelIndices() const;
   const unsigned int getNumRelevantVoxels() const;
-  const voxblox::Pointcloud &getIsosurfaceVertices() const;
+  const voxblox::AlignedVector<IsosurfaceVertex> &getIsosurfaceVertices() const;
   const unsigned int getNumIsosurfaceVertices() const;
 
   // Overlap and Bounding Box related methods
@@ -60,6 +61,9 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
  private:
   typedef Eigen::Matrix<voxblox::FloatingPoint, 4, 8> HomogBoxCornerMatrix;
+  using TsdfVoxel = voxblox::TsdfVoxel;
+  using TsdfLayer = voxblox::Layer<TsdfVoxel>;
+  using Interpolator = voxblox::Interpolator<voxblox::TsdfVoxel>;
 
   Config config_;
 
@@ -77,8 +81,8 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   unsigned int num_relevant_voxels_ = 0;
   void findRelevantVoxelIndices();
 
-  // Vector containing all isosurface vertex coordinates in submap frame
-  voxblox::Pointcloud isosurface_vertices_;
+  // Vector containing all isosurface vertices stored as [x, y, z, weight]
+  voxblox::AlignedVector<IsosurfaceVertex> isosurface_vertices_;
   unsigned int num_isosurface_vertices_ = 0;
   void findIsosurfaceVertices();
 

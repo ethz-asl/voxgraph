@@ -8,7 +8,7 @@
 #include <voxblox/io/layer_io.h>
 #include <memory>
 #include <string>
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost_fn.h"
+#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost.h"
 
 namespace voxgraph {
 MapEvaluation::MapEvaluation(const ros::NodeHandle &node_handle,
@@ -68,7 +68,7 @@ void MapEvaluation::evaluate(
       << "Submap collection and ground truth must have equal voxel size.";
 
   // Load the submap collection's projected TSDF map into a VoxgraphSubmap
-  // NOTE: This is done in order to use voxgraph's SubmapRegisterer (see below)
+  // NOTE: This is done in order to use our SubmapRegistrationHelper (see below)
   Transformation T_identity;
   TsdfLayer projected_tsdf_layer(
       submap_collection.getProjectedMap()->getTsdfLayer());
@@ -122,8 +122,8 @@ void MapEvaluation::alignSubmapAtoSubmapB(
   ceres::Solver::Options ceres_options;
   ceres_options.max_num_iterations = 200;
   ceres_options.parameter_tolerance = 1e-12;
-  SubmapRegisterer::Options::CostFunction cost_function_options;
-  cost_function_options.use_esdf_distance = true;
+  RegistrationCost::Config cost_config;
+  cost_config.use_esdf_distance = true;
 
   // Add the parameter blocks to the optimization
   double layer_B_pose[4] = {0, 0, 0, 0};
@@ -133,8 +133,8 @@ void MapEvaluation::alignSubmapAtoSubmapB(
   problem.AddParameterBlock(layer_A_pose, 4);
 
   // Create and add the submap alignment cost function to the problem
-  ceres::CostFunction *cost_function = new ImplicitImplicitRegistrationCostFn(
-      submap_B, submap_A, cost_function_options);
+  ceres::CostFunction *cost_function =
+      new ImplicitImplicitRegistrationCost(submap_B, submap_A, cost_config);
   problem.AddResidualBlock(cost_function, loss_function, layer_B_pose,
                            layer_A_pose);
 

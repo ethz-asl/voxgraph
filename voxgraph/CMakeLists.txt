@@ -27,8 +27,9 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/backend/constraint/relative_pose_constraint.cpp
     src/backend/constraint/absolute_pose_constraint.cpp
     src/backend/constraint/registration_constraint.cpp
-    src/backend/constraint/cost_functions/submap_registration/submap_registerer.cpp
-    src/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost_fn.cpp
+    src/tools/submap_registration_helper.cpp
+    src/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost.cpp
+    src/backend/constraint/cost_functions/submap_registration/explicit_implicit_registration_cost.cpp
     src/tools/rosbag_helper.cpp
     src/tools/tf_helper.cpp
     src/tools/evaluation/map_evaluation.cpp

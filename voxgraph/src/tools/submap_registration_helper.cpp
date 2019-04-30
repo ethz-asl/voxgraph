@@ -2,19 +2,19 @@
 // Created by victor on 04.12.18.
 //
 
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/submap_registerer.h"
+#include "voxgraph/tools/submap_registration_helper.h"
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost_fn.h"
+#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost.h"
 
 namespace voxgraph {
-SubmapRegisterer::SubmapRegisterer(
+SubmapRegistrationHelper::SubmapRegistrationHelper(
     cblox::SubmapCollection<VoxgraphSubmap>::ConstPtr submap_collection_ptr,
     const Options &options)
     : submap_collection_ptr_(std::move(submap_collection_ptr)),
       options_(options) {}
 
-bool SubmapRegisterer::testRegistration(
+bool SubmapRegistrationHelper::testRegistration(
     const cblox::SubmapID &reference_submap_id,
     const cblox::SubmapID &reading_submap_id, double *world_pose_reading,
     ceres::Solver::Summary *summary) {
@@ -43,21 +43,19 @@ bool SubmapRegisterer::testRegistration(
 
   // Create and add submap alignment cost function
   ceres::CostFunction *cost_function;
-  if (options_.cost.jacobian_evaluation_method ==
-      Options::CostFunction::JacobianEvaluationMethod::kNumeric) {
+  if (options_.registration.jacobian_evaluation_method ==
+      RegistrationCost::JacobianEvaluationMethod::kNumeric) {
     // Create cost function with one residual per voxel
-    ImplicitImplicitRegistrationCostFn *analytic_cost_function_ptr =
-        new ImplicitImplicitRegistrationCostFn(
-            reference_submap_ptr, reading_submap_ptr, options_.cost);
-    cost_function =
-        new ceres::NumericDiffCostFunction<ImplicitImplicitRegistrationCostFn,
-                                           ceres::CENTRAL, ceres::DYNAMIC, 4,
-                                           4>(
-            analytic_cost_function_ptr, ceres::TAKE_OWNERSHIP,
-            reference_submap_ptr->getNumRelevantVoxels());
+    ImplicitImplicitRegistrationCost *analytic_cost_function_ptr =
+        new ImplicitImplicitRegistrationCost(
+            reference_submap_ptr, reading_submap_ptr, options_.registration);
+    cost_function = new ceres::NumericDiffCostFunction<
+        ImplicitImplicitRegistrationCost, ceres::CENTRAL, ceres::DYNAMIC, 4, 4>(
+        analytic_cost_function_ptr, ceres::TAKE_OWNERSHIP,
+        reference_submap_ptr->getNumRelevantVoxels());
   } else {
-    cost_function = new ImplicitImplicitRegistrationCostFn(
-        reference_submap_ptr, reading_submap_ptr, options_.cost);
+    cost_function = new ImplicitImplicitRegistrationCost(
+        reference_submap_ptr, reading_submap_ptr, options_.registration);
   }
   problem.AddResidualBlock(cost_function, loss_function, world_pose_ref,
                            world_pose_reading);

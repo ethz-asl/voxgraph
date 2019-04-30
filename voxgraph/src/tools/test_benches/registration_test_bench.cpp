@@ -13,8 +13,8 @@
 #include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/submap_registerer.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
+#include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
 
@@ -78,33 +78,36 @@ int main(int argc, char **argv) {
 
   // Read ROS params: Submap registration settings
   ros::NodeHandle nh_registration(nh_private, "submap_registration");
-  voxgraph::SubmapRegisterer::Options registerer_options;
+  voxgraph::SubmapRegistrationHelper::Options registerer_options;
   nh_registration.param("solver/max_num_iterations",
                         registerer_options.solver.max_num_iterations, 40);
   nh_registration.param("solver/parameter_tolerance",
                         registerer_options.solver.parameter_tolerance, 3e-9);
   nh_registration.param("cost/no_correspondence_cost",
-                        registerer_options.cost.no_correspondence_cost, 0.0);
+                        registerer_options.registration.no_correspondence_cost,
+                        0.0);
   nh_registration.param("cost/use_esdf_distance",
-                        registerer_options.cost.use_esdf_distance, true);
+                        registerer_options.registration.use_esdf_distance,
+                        true);
   nh_registration.param("cost/visualize_residuals",
-                        registerer_options.cost.visualize_residuals, false);
+                        registerer_options.registration.visualize_residuals,
+                        false);
   nh_registration.param("cost/visualize_gradients",
-                        registerer_options.cost.visualize_gradients, false);
+                        registerer_options.registration.visualize_gradients,
+                        false);
   nh_registration.param("cost/visualize_transforms",
-                        registerer_options.cost.visualize_transforms_, false);
+                        registerer_options.registration.visualize_transforms_,
+                        false);
   {
     std::string cost_function_type_str;
     nh_registration.param<std::string>("cost/cost_function_type",
                                        cost_function_type_str, "analytic");
     if (cost_function_type_str == "analytic") {
-      registerer_options.cost.jacobian_evaluation_method =
-          voxgraph::SubmapRegisterer::Options::CostFunction::
-              JacobianEvaluationMethod::kAnalytic;
+      registerer_options.registration.jacobian_evaluation_method =
+          voxgraph::RegistrationCost::JacobianEvaluationMethod::kAnalytic;
     } else if (cost_function_type_str == "numeric") {
-      registerer_options.cost.jacobian_evaluation_method =
-          voxgraph::SubmapRegisterer::Options::CostFunction::
-              JacobianEvaluationMethod::kNumeric;
+      registerer_options.registration.jacobian_evaluation_method =
+          voxgraph::RegistrationCost::JacobianEvaluationMethod::kNumeric;
     } else {
       ROS_FATAL(
           "Param \"submap_registration/cost/cost_function_type\" "
@@ -113,6 +116,10 @@ int main(int argc, char **argv) {
       return -1;
     }
   }
+
+  // TODO(victorr): Read this from ROS params
+  registerer_options.registration.registration_method =
+      voxgraph::RegistrationCost::RegistrationMethod::kExplicitToImplicit;
 
   // TODO(victorr): Reintroduce these
   // nh_registration.param("cost/min_voxel_weight",
@@ -150,8 +157,8 @@ int main(int argc, char **argv) {
   }
 
   // Setup the submap to submap registerer
-  voxgraph::SubmapRegisterer submap_registerer(submap_collection_ptr,
-                                               registerer_options);
+  voxgraph::SubmapRegistrationHelper submap_registerer(submap_collection_ptr,
+                                                       registerer_options);
 
   // Setup visualization tools
   voxgraph::SubmapVisuals submap_vis(submap_collection_ptr->getConfig());
@@ -238,9 +245,9 @@ int main(int argc, char **argv) {
   } else {
     log_file << reading_submap_id;
   }
-  log_file << "," << (registerer_options.cost.visualize_residuals ||
-                      registerer_options.cost.visualize_gradients)
-           << "," << registerer_options.cost.use_esdf_distance << "\n"
+  log_file << "," << (registerer_options.registration.visualize_residuals ||
+                      registerer_options.registration.visualize_gradients)
+           << "," << registerer_options.registration.use_esdf_distance << "\n"
            << "x_true, y_true, z_true, yaw_true, pitch_true, roll_true\n"
            << ground_truth_position.x() << "," << ground_truth_position.y()
            << "," << ground_truth_position.z() << ","

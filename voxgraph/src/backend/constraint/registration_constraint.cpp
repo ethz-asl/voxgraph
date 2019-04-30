@@ -3,6 +3,8 @@
 //
 
 #include "voxgraph/backend/constraint/registration_constraint.h"
+#include "voxgraph/backend/constraint/cost_functions/submap_registration/explicit_implicit_registration_cost.h"
+#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost.h"
 
 namespace voxgraph {
 void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
@@ -25,28 +27,23 @@ void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
   second_submap_node_ptr->addToProblem(
       problem, node_collection.getLocalParameterization());
 
-  // TODO(victorr): Load cost options from ROS params instead of using default
-  SubmapRegisterer::Options::CostFunction cost_options;
-  cost_options.registration_method =
-      SubmapRegisterer::Options::CostFunction::kImplicitToImplicit;
-  cost_options.jacobian_evaluation_method =
-      SubmapRegisterer::Options::CostFunction::kAnalytic;
-  cost_options.no_correspondence_cost = 0;
-  cost_options.use_esdf_distance = true;
-  cost_options.visualize_residuals = false;
-  cost_options.visualize_gradients = false;
-  cost_options.visualize_transforms_ = false;
-
   // Create submap alignment cost function
   ceres::CostFunction *cost_function;
-  if (cost_options.jacobian_evaluation_method ==
-      SubmapRegisterer::Options::CostFunction::JacobianEvaluationMethod::
-          kNumeric) {
+  if (config_.registration.jacobian_evaluation_method ==
+      RegistrationCost::JacobianEvaluationMethod::kNumeric) {
     cost_function = nullptr;
     LOG(FATAL) << "Numeric cost not yet implemented";
   } else {
-    cost_function = new ImplicitImplicitRegistrationCostFn(
-        config_.first_submap_ptr, config_.second_submap_ptr, cost_options);
+    if (config_.registration.registration_method ==
+        RegistrationCost::RegistrationMethod::kExplicitToImplicit) {
+      cost_function = new ExplicitImplicitRegistrationCost(
+          config_.first_submap_ptr, config_.second_submap_ptr,
+          config_.registration);
+    } else {
+      cost_function = new ImplicitImplicitRegistrationCost(
+          config_.first_submap_ptr, config_.second_submap_ptr,
+          config_.registration);
+    }
   }
 
   // Add the constraint to the optimization and keep track of it

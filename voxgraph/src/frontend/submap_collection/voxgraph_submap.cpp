@@ -6,6 +6,7 @@
 #include <voxblox/integrator/merge_integration.h>
 #include <voxblox/interpolator/interpolator.h>
 #include <voxblox/mesh/mesh_integrator.h>
+#include <memory>
 #include <utility>
 
 namespace voxgraph {
@@ -25,10 +26,10 @@ VoxgraphSubmap::VoxgraphSubmap(
   config_.esdf_voxels_per_side = tsdf_layer.voxels_per_side();
 
   // Reset the inherited EsdfMap
-  esdf_map_.reset(new voxblox::EsdfMap(config_));
+  esdf_map_ = std::make_shared<voxblox::EsdfMap>(config_);
 
   // Reset the inherited TsdfMap to contain a copy of the provided tsdf_layer
-  tsdf_map_.reset(new voxblox::TsdfMap(tsdf_layer));
+  tsdf_map_ = std::make_shared<voxblox::TsdfMap>(tsdf_layer);
 }
 
 void VoxgraphSubmap::transformSubmap(const voxblox::Transformation &T_new_old) {
@@ -69,12 +70,11 @@ void VoxgraphSubmap::finishSubmap() {
 
   // Populate the relevant block voxel index hash map
   findRelevantVoxelIndices();
-  std::cout << "# relevant voxels: " << num_relevant_voxels_ << "\n"
-            << std::endl;
+  std::cout << "\n# relevant voxels: " << num_relevant_voxels_ << std::endl;
 
   // Populate the isosurface vertex vector
   findIsosurfaceVertices();
-  std::cout << "# isosurface vertices: " << num_isosurface_vertices_ << "\n"
+  std::cout << "\n# isosurface vertices: " << num_isosurface_vertices_
             << std::endl;
 
   // Set the finished flag
@@ -101,6 +101,10 @@ const unsigned int VoxgraphSubmap::getNumRelevantVoxels() const {
 }
 
 void VoxgraphSubmap::findRelevantVoxelIndices() {
+  // Reset the cached relevant voxels
+  relevant_block_voxel_indices_.clear();
+  num_relevant_voxels_ = 0;
+
   // Get a reference to the TSDF layer
   const voxblox::Layer<voxblox::TsdfVoxel> &tsdf_layer =
       tsdf_map_->getTsdfLayer();
@@ -136,7 +140,8 @@ void VoxgraphSubmap::findRelevantVoxelIndices() {
   }
 }
 
-const voxblox::Pointcloud &VoxgraphSubmap::getIsosurfaceVertices() const {
+const voxblox::AlignedVector<IsosurfaceVertex>
+    &VoxgraphSubmap::getIsosurfaceVertices() const {
   CHECK(finished_) << "The cached isosurface vertex vector is only available"
                       " once the submap has been declared finished.";
   return isosurface_vertices_;
@@ -147,6 +152,10 @@ const unsigned int VoxgraphSubmap::getNumIsosurfaceVertices() const {
 }
 
 void VoxgraphSubmap::findIsosurfaceVertices() {
+  // Reset the cached isosurface vertex vector
+  isosurface_vertices_.clear();
+  num_isosurface_vertices_ = 0;
+
   // Generate the mesh layer
   voxblox::MeshLayer mesh_layer(tsdf_map_->block_size());
   voxblox::MeshIntegratorConfig mesh_integrator_config;
@@ -158,13 +167,25 @@ void VoxgraphSubmap::findIsosurfaceVertices() {
 
   // Convert it into a connected mesh
   voxblox::Point origin{0, 0, 0};
-  voxblox::Mesh connected_mesh_layer(tsdf_map_->block_size(), origin);
-  mesh_layer.getConnectedMesh(&connected_mesh_layer,
-                              0.5 * tsdf_map_->voxel_size());
+  voxblox::Mesh connected_mesh(tsdf_map_->block_size(), origin);
+  mesh_layer.getConnectedMesh(&connected_mesh, 0.5 * tsdf_map_->voxel_size());
+
+  // Create an interpolator to interpolate the vertex weights from the TSDF
+  Interpolator tsdf_interpolator(tsdf_map_->getTsdfLayerPtr());
 
   // Extract the vertices
-  isosurface_vertices_ = connected_mesh_layer.vertices;
-  num_isosurface_vertices_ = isosurface_vertices_.size();
+  for (const auto &mesh_vertex : connected_mesh.vertices) {
+    // Try to interpolate the voxel weight
+    voxblox::TsdfVoxel voxel;
+    if (tsdf_interpolator.getVoxel(mesh_vertex, &voxel, true)) {
+      CHECK_LE(voxel.distance, 1e-3 * tsdf_map_->voxel_size());
+
+      // Store the isosurface vertex
+      IsosurfaceVertex isosurface_vertex{mesh_vertex, voxel.weight};
+      isosurface_vertices_.push_back(isosurface_vertex);
+      num_isosurface_vertices_++;
+    }
+  }
 }
 
 bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap &otherSubmap) const {
