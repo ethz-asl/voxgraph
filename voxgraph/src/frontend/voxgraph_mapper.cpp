@@ -8,8 +8,8 @@
 #include <memory>
 #include <string>
 #include <thread>
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/submap_registerer.h"
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
+#include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {
@@ -172,9 +172,11 @@ void VoxgraphMapper::pointcloudCallback(
     // NOTE: We only add submaps to the pose graph once they're finished to
     //       avoid generating their ESDF more than once
     if (!submap_collection_ptr_->empty()) {
-      // Pause the rosbag (remove this once the system runs in real-time)
+      // Automatically pause the rosbag
+      // NOTE: This is useful when playing the rosbag faster than real-time
       // TODO(victorr): Parametrize this
-      if (false) {
+      bool rosbag_pausing_enabled = false;
+      if (rosbag_pausing_enabled) {
         rosbag_helper_.pauseRosbag();
       }
 
@@ -225,9 +227,9 @@ void VoxgraphMapper::pointcloudCallback(
                                  world_frame_, combined_mesh_pub_);
       meshing_thread.detach();
 
-      // Play the rosbag (remove this once the system runs in real-time)
+      // Resume playing  the rosbag
       // TODO(victorr): Parametrize this
-      if (false) {
+      if (rosbag_pausing_enabled) {
         rosbag_helper_.playRosbag();
       }
     }
