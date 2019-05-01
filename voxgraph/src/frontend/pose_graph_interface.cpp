@@ -11,6 +11,7 @@ PoseGraphInterface::PoseGraphInterface(
     ros::NodeHandle node_handle,
     VoxgraphSubmapCollection::Ptr submap_collection_ptr, bool verbose)
     : submap_collection_ptr_(std::move(submap_collection_ptr)),
+      submap_vis_(submap_collection_ptr_->getConfig()),
       verbose_(verbose) {
   // Zero initialize all information matrices
   odometry_information_matrix_.setZero();
@@ -22,6 +23,8 @@ PoseGraphInterface::PoseGraphInterface(
   // Advertise the pose graph visuals publisher
   pose_graph_pub_ = node_handle.advertise<visualization_msgs::Marker>(
       "pose_graph", 100, true);
+  submap_pub_ = node_handle.advertise<visualization_msgs::Marker>("submap_info",
+                                                                  100, true);
 }
 
 void PoseGraphInterface::setPoseGraphConfigFromRosParams(
@@ -201,6 +204,12 @@ void PoseGraphInterface::updateRegistrationConstraints() {
     cblox::SubmapID first_submap_id = submap_ids[i];
     const VoxgraphSubmap& first_submap =
         submap_collection_ptr_->getSubMap(first_submap_id);
+
+    // Publish debug visuals
+    submap_vis_.publishBox(
+        first_submap.getWorldFrameSurfaceAabb().getCornerCoordinates(),
+        voxblox::Color::Blue(), "odom",
+        "surface_abb" + std::to_string(first_submap_id), submap_pub_);
 
     for (unsigned int j = i + 1; j < submap_ids.size(); j++) {
       // Get the second submap

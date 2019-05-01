@@ -59,7 +59,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
       RegistrationPointType registration_point_type) const;
 
   // Overlap and Bounding Box related methods
-  bool overlapsWith(const VoxgraphSubmap &otherSubmap) const;
+  bool overlapsWith(const VoxgraphSubmap &other_submap) const;
   const BoundingBox getSubmapFrameSurfaceObb() const;
   const BoundingBox getSubmapFrameSubmapObb() const;
   const BoundingBox getWorldFrameSurfaceAabb() const;

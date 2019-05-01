@@ -5,6 +5,7 @@
 #ifndef VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_H_
 #define VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_H_
 
+#include <voxgraph/tools/visualization/submap_visuals.h>
 #include <utility>
 #include "voxgraph/backend/pose_graph.h"
 #include "voxgraph/common.h"
@@ -45,8 +46,10 @@ class PoseGraphInterface {
 
   // Pose graph and visualization tools
   PoseGraph pose_graph_;
+  SubmapVisuals submap_vis_;
   PoseGraphVisuals pose_graph_vis_;
   ros::Publisher pose_graph_pub_;
+  ros::Publisher submap_pub_;
 
   // Information matrices for each measurement type
   Constraint::InformationMatrix odometry_information_matrix_;
