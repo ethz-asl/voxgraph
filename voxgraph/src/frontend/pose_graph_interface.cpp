@@ -218,6 +218,7 @@ void PoseGraphInterface::updateRegistrationConstraints() {
         // TODO(victorr): Read this from ROS params
         constraint_config.registration.registration_method =
             RegistrationCost::RegistrationMethod::kExplicitToImplicit;
+        constraint_config.registration.sampling_ratio = 0.05;
 
         // Add pointers to both submaps
         constraint_config.first_submap_ptr =
