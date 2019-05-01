@@ -70,7 +70,7 @@ void VoxgraphSubmap::finishSubmap() {
 
   // Populate the relevant block voxel index hash map
   findRelevantVoxelIndices();
-  std::cout << "\n# relevant voxels: " << num_relevant_voxels_ << std::endl;
+  std::cout << "\n# relevant voxels: " << relevant_voxels_.size() << std::endl;
 
   // Populate the isosurface vertex vector
   findIsosurfaceVertices();
@@ -95,27 +95,27 @@ const ros::Time VoxgraphSubmap::getCreationTime() const {
   }
 }
 
-const voxblox::HierarchicalIndexMap &
-VoxgraphSubmap::getRelevantBlockVoxelIndices() const {
-  CHECK(finished_) << "The cached relevant voxel index list is only available"
+const WeightedSampler<RegistrationPoint> &VoxgraphSubmap::getRegistrationPoints(
+    RegistrationPointType registration_point_type) const {
+  CHECK(finished_) << "The cached registration points are only available"
                       " once the submap has been declared finished.";
-  return relevant_block_voxel_indices_;
-}
-
-const unsigned int VoxgraphSubmap::getNumRelevantVoxels() const {
-  return num_relevant_voxels_;
+  switch (registration_point_type) {
+    case RegistrationPointType::kVoxels:
+      return relevant_voxels_;
+    case RegistrationPointType::kIsosurfacePoints:
+      return isosurface_vertices_;
+  }
 }
 
 void VoxgraphSubmap::findRelevantVoxelIndices() {
   // Reset the cached relevant voxels
-  relevant_block_voxel_indices_.clear();
-  num_relevant_voxels_ = 0;
+  relevant_voxels_.clear();
 
-  // Get a reference to the TSDF layer
-  const voxblox::Layer<voxblox::TsdfVoxel> &tsdf_layer =
-      tsdf_map_->getTsdfLayer();
+  // Get references to the TSDF and ESDF layers
+  const TsdfLayer &tsdf_layer = tsdf_map_->getTsdfLayer();
+  const EsdfLayer &esdf_layer = esdf_map_->getEsdfLayer();
 
-  // Get list of all allocated voxel blocks in the reference submap
+  // Get list of all allocated voxel blocks in the submap
   voxblox::BlockIndexList block_list;
   tsdf_layer.getAllAllocatedBlocks(&block_list);
 
@@ -123,40 +123,47 @@ void VoxgraphSubmap::findRelevantVoxelIndices() {
   size_t vps = tsdf_map_->getTsdfLayer().voxels_per_side();
   size_t num_voxels_per_block = vps * vps * vps;
 
-  // Create a list containing only reference voxels that matter
-  // i.e. that have been observed and fall within a truncation band
-  // Iterate over all allocated blocks in the reference submap
+  // Iterate over all allocated blocks in the submap
   double min_voxel_weight = config_.registration_filter.min_voxel_weight;
   double max_voxel_distance = config_.registration_filter.max_voxel_distance;
   for (const voxblox::BlockIndex &block_index : block_list) {
-    const voxblox::Block<voxblox::TsdfVoxel> &reference_block =
-        tsdf_layer.getBlockByIndex(block_index);
+    // Get the TSDF block and ESDF block if needed
+    const TsdfBlock &tsdf_block = tsdf_layer.getBlockByIndex(block_index);
+    EsdfBlock::ConstPtr esdf_block;
+    if (config_.registration_filter.use_esdf_distance) {
+      esdf_block = esdf_layer.getBlockPtrByIndex(block_index);
+    }
+
     // Iterate over all voxels in block
     for (size_t linear_index = 0u; linear_index < num_voxels_per_block;
          ++linear_index) {
-      const voxblox::TsdfVoxel &ref_voxel =
-          reference_block.getVoxelByLinearIndex(linear_index);
+      const TsdfVoxel &tsdf_voxel =
+          tsdf_block.getVoxelByLinearIndex(linear_index);
       // Select the observed voxels within the truncation band
-      if (ref_voxel.weight > min_voxel_weight &&
-          std::abs(ref_voxel.distance) < max_voxel_distance) {
-        voxblox::VoxelIndex voxel_index =
-            reference_block.computeVoxelIndexFromLinearIndex(linear_index);
-        relevant_block_voxel_indices_[block_index].push_back(voxel_index);
-        num_relevant_voxels_++;
+      if (tsdf_voxel.weight > min_voxel_weight &&
+          std::abs(tsdf_voxel.distance) < max_voxel_distance) {
+        // Get the voxel position
+        voxblox::Point voxel_coordinates =
+            tsdf_block.computeCoordinatesFromLinearIndex(linear_index);
+
+        // Get the distance at the voxel
+        float distance;
+        if (config_.registration_filter.use_esdf_distance) {
+          CHECK(esdf_block->isValidLinearIndex(linear_index));
+          const EsdfVoxel &esdf_voxel =
+              esdf_block->getVoxelByLinearIndex(linear_index);
+          distance = esdf_voxel.distance;
+        } else {
+          distance = tsdf_voxel.distance;
+        }
+
+        // Store the relevant voxel
+        RegistrationPoint relevant_voxel{voxel_coordinates, distance,
+                                         tsdf_voxel.weight};
+        relevant_voxels_.addItem(relevant_voxel, tsdf_voxel.weight);
       }
     }
   }
-}
-
-const WeightedSampler<WeightedVertex> &VoxgraphSubmap::getIsosurfacePoints()
-    const {
-  CHECK(finished_) << "The cached isosurface vertex vector is only available"
-                      " once the submap has been declared finished.";
-  return isosurface_vertices_;
-}
-
-const unsigned int VoxgraphSubmap::getNumIsosurfacePoints() const {
-  return isosurface_vertices_.size();
 }
 
 void VoxgraphSubmap::findIsosurfaceVertices() {
@@ -182,14 +189,15 @@ void VoxgraphSubmap::findIsosurfaceVertices() {
   Interpolator tsdf_interpolator(tsdf_map_->getTsdfLayerPtr());
 
   // Extract the vertices
-  for (const auto &mesh_vertex : connected_mesh.vertices) {
+  for (const auto &mesh_vertex_coordinates : connected_mesh.vertices) {
     // Try to interpolate the voxel weight
     voxblox::TsdfVoxel voxel;
-    if (tsdf_interpolator.getVoxel(mesh_vertex, &voxel, true)) {
+    if (tsdf_interpolator.getVoxel(mesh_vertex_coordinates, &voxel, true)) {
       CHECK_LE(voxel.distance, 1e-2 * tsdf_map_->voxel_size());
 
       // Store the isosurface vertex
-      WeightedVertex isosurface_vertex{mesh_vertex, voxel.weight};
+      RegistrationPoint isosurface_vertex{mesh_vertex_coordinates,
+                                          voxel.distance, voxel.weight};
       isosurface_vertices_.addItem(isosurface_vertex, voxel.weight);
     }
   }

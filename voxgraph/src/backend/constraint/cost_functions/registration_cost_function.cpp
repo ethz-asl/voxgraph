@@ -1,8 +1,8 @@
 //
-// Created by victor on 24.01.19.
+// Created by victor on 30.04.19.
 //
 
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/explicit_implicit_registration_cost.h"
+#include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 #include <minkindr_conversions/kindr_tf.h>
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
@@ -10,30 +10,58 @@
 #include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {
-ExplicitImplicitRegistrationCost::ExplicitImplicitRegistrationCost(
+RegistrationCostFunction::RegistrationCostFunction(
     VoxgraphSubmap::ConstPtr reference_submap_ptr,
-    VoxgraphSubmap::ConstPtr reading_submap_ptr, const Config &config)
-    : RegistrationCost(reference_submap_ptr, reading_submap_ptr, config),
-      isosurface_vertex_sampler_(reference_submap_ptr->getIsosurfacePoints()) {
+    VoxgraphSubmap::ConstPtr reading_submap_ptr,
+    const RegistrationCostFunction::Config &config)
+    : ref_submap_ptr_(reference_submap_ptr),
+      reading_submap_ptr_(reading_submap_ptr),
+      reference_tsdf_layer_(reference_submap_ptr->getTsdfMap().getTsdfLayer()),
+      reading_tsdf_layer_(reading_submap_ptr->getTsdfMap().getTsdfLayer()),
+      reference_esdf_layer_(reference_submap_ptr->getEsdfMap().getEsdfLayer()),
+      reading_esdf_layer_(reading_submap_ptr->getEsdfMap().getEsdfLayer()),
+      tsdf_interpolator_(&reading_submap_ptr->getTsdfMap().getTsdfLayer()),
+      esdf_interpolator_(&reading_submap_ptr->getEsdfMap().getEsdfLayer()),
+      registration_points_(reference_submap_ptr->getRegistrationPoints(
+          config.registration_point_type)),
+      config_(config) {
+  // Ensure that the reference and reading submaps have gravity aligned Z-axes
+  voxblox::Transformation::Vector6 T_vec_reference =
+      ref_submap_ptr_->getPose().log();
+  voxblox::Transformation::Vector6 T_vec_reading =
+      reading_submap_ptr->getPose().log();
+  CHECK(T_vec_reference[3] < 1e-6 && T_vec_reference[4] < 1e-6)
+      << "Submap Z axes should be gravity aligned, yet submap "
+      << ref_submap_ptr_->getID() << " had non-zero roll & pitch: ["
+      << T_vec_reference[3] << ", " << T_vec_reference[4] << "]";
+  CHECK(T_vec_reading[3] < 1e-6 && T_vec_reading[4] < 1e-6)
+      << "Submap Z axes should be gravity aligned, yet submap "
+      << reading_submap_ptr_->getID() << " had non-zero roll & pitch: ["
+      << T_vec_reading[3] << ", " << T_vec_reading[4] << "]";
+
+  // Set number of parameters: namely 2 poses, each having 4 params
+  // (X,Y,Z,Yaw)
+  mutable_parameter_block_sizes()->clear();
+  mutable_parameter_block_sizes()->push_back(4);
+  mutable_parameter_block_sizes()->push_back(4);
+
   // Set number of residuals
   int num_registration_residuals;
   if (config_.sampling_ratio != -1) {
-    // Up/down sample the reference submap isosurface points
+    // Up/down sample the reference submap's registration points
     // according to the sampling ratio
     num_registration_residuals =
-        static_cast<int>(config_.sampling_ratio *
-                         reference_submap_ptr->getNumIsosurfacePoints());
+        static_cast<int>(config_.sampling_ratio * registration_points_.size());
   } else {
-    // Deterministically use all isosurface vertices
-    num_registration_residuals = reference_submap_ptr->getNumIsosurfacePoints();
+    // Deterministically use all registration points
+    num_registration_residuals = registration_points_.size();
   }
   set_num_residuals(num_registration_residuals);
 }
 
-// TODO(victorr): Gradually move all common code to the base class
-bool ExplicitImplicitRegistrationCost::Evaluate(double const *const *parameters,
-                                                double *residuals,
-                                                double **jacobians) const {
+bool RegistrationCostFunction::Evaluate(double const *const *parameters,
+                                        double *residuals,
+                                        double **jacobians) const {
   unsigned int residual_idx = 0;
   double summed_reference_weight = 0;
 
@@ -85,21 +113,20 @@ bool ExplicitImplicitRegistrationCost::Evaluate(double const *const *parameters,
   const voxblox::Transformation T_reading__reference =
       T_world__reading.inverse() * T_world__reference;
 
-  // Iterate over the isosurface vertex samples
+  // Iterate over all registration points
   for (unsigned int sample_i = 0; sample_i < num_residuals(); sample_i++) {
-    WeightedVertex reference_isosurface_vertex;
+    RegistrationPoint registration_point;
     if (config_.sampling_ratio == -1) {
-      // We deterministically use all isosurface vertices
-      reference_isosurface_vertex = isosurface_vertex_sampler_[sample_i];
+      // We deterministically use each registration point
+      registration_point = registration_points_[sample_i];
     } else {
-      // Draw an isosurface vertex sample at random
-      reference_isosurface_vertex.position =
-          isosurface_vertex_sampler_.getRandomItem().position;
-      reference_isosurface_vertex.weight = 1;
+      // Draw a registration point at random
+      registration_point = registration_points_.getRandomItem();
+      registration_point.weight = 1;
     }
 
-    summed_reference_weight += reference_isosurface_vertex.weight;
-    voxblox::Point reference_coordinate = reference_isosurface_vertex.position;
+    summed_reference_weight += registration_point.weight;
+    voxblox::Point reference_coordinate = registration_point.position;
 
     // Get distances and q_vector in reading submap
     const voxblox::Point reading_coordinate =
@@ -136,10 +163,11 @@ bool ExplicitImplicitRegistrationCost::Evaluate(double const *const *parameters,
           q_vector * (interp_table_ * distances.transpose());
 
       residuals[residual_idx] =
-          -reading_distance * reference_isosurface_vertex.weight;
+          (registration_point.distance - reading_distance) *
+          registration_point.weight;
     } else {
       residuals[residual_idx] =
-          reference_isosurface_vertex.weight * config_.no_correspondence_cost;
+          registration_point.weight * config_.no_correspondence_cost;
     }
 
     // Add residual to visualization pointcloud
@@ -169,13 +197,13 @@ bool ExplicitImplicitRegistrationCost::Evaluate(double const *const *parameters,
         // clang-format off
         Eigen::Matrix<float, 8, 3> pQ_pr;
         pQ_pr << 0,             0,             0,
-            inv,           0,             0,
-            0,             inv,           0,
-            0,             0,             inv,
-            inv * Dy,      inv * Dx,      0,
-            0,             inv * Dz,      inv * Dy,
-            inv * Dz,      0,             inv * Dx,
-            inv * Dy * Dz, inv * Dx * Dz, inv * Dx * Dy;
+                 inv,           0,             0,
+                 0,             inv,           0,
+                 0,             0,             inv,
+                 inv * Dy,      inv * Dx,      0,
+                 0,             inv * Dz,      inv * Dy,
+                 inv * Dz,      0,             inv * Dx,
+                 inv * Dy * Dz, inv * Dx * Dz, inv * Dx * Dy;
         // Calculate the Jacobian of the interpolation function
         Eigen::Matrix<float, 1, 3> pInterp_pr =
             distances * interp_table_.transpose() * pQ_pr;
@@ -207,12 +235,12 @@ bool ExplicitImplicitRegistrationCost::Evaluate(double const *const *parameters,
         //                to reduce redundant computations
 
         // Compute the Jacobian of the residual over the reference pose params
-        pResidual_pParamRef = -reference_isosurface_vertex.weight * pInterp_pr *
+        pResidual_pParamRef = -registration_point.weight * pInterp_pr *
                               pTrr_pParamRef_times_r_ref;
 
         // Compute the Jacobian of the residual over the reading pose params
-        pResidual_pParamRead = -reference_isosurface_vertex.weight *
-                               pInterp_pr * pTrr_pParamRead_times_r_ref;
+        pResidual_pParamRead = -registration_point.weight * pInterp_pr *
+                               pTrr_pParamRead_times_r_ref;
       } else {
         pResidual_pParamRef.setZero();
         pResidual_pParamRead.setZero();
@@ -245,7 +273,7 @@ bool ExplicitImplicitRegistrationCost::Evaluate(double const *const *parameters,
     residual_idx++;
   }
 
-  // Scale residuals by sum of reference voxel weights
+  // Scale residuals by sum of registration point weights
   if (summed_reference_weight == 0) return false;
   double factor = num_residuals() / summed_reference_weight;
   for (int i = 0; i < num_residuals(); i++) {

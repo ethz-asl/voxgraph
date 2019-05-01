@@ -3,8 +3,7 @@
 //
 
 #include "voxgraph/backend/constraint/registration_constraint.h"
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/explicit_implicit_registration_cost.h"
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost.h"
+#include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 
 namespace voxgraph {
 void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
@@ -27,23 +26,16 @@ void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
   second_submap_node_ptr->addToProblem(
       problem, node_collection.getLocalParameterization());
 
-  // Create submap alignment cost function
+  // Create submap registration cost function
   ceres::CostFunction *cost_function;
   if (config_.registration.jacobian_evaluation_method ==
-      RegistrationCost::JacobianEvaluationMethod::kNumeric) {
+      RegistrationCostFunction::JacobianEvaluationMethod::kNumeric) {
     cost_function = nullptr;
     LOG(FATAL) << "Numeric cost not yet implemented";
   } else {
-    if (config_.registration.registration_method ==
-        RegistrationCost::RegistrationMethod::kExplicitToImplicit) {
-      cost_function = new ExplicitImplicitRegistrationCost(
-          config_.first_submap_ptr, config_.second_submap_ptr,
-          config_.registration);
-    } else {
-      cost_function = new ImplicitImplicitRegistrationCost(
-          config_.first_submap_ptr, config_.second_submap_ptr,
-          config_.registration);
-    }
+    cost_function = new RegistrationCostFunction(config_.first_submap_ptr,
+                                                 config_.second_submap_ptr,
+                                                 config_.registration);
   }
 
   // Add the constraint to the optimization and keep track of it

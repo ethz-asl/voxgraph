@@ -8,7 +8,7 @@
 #include <voxblox/io/layer_io.h>
 #include <memory>
 #include <string>
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost.h"
+#include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 
 namespace voxgraph {
 MapEvaluation::MapEvaluation(const ros::NodeHandle &node_handle,
@@ -122,8 +122,11 @@ void MapEvaluation::alignSubmapAtoSubmapB(
   ceres::Solver::Options ceres_options;
   ceres_options.max_num_iterations = 200;
   ceres_options.parameter_tolerance = 1e-12;
-  RegistrationCost::Config cost_config;
+  RegistrationCostFunction::Config cost_config;
   cost_config.use_esdf_distance = true;
+  cost_config.sampling_ratio = -1;
+  cost_config.registration_point_type =
+      VoxgraphSubmap::RegistrationPointType::kVoxels;
 
   // Add the parameter blocks to the optimization
   double layer_B_pose[4] = {0, 0, 0, 0};
@@ -134,7 +137,7 @@ void MapEvaluation::alignSubmapAtoSubmapB(
 
   // Create and add the submap alignment cost function to the problem
   ceres::CostFunction *cost_function =
-      new ImplicitImplicitRegistrationCost(submap_B, submap_A, cost_config);
+      new RegistrationCostFunction(submap_B, submap_A, cost_config);
   problem.AddResidualBlock(cost_function, loss_function, layer_B_pose,
                            layer_A_pose);
 

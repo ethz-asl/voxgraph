@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
   enum SolverReportStyle { kBrief, kFull, kNone };
   using voxblox::Transformation;
   using voxgraph::VoxgraphSubmap;
-  using voxgraph::RegistrationCost;
+  using voxgraph::RegistrationCostFunction;
   using voxgraph::SubmapRegistrationHelper;
   using voxgraph::TfHelper;
 
@@ -114,11 +114,11 @@ int main(int argc, char **argv) {
                                        registration_method_str,
                                        "implicit_to_implicit");
     if (registration_method_str == "implicit_to_implicit") {
-      registerer_options.registration.registration_method =
-          RegistrationCost::RegistrationMethod::kImplicitToImplicit;
+      registerer_options.registration.registration_point_type =
+          VoxgraphSubmap::RegistrationPointType::kVoxels;
     } else if (registration_method_str == "explicit_to_implicit") {
-      registerer_options.registration.registration_method =
-          RegistrationCost::RegistrationMethod::kExplicitToImplicit;
+      registerer_options.registration.registration_point_type =
+          VoxgraphSubmap::RegistrationPointType::kIsosurfacePoints;
     } else {
       ROS_FATAL(
           "Param \"submap_registration/cost/registration_method\" must be "
@@ -135,10 +135,10 @@ int main(int argc, char **argv) {
                                        "analytic");
     if (jacobian_evaluation_method_str == "analytic") {
       registerer_options.registration.jacobian_evaluation_method =
-          RegistrationCost::JacobianEvaluationMethod::kAnalytic;
+          RegistrationCostFunction::JacobianEvaluationMethod::kAnalytic;
     } else if (jacobian_evaluation_method_str == "numeric") {
       registerer_options.registration.jacobian_evaluation_method =
-          RegistrationCost::JacobianEvaluationMethod::kNumeric;
+          RegistrationCostFunction::JacobianEvaluationMethod::kNumeric;
     } else {
       ROS_FATAL(
           "Param \"submap_registration/cost/jacobian_evaluation_method\" "

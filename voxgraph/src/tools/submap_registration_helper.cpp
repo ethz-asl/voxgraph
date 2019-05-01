@@ -5,8 +5,7 @@
 #include "voxgraph/tools/submap_registration_helper.h"
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/explicit_implicit_registration_cost.h"
-#include "voxgraph/backend/constraint/cost_functions/submap_registration/implicit_implicit_registration_cost.h"
+#include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 
 namespace voxgraph {
 SubmapRegistrationHelper::SubmapRegistrationHelper(
@@ -42,28 +41,21 @@ bool SubmapRegistrationHelper::testRegistration(
   problem.SetParameterBlockConstant(world_pose_ref);
   problem.AddParameterBlock(world_pose_reading, 4);
 
-  // Create and add submap alignment cost function
-  RegistrationCost *registration_cost_function;
-  if (options_.registration.registration_method ==
-      RegistrationCost::RegistrationMethod::kImplicitToImplicit) {
-    registration_cost_function = new ImplicitImplicitRegistrationCost(
-        reference_submap_ptr, reading_submap_ptr, options_.registration);
-  } else {
-    registration_cost_function = new ExplicitImplicitRegistrationCost(
-        reference_submap_ptr, reading_submap_ptr, options_.registration);
-  }
+  // Create the submap registration cost function
+  RegistrationCostFunction *registration_cost_function =
+      new RegistrationCostFunction(reference_submap_ptr, reading_submap_ptr,
+                                   options_.registration);
 
   // Toggle between analytic and numeric Jacobians
   ceres::CostFunction *ceres_cost_function;
   if (options_.registration.jacobian_evaluation_method ==
-      RegistrationCost::JacobianEvaluationMethod::kNumeric) {
+      RegistrationCostFunction::JacobianEvaluationMethod::kNumeric) {
     // Wrap the registration cost function in a numeric diff cost function,
     // which only requests residuals and calculates the Jacobians numerically
-    ceres_cost_function =
-        new ceres::NumericDiffCostFunction<RegistrationCost, ceres::CENTRAL,
-                                           ceres::DYNAMIC, 4, 4>(
-            registration_cost_function, ceres::TAKE_OWNERSHIP,
-            registration_cost_function->num_residuals());
+    ceres_cost_function = new ceres::NumericDiffCostFunction<
+        RegistrationCostFunction, ceres::CENTRAL, ceres::DYNAMIC, 4, 4>(
+        registration_cost_function, ceres::TAKE_OWNERSHIP,
+        registration_cost_function->num_residuals());
   } else {
     // Let Ceres use the registration cost function's analytic Jacobians
     ceres_cost_function = registration_cost_function;

@@ -11,8 +11,8 @@
 #include <memory>
 #include <vector>
 #include "voxgraph/frontend/submap_collection/bounding_box.h"
+#include "voxgraph/frontend/submap_collection/registration_point.h"
 #include "voxgraph/frontend/submap_collection/weighted_sampler.h"
-#include "voxgraph/frontend/submap_collection/weighted_vertex.h"
 
 namespace voxgraph {
 class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
@@ -24,6 +24,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
     struct RegistrationFilter {
       double min_voxel_weight = 1;
       double max_voxel_distance = 0.3;
+      bool use_esdf_distance = true;
     } registration_filter;
   };
 
@@ -51,11 +52,11 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   const ros::Time getCreationTime() const;
 
-  const voxblox::HierarchicalIndexMap &getRelevantBlockVoxelIndices() const;
-  const unsigned int getNumRelevantVoxels() const;
-
-  const WeightedSampler<WeightedVertex> &getIsosurfacePoints() const;
-  const unsigned int getNumIsosurfacePoints() const;
+  // The type of registration points implemented by this submap
+  enum class RegistrationPointType { kIsosurfacePoints = 0, kVoxels };
+  // Getter to the registration points of a certain type
+  const WeightedSampler<RegistrationPoint> &getRegistrationPoints(
+      RegistrationPointType registration_point_type) const;
 
   // Overlap and Bounding Box related methods
   bool overlapsWith(const VoxgraphSubmap &otherSubmap) const;
@@ -71,7 +72,11 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
  private:
   typedef Eigen::Matrix<voxblox::FloatingPoint, 4, 8> HomogBoxCornerMatrix;
   using TsdfVoxel = voxblox::TsdfVoxel;
+  using EsdfVoxel = voxblox::EsdfVoxel;
   using TsdfLayer = voxblox::Layer<TsdfVoxel>;
+  using EsdfLayer = voxblox::Layer<EsdfVoxel>;
+  using TsdfBlock = voxblox::Block<TsdfVoxel>;
+  using EsdfBlock = voxblox::Block<EsdfVoxel>;
   using Interpolator = voxblox::Interpolator<voxblox::TsdfVoxel>;
 
   Config config_;
@@ -84,15 +89,13 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   mutable BoundingBox surface_obb_;  // around the isosurface
   mutable BoundingBox map_obb_;      // around the entire submap
 
-  // Hash map containing the block and voxel indices of the observed voxels
-  // that fall within the truncation distance
-  // TODO(victorr): Use WeightedSampler as container
-  voxblox::HierarchicalIndexMap relevant_block_voxel_indices_;
-  unsigned int num_relevant_voxels_ = 0;
+  // Object containing all voxels that fall within the truncation distance
+  // and have a sufficiently high weight
+  WeightedSampler<RegistrationPoint> relevant_voxels_;
   void findRelevantVoxelIndices();
 
-  // Vector containing all isosurface vertices stored as [x, y, z, weight]
-  WeightedSampler<WeightedVertex> isosurface_vertices_;
+  // Object containing all isosurface vertices stored as [x, y, z, weight]
+  WeightedSampler<RegistrationPoint> isosurface_vertices_;
   void findIsosurfaceVertices();
 
   // History of how the robot moved through the submap

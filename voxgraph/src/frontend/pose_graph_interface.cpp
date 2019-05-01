@@ -216,8 +216,8 @@ void PoseGraphInterface::updateRegistrationConstraints() {
         constraint_config.second_submap_id = second_submap_id;
         constraint_config.information_matrix = registration_information_matrix_;
         // TODO(victorr): Read this from ROS params
-        constraint_config.registration.registration_method =
-            RegistrationCost::RegistrationMethod::kExplicitToImplicit;
+        constraint_config.registration.registration_point_type =
+            VoxgraphSubmap::RegistrationPointType::kIsosurfacePoints;
         constraint_config.registration.sampling_ratio = 0.2;
 
         // Add pointers to both submaps

@@ -2,8 +2,8 @@
 // Created by victor on 28.04.19.
 //
 
-#ifndef VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_H_
-#define VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_H_
+#ifndef VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_REGISTRATION_COST_FUNCTION_H_
+#define VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_REGISTRATION_COST_FUNCTION_H_
 
 #include <ceres/ceres.h>
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
@@ -13,19 +13,15 @@
 #include "voxgraph/tools/visualization/cost_function_visuals.h"
 
 namespace voxgraph {
-class RegistrationCost : public ceres::CostFunction {
+class RegistrationCostFunction : public ceres::CostFunction {
  public:
-  enum class RegistrationMethod {
-    kImplicitToImplicit = 0,
-    kExplicitToImplicit
-  };
-
   enum class JacobianEvaluationMethod { kAnalytic = 0, kNumeric };
 
   struct Config {
-    // What method to use register the submaps to each other
-    RegistrationMethod registration_method =
-        RegistrationMethod::kImplicitToImplicit;
+    // What type of reference submap points are used
+    // to register it to the reading submap
+    VoxgraphSubmap::RegistrationPointType registration_point_type =
+        VoxgraphSubmap::RegistrationPointType::kIsosurfacePoints;
 
     // What method to use to calculate the Jacobians
     JacobianEvaluationMethod jacobian_evaluation_method =
@@ -47,9 +43,12 @@ class RegistrationCost : public ceres::CostFunction {
     bool visualize_transforms_ = false;
   };
 
-  RegistrationCost(VoxgraphSubmap::ConstPtr reference_submap_ptr,
-                   VoxgraphSubmap::ConstPtr reading_submap_ptr,
-                   const Config &config);
+  RegistrationCostFunction(VoxgraphSubmap::ConstPtr reference_submap_ptr,
+                           VoxgraphSubmap::ConstPtr reading_submap_ptr,
+                           const Config &config);
+
+  bool Evaluate(double const *const *parameters, double *residuals,
+                double **jacobians) const override;
 
  protected:
   Config config_;
@@ -61,6 +60,11 @@ class RegistrationCost : public ceres::CostFunction {
   const voxblox::Layer<voxblox::TsdfVoxel> &reading_tsdf_layer_;
   const voxblox::Layer<voxblox::EsdfVoxel> &reference_esdf_layer_;
   const voxblox::Layer<voxblox::EsdfVoxel> &reading_esdf_layer_;
+
+  // Reference to registration point sampler
+  // NOTE: These points are voxels or isosurface vertices
+  //       of the reference submap
+  const WeightedSampler<RegistrationPoint> &registration_points_;
 
   // Interpolators
   voxblox::Interpolator<voxblox::TsdfVoxel> tsdf_interpolator_;
@@ -85,4 +89,4 @@ class RegistrationCost : public ceres::CostFunction {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_SUBMAP_REGISTRATION_REGISTRATION_COST_H_
+#endif  // VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_REGISTRATION_COST_FUNCTION_H_
