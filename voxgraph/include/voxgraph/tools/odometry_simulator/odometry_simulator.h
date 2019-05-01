@@ -42,7 +42,9 @@ class OdometrySimulator {
   ros::Subscriber odometry_subscriber_;
   int subscriber_queue_length_;
   std::string subscribe_to_odom_topic_;
-  std::string publish_to_tf_frame_id_;
+  std::string published_world_frame_;
+  std::string published_simulated_robot_frame_;
+  std::string published_original_robot_frame_;
 
   // Noise distributions
   struct NoiseDistributions {
@@ -55,7 +57,7 @@ class OdometrySimulator {
   // Transform publisher for the simulated noisy pose
   void publishSimulatedPoseTf();
   // Transform publisher for the true, noise-free pose
-  void publishTruePoseTf(const nav_msgs::Odometry::ConstPtr &odometry_msg);
+  void publishOriginalPoseTf(const nav_msgs::Odometry::ConstPtr &odometry_msg);
 };
 }  // namespace voxgraph
 

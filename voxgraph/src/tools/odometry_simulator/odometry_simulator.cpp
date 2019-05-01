@@ -15,15 +15,23 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle &nh,
       debug_(false),
       subscriber_queue_length_(100),
       subscribe_to_odom_topic_("odometry"),
-      publish_to_tf_frame_id_("simulated_odometry") {
+      published_world_frame_("world"),
+      published_simulated_robot_frame_("robot"),
+      published_original_robot_frame_("robot_ground_truth") {
   // Read odometry simulator params from ROS
   nh_private_.param("debug", debug_, debug_);
   nh_private_.param("subscriber_queue_length_", subscriber_queue_length_,
                     subscriber_queue_length_);
   nh_private_.param("subscribe_to_odom_topic", subscribe_to_odom_topic_,
                     subscribe_to_odom_topic_);
-  nh_private_.param("publish_to_tf_frame_id", publish_to_tf_frame_id_,
-                    publish_to_tf_frame_id_);
+  nh_private_.param("published_world_frame", published_world_frame_,
+                    published_world_frame_);
+  nh_private_.param("published_simulated_robot_frame",
+                    published_simulated_robot_frame_,
+                    published_simulated_robot_frame_);
+  nh_private_.param("published_original_robot_frame",
+                    published_original_robot_frame_,
+                    published_original_robot_frame_);
 
   ros::NodeHandle nh_velocity_noise_(nh_private_, "odometry_noise/velocity");
   nh_velocity_noise_.param<double>("x/mean", noise_.x_vel.mean(), 0);
@@ -64,7 +72,6 @@ void OdometrySimulator::odometryCallback(
     internal_pose_.header = odometry_msg->header;
     internal_pose_.pose = odometry_msg->pose.pose;
     // Initialize the published pose
-    published_pose_.child_frame_id = publish_to_tf_frame_id_;
     ROS_INFO("Initialized drifting odometry simulator");
     publishSimulatedPoseTf();
     return;
@@ -126,7 +133,7 @@ void OdometrySimulator::odometryCallback(
 
   // Publish true pose TF if requested
   if (debug_) {
-    publishTruePoseTf(odometry_msg);
+    publishOriginalPoseTf(odometry_msg);
   }
 }
 
@@ -136,6 +143,8 @@ void OdometrySimulator::publishSimulatedPoseTf() {
 
   // Update the TF message header
   published_pose_.header = internal_pose_.header;
+  published_pose_.header.frame_id = published_world_frame_;
+  published_pose_.child_frame_id = published_simulated_robot_frame_;
 
   // Get the rotation from the world to body frame
   Rotation Rotation_WB;
@@ -163,7 +172,7 @@ void OdometrySimulator::publishSimulatedPoseTf() {
   transform_broadcaster.sendTransform(published_pose_);  // Simulated pose
 }
 
-void OdometrySimulator::publishTruePoseTf(
+void OdometrySimulator::publishOriginalPoseTf(
     const nav_msgs::Odometry::ConstPtr &odometry_msg) {
   // Declare the TF broadcaster
   static tf2_ros::TransformBroadcaster transform_broadcaster;
@@ -171,7 +180,8 @@ void OdometrySimulator::publishTruePoseTf(
   // Create the transform msg
   geometry_msgs::TransformStamped true_pose;
   true_pose.header = odometry_msg->header;
-  true_pose.child_frame_id = "debug_T_world__true_odom";
+  true_pose.header.frame_id = published_world_frame_;
+  true_pose.child_frame_id = published_original_robot_frame_;
 
   // Copy the true pose from the odometry message to the TF msg
   true_pose.transform.translation.x = odometry_msg->pose.pose.position.x;

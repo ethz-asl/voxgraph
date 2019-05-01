@@ -78,8 +78,8 @@ void MapEvaluation::evaluate(
   // Align the ground truth map to the submap collection's projected map
   // NOTE: Moving the submap collection would be more intuitive, but that would
   //       require updating all visuals published during the mapping stage
-  projected_map_ptr->generateEsdf();
-  ground_truth_map_ptr_->generateEsdf();
+  projected_map_ptr->finishSubmap();
+  ground_truth_map_ptr_->finishSubmap();
   alignSubmapAtoSubmapB(ground_truth_map_ptr_, projected_map_ptr);
   // Apply the transform (interpolate TSDF and ESDF layers into world frame)
   ground_truth_map_ptr_->transformSubmap(ground_truth_map_ptr_->getPose());

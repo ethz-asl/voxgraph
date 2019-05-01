@@ -293,7 +293,8 @@ bool VoxgraphMapper::lookup_T_odom_robot(ros::Time timestamp,
     timeout.sleep();
     t_waited += timeout.toSec();
   }
-  ROS_WARN("Waited %.3fs, but still could not get the updated odom", t_waited);
+  ROS_WARN("Waited %.3fs, but still could not get the TF from %s to %s",
+           t_waited, robot_frame_.c_str(), odom_frame_.c_str());
   return false;
 }
 }  // namespace voxgraph
