@@ -225,10 +225,10 @@ void VoxgraphMapper::pointcloudCallback(
                                  current_timestamp);
 
       // Update the submap collection visualization in Rviz
-      std::thread meshing_thread(&SubmapVisuals::publishCombinedMesh,
-                                 &submap_vis_, *submap_collection_ptr_,
-                                 world_frame_, combined_mesh_pub_);
-      meshing_thread.detach();
+      //      std::thread meshing_thread(&SubmapVisuals::publishCombinedMesh,
+      //                                 &submap_vis_, *submap_collection_ptr_,
+      //                                 world_frame_, combined_mesh_pub_);
+      //      meshing_thread.detach();
 
       // Resume playing  the rosbag
       if (auto_pause_rosbag_) {

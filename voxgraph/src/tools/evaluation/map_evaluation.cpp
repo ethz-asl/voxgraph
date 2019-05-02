@@ -57,7 +57,7 @@ MapEvaluation::MapEvaluation(const ros::NodeHandle &node_handle,
   ground_truth_mesh_pub_.publish(marker);
 }
 
-void MapEvaluation::evaluate(
+voxblox::utils::VoxelEvaluationDetails MapEvaluation::evaluate(
     const VoxgraphSubmapCollection &submap_collection) {
   // Get the voxel size and number of voxels per side
   voxblox::FloatingPoint voxel_size =
@@ -107,6 +107,8 @@ void MapEvaluation::evaluate(
 
   rmse_error_pub_.publish(rmse_error_msg);
   rmse_error_slice_pub_.publish(rmse_error_slice_msg);
+
+  return evaluation_details;
 }
 
 void MapEvaluation::alignSubmapAtoSubmapB(

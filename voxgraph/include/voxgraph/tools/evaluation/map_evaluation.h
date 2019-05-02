@@ -22,7 +22,8 @@ class MapEvaluation {
   MapEvaluation(const ros::NodeHandle &nh,
                 const std::string &ground_truth_tsdf_file_path);
 
-  void evaluate(const VoxgraphSubmapCollection &submap_collection);
+  voxblox::utils::VoxelEvaluationDetails evaluate(
+      const VoxgraphSubmapCollection &submap_collection);
 
   // Find and apply the best rigid body alignment of layer A to B
   void alignSubmapAtoSubmapB(VoxgraphSubmap::Ptr submap_A,
