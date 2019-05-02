@@ -2,7 +2,7 @@
 // Created by victor on 02.05.19.
 //
 
-#include "voxgraph/frontend/node_templates.h"
+#include "voxgraph/frontend/pose_graph_interface/node_templates.h"
 
 namespace voxgraph {
 NodeTemplates::NodeTemplates()

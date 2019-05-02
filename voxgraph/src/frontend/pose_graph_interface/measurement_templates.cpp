@@ -2,7 +2,7 @@
 // Created by victor on 02.05.19.
 //
 
-#include "voxgraph/frontend/measurement_templates.h"
+#include "voxgraph/frontend/pose_graph_interface/measurement_templates.h"
 #include <string>
 
 namespace voxgraph {

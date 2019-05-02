@@ -2,13 +2,13 @@
 // Created by victor on 02.05.19.
 //
 
-#ifndef VOXGRAPH_FRONTEND_MEASUREMENT_TEMPLATES_H_
-#define VOXGRAPH_FRONTEND_MEASUREMENT_TEMPLATES_H_
+#ifndef VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_MEASUREMENT_TEMPLATES_H_
+#define VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_MEASUREMENT_TEMPLATES_H_
 
 #include "voxgraph/backend/constraint/absolute_pose_constraint.h"
 #include "voxgraph/backend/constraint/registration_constraint.h"
 #include "voxgraph/backend/constraint/relative_pose_constraint.h"
-#include "voxgraph/frontend/node_templates.h"
+#include "voxgraph/frontend/pose_graph_interface/node_templates.h"
 
 namespace voxgraph {
 class MeasurementTemplates {
@@ -38,4 +38,4 @@ class MeasurementTemplates {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_FRONTEND_MEASUREMENT_TEMPLATES_H_
+#endif  // VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_MEASUREMENT_TEMPLATES_H_

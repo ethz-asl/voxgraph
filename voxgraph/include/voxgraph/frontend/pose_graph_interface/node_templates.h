@@ -2,8 +2,8 @@
 // Created by victor on 02.05.19.
 //
 
-#ifndef VOXGRAPH_FRONTEND_NODE_TEMPLATES_H_
-#define VOXGRAPH_FRONTEND_NODE_TEMPLATES_H_
+#ifndef VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_NODE_TEMPLATES_H_
+#define VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_NODE_TEMPLATES_H_
 
 #include "voxgraph/backend/node/reference_frame_node.h"
 #include "voxgraph/backend/node/submap_node.h"
@@ -29,4 +29,4 @@ class NodeTemplates {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_FRONTEND_NODE_TEMPLATES_H_
+#endif  // VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_NODE_TEMPLATES_H_

@@ -2,7 +2,7 @@
 // Created by victor on 09.04.19.
 //
 
-#include "voxgraph/frontend/pose_graph_interface.h"
+#include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
 #include <utility>
 #include <vector>
 
@@ -114,7 +114,7 @@ void PoseGraphInterface::updateRegistrationConstraints() {
   for (unsigned int i = 0; i < submap_ids.size(); i++) {
     // Get a pointer to the first submap
     cblox::SubmapID first_submap_id = submap_ids[i];
-    const VoxgraphSubmap& first_submap =
+    const VoxgraphSubmap &first_submap =
         submap_collection_ptr_->getSubMap(first_submap_id);
 
     // Publish debug visuals
@@ -126,7 +126,7 @@ void PoseGraphInterface::updateRegistrationConstraints() {
     for (unsigned int j = i + 1; j < submap_ids.size(); j++) {
       // Get the second submap
       cblox::SubmapID second_submap_id = submap_ids[j];
-      const VoxgraphSubmap& second_submap =
+      const VoxgraphSubmap &second_submap =
           submap_collection_ptr_->getSubMap(second_submap_id);
 
       // Check whether the first and second submap overlap

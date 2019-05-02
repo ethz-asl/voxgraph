@@ -15,7 +15,7 @@
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/measurement_processors/gps_processor.h"
 #include "voxgraph/frontend/measurement_processors/pointcloud_processor.h"
-#include "voxgraph/frontend/pose_graph_interface.h"
+#include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 #include "voxgraph/tools/rosbag_helper.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"

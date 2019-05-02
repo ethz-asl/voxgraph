@@ -2,15 +2,15 @@
 // Created by victor on 09.04.19.
 //
 
-#ifndef VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_H_
-#define VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_H_
+#ifndef VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_POSE_GRAPH_INTERFACE_H_
+#define VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_POSE_GRAPH_INTERFACE_H_
 
 #include <voxgraph/tools/visualization/submap_visuals.h>
 #include <utility>
 #include "voxgraph/backend/pose_graph.h"
 #include "voxgraph/common.h"
-#include "voxgraph/frontend/measurement_templates.h"
-#include "voxgraph/frontend/node_templates.h"
+#include "voxgraph/frontend/pose_graph_interface/measurement_templates.h"
+#include "voxgraph/frontend/pose_graph_interface/node_templates.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 #include "voxgraph/tools/visualization/pose_graph_visuals.h"
 
@@ -63,4 +63,4 @@ class PoseGraphInterface {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_H_
+#endif  // VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_POSE_GRAPH_INTERFACE_H_
