@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
           pointcloud_queue.pop();
         }
 
-        // Create a new thread operating on the queue's next pointcloud
+        // Launch processing of the queue's next ptcloud as an asynchronous task
         mapper_async_handle = std::async(std::launch::async, [&] {
           voxgraph_mapper.pointcloudCallback(pointcloud_queue.front());
           return 1;

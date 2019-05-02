@@ -9,6 +9,8 @@
 #include <utility>
 #include "voxgraph/backend/pose_graph.h"
 #include "voxgraph/common.h"
+#include "voxgraph/frontend/measurement_templates.h"
+#include "voxgraph/frontend/node_templates.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 #include "voxgraph/tools/visualization/pose_graph_visuals.h"
 
@@ -21,8 +23,9 @@ class PoseGraphInterface {
       bool verbose = false);
 
   void setVerbosity(bool verbose) { verbose_ = verbose; }
-
-  void setPoseGraphConfigFromRosParams(const ros::NodeHandle &node_handle);
+  void setMeasurementConfigFromRosParams(const ros::NodeHandle &node_handle) {
+    measurement_templates_.setFromRosParams(node_handle);
+  }
 
   void addSubmap(SubmapID submap_id, bool add_easy_odometry = false);
 
@@ -51,19 +54,12 @@ class PoseGraphInterface {
   ros::Publisher pose_graph_pub_;
   ros::Publisher submap_pub_;
 
-  // Information matrices for each measurement type
-  Constraint::InformationMatrix odometry_information_matrix_;
-  Constraint::InformationMatrix loop_closure_information_matrix_;
-  Constraint::InformationMatrix gps_information_matrix_;
-  Constraint::InformationMatrix height_information_matrix_;
-  Constraint::InformationMatrix registration_information_matrix_;
-  void setInformationMatrixFromRosParams(
-      const ros::NodeHandle &node_handle,
-      Constraint::InformationMatrix *information_matrix);
+  // Node and measurement config templates
+  NodeTemplates node_templates_;
+  MeasurementTemplates measurement_templates_;
 
-  // Reference frames used for absolute pose constraints
-  enum ReferenceFrames : ReferenceFrameNode::FrameId { kWorldFrame, kGpsFrame };
-  void addReferenceFrameIfMissing(ReferenceFrames frame);
+  // Helper to add reference frames to the pose graph
+  void addReferenceFrameIfMissing(ReferenceFrameNode::FrameId frame_id);
 };
 }  // namespace voxgraph
 

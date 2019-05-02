@@ -19,6 +19,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       nh_private_(nh_private),
       verbose_(false),
       debug_(false),
+      auto_pause_rosbag_(false),
       subscriber_queue_length_(100),
       pointcloud_topic_("pointcloud"),
       transformer_(nh, nh_private),
@@ -74,6 +75,10 @@ void VoxgraphMapper::getParametersFromRos() {
         ros::Duration(interval_temp));
   }
 
+  // Read whether or not to auto pause the rosbag during graph optimization
+  nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
+                    auto_pause_rosbag_);
+
   // Load the transform from the robot frame to the sensor frame
   XmlRpc::XmlRpcValue T_robot_sensor_xml;
   CHECK(nh_private_.getParam("T_robot_sensor", T_robot_sensor_xml))
@@ -101,7 +106,8 @@ void VoxgraphMapper::getParametersFromRos() {
   ROS_INFO_STREAM_COND(
       verbose_, "Height constraints: "
                     << (height_constraints_enabled_ ? "enabled" : "disabled"));
-  pose_graph_interface_.setPoseGraphConfigFromRosParams(nh_measurement_params);
+  pose_graph_interface_.setMeasurementConfigFromRosParams(
+      nh_measurement_params);
 
   // Read TSDF integrator params from their sub-namespace
   ros::NodeHandle nh_tsdf_params(nh_private_, "tsdf_integrator");
@@ -172,11 +178,8 @@ void VoxgraphMapper::pointcloudCallback(
     // NOTE: We only add submaps to the pose graph once they're finished to
     //       avoid generating their ESDF more than once
     if (!submap_collection_ptr_->empty()) {
-      // Automatically pause the rosbag
-      // NOTE: This is useful when playing the rosbag faster than real-time
-      // TODO(victorr): Parametrize this
-      bool rosbag_pausing_enabled = false;
-      if (rosbag_pausing_enabled) {
+      // Automatically pause the rosbag if requested
+      if (auto_pause_rosbag_) {
         rosbag_helper_.pauseRosbag();
       }
 
@@ -228,8 +231,7 @@ void VoxgraphMapper::pointcloudCallback(
       meshing_thread.detach();
 
       // Resume playing  the rosbag
-      // TODO(victorr): Parametrize this
-      if (rosbag_pausing_enabled) {
+      if (auto_pause_rosbag_) {
         rosbag_helper_.playRosbag();
       }
     }

@@ -55,7 +55,10 @@ class VoxgraphMapper {
   bool verbose_;
   bool debug_;
 
-  // Helper to pause/unpause rosbags during initial, non real-time testing
+  // Flag and helper to automatically pause rosbags during graph optimization
+  // NOTE: This is useful when playing bags faster than real-time or when
+  //       experimenting with optimization settings
+  bool auto_pause_rosbag_;
   RosbagHelper rosbag_helper_;
 
   // Interaction with ROS

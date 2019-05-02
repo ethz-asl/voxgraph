@@ -13,95 +13,11 @@ PoseGraphInterface::PoseGraphInterface(
     : submap_collection_ptr_(std::move(submap_collection_ptr)),
       submap_vis_(submap_collection_ptr_->getConfig()),
       verbose_(verbose) {
-  // Zero initialize all information matrices
-  odometry_information_matrix_.setZero();
-  loop_closure_information_matrix_.setZero();
-  gps_information_matrix_.setZero();
-  height_information_matrix_.setZero();
-  registration_information_matrix_.setZero();
-
   // Advertise the pose graph visuals publisher
   pose_graph_pub_ = node_handle.advertise<visualization_msgs::Marker>(
       "pose_graph", 100, true);
   submap_pub_ = node_handle.advertise<visualization_msgs::Marker>("submap_info",
                                                                   100, true);
-}
-
-void PoseGraphInterface::setPoseGraphConfigFromRosParams(
-    const ros::NodeHandle &node_handle) {
-  if (node_handle.hasParam("odometry")) {
-    setInformationMatrixFromRosParams(
-        ros::NodeHandle(node_handle, "odometry/information_matrix"),
-        &odometry_information_matrix_);
-    ROS_INFO_STREAM_COND(verbose_, "Setting odometry information matrix to:\n"
-                                       << odometry_information_matrix_);
-  }
-
-  if (node_handle.hasParam("loop_closure")) {
-    setInformationMatrixFromRosParams(
-        ros::NodeHandle(node_handle, "loop_closure/information_matrix"),
-        &loop_closure_information_matrix_);
-    ROS_INFO_STREAM_COND(verbose_,
-                         "Setting loop closure information matrix "
-                         "to:\n"
-                             << loop_closure_information_matrix_);
-  }
-
-  if (node_handle.hasParam("gps")) {
-    setInformationMatrixFromRosParams(
-        ros::NodeHandle(node_handle, "gps/information_matrix"),
-        &gps_information_matrix_);
-    ROS_INFO_STREAM_COND(verbose_,
-                         "Setting gps measurement information matrix "
-                         "to:\n"
-                             << gps_information_matrix_);
-  }
-
-  if (node_handle.hasParam("height")) {
-    height_information_matrix_.setZero();
-    node_handle.param("height/information_zz", height_information_matrix_(2, 2),
-                      0.0);
-    ROS_INFO_STREAM_COND(verbose_,
-                         "Setting height measurement information "
-                         "matrix to:\n"
-                             << height_information_matrix_);
-  }
-
-  if (node_handle.hasParam("submap_registration")) {
-    setInformationMatrixFromRosParams(
-        ros::NodeHandle(node_handle, "submap_registration/information_matrix"),
-        &registration_information_matrix_);
-    ROS_INFO_STREAM_COND(verbose_,
-                         "Setting submap registration information "
-                         "matrix to:\n"
-                             << registration_information_matrix_);
-  }
-}
-
-void PoseGraphInterface::setInformationMatrixFromRosParams(
-    const ros::NodeHandle &node_handle,
-    Constraint::InformationMatrix *information_matrix) {
-  CHECK_NOTNULL(information_matrix);
-  Constraint::InformationMatrix &information_matrix_ref = *information_matrix;
-
-  // Set the upper triangular part of the information matrix from ROS params
-  node_handle.param("x_x", information_matrix_ref(0, 0), 0.0);
-  node_handle.param("x_y", information_matrix_ref(0, 1), 0.0);
-  node_handle.param("x_z", information_matrix_ref(0, 2), 0.0);
-  node_handle.param("x_yaw", information_matrix_ref(0, 3), 0.0);
-
-  node_handle.param("y_y", information_matrix_ref(1, 1), 0.0);
-  node_handle.param("y_z", information_matrix_ref(1, 2), 0.0);
-  node_handle.param("y_yaw", information_matrix_ref(1, 3), 0.0);
-
-  node_handle.param("z_z", information_matrix_ref(2, 2), 0.0);
-  node_handle.param("z_yaw", information_matrix_ref(2, 3), 0.0);
-
-  node_handle.param("yaw_yaw", information_matrix_ref(3, 3), 0.0);
-
-  // Copy the upper to the lower triangular part, to get a symmetric info matrix
-  information_matrix_ref =
-      information_matrix_ref.selfadjointView<Eigen::Upper>();
 }
 
 void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
@@ -113,21 +29,21 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
   }
 
   // Configure the submap node and add it to the pose graph
-  SubmapNode::Config submap_node_config;
-  submap_node_config.submap_id = submap_id;
+  SubmapNode::Config node_config = node_templates_.submap;
+  node_config.submap_id = submap_id;
   CHECK(submap_collection_ptr_->getSubMapPose(
-      submap_id, &submap_node_config.T_world_node_initial));
+      submap_id, &node_config.T_world_node_initial));
   if (submap_id == 0) {
-    std::cout << "Setting pose of submap 0 to constant" << std::endl;
-    submap_node_config.set_constant = true;
+    ROS_INFO("Setting pose of submap 0 to constant");
+    node_config.set_constant = true;
   } else {
-    submap_node_config.set_constant = false;
+    node_config.set_constant = false;
   }
-  pose_graph_.addSubmapNode(submap_node_config);
-  if (verbose_) {
-    std::cout << "Added node to graph for submap: " << submap_id << std::endl;
-  }
+  pose_graph_.addSubmapNode(node_config);
+  ROS_INFO_STREAM_COND(verbose_,
+                       "Added node to graph for submap: " << submap_id);
 
+  // TODO(victorr): Move this to addOdometryMeasurement
   // Easy way to add an odometry constraint between the previous and new submap
   // NOTE: This method assumes that the current submap pose purely comes from
   //       odometry and has not yet been corrected through other means
@@ -135,11 +51,10 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
     SubmapID previous_submap_id = submap_collection_ptr_->getPreviousSubmapId();
 
     // Configure the odometry constraint
-    RelativePoseConstraint::Config odom_constraint_config;
-    odom_constraint_config.origin_submap_id = previous_submap_id;
-    odom_constraint_config.destination_submap_id = submap_id;
-    // TODO(victorr): Properly tune the odometry information matrix
-    odom_constraint_config.information_matrix = odometry_information_matrix_;
+    RelativePoseConstraint::Config constraint_config =
+        measurement_templates_.odometry;
+    constraint_config.origin_submap_id = previous_submap_id;
+    constraint_config.destination_submap_id = submap_id;
 
     // Set the relative transformation
     Transformation T_world__previous_submap;
@@ -148,15 +63,14 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
                                                 &T_world__previous_submap));
     CHECK(submap_collection_ptr_->getSubMapPose(submap_id,
                                                 &T_world__current_submap));
-    odom_constraint_config.T_origin_destination =
+    constraint_config.T_origin_destination =
         T_world__previous_submap.inverse() * T_world__current_submap;
 
     // Add the odometry constraint to the pose graph
     if (verbose_) {
       std::cout << "Adding odom constraint\n"
-                << "From: " << odom_constraint_config.origin_submap_id << "\n"
-                << "To: " << odom_constraint_config.destination_submap_id
-                << "\n"
+                << "From: " << constraint_config.origin_submap_id << "\n"
+                << "To: " << constraint_config.destination_submap_id << "\n"
                 << "Submap currently being built in submap collection: "
                 << submap_collection_ptr_->getActiveSubMapID() << "\n"
                 << "T_w_s1:\n"
@@ -166,30 +80,28 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
                 << T_world__current_submap << "\n"
                 << "yaw_w_s2:" << T_world__current_submap.log()[5] << "\n"
                 << "T_s1_s2:\n"
-                << odom_constraint_config.T_origin_destination << "\n"
+                << constraint_config.T_origin_destination << "\n"
                 << "yaw_s1_s2: "
-                << odom_constraint_config.T_origin_destination.log()[5] << "\n"
+                << constraint_config.T_origin_destination.log()[5] << "\n"
                 << "Information matrix\n"
-                << odom_constraint_config.information_matrix << std::endl;
+                << constraint_config.information_matrix << std::endl;
     }
-
-    pose_graph_.addRelativePoseConstraint(odom_constraint_config);
+    pose_graph_.addRelativePoseConstraint(constraint_config);
   }
 }
 
 void PoseGraphInterface::addHeightMeasurement(const SubmapID &submap_id,
                                               const double &height) {
-  // Add the world reference frame to the pose graph if it isn't already there
-  addReferenceFrameIfMissing(kWorldFrame);
-
-  // Add the height measurement to the pose graph,
-  // as an absolute pose constraint with infinite covariance on X, Y, Yaw
-  AbsolutePoseConstraint::Config constraint_config;
-  constraint_config.reference_frame_id = kWorldFrame;
+  // Configure the constraint
+  AbsolutePoseConstraint::Config constraint_config =
+      measurement_templates_.height;
   constraint_config.submap_id = submap_id;
   constraint_config.T_ref_submap.getPosition().z() = height;
-  constraint_config.information_matrix = height_information_matrix_;
-  constraint_config.allow_semi_definite_information_matrix = true;
+
+  // Add the world reference frame to the pose graph if it isn't already there
+  addReferenceFrameIfMissing(constraint_config.reference_frame_id);
+
+  // Add the height measurement to the pose graph
   pose_graph_.addAbsolutePoseConstraint(constraint_config);
 }
 
@@ -220,21 +132,16 @@ void PoseGraphInterface::updateRegistrationConstraints() {
       // Check whether the first and second submap overlap
       if (first_submap.overlapsWith(second_submap)) {
         // Configure the registration constraint
-        RegistrationConstraint::Config constraint_config;
+        RegistrationConstraint::Config constraint_config =
+            measurement_templates_.registration;
         constraint_config.first_submap_id = first_submap_id;
         constraint_config.second_submap_id = second_submap_id;
-        constraint_config.information_matrix = registration_information_matrix_;
-        // TODO(victorr): Read this from ROS params
-        constraint_config.registration.registration_point_type =
-            VoxgraphSubmap::RegistrationPointType::kIsosurfacePoints;
-        constraint_config.registration.sampling_ratio = 0.2;
 
         // Add pointers to both submaps
         constraint_config.first_submap_ptr =
             submap_collection_ptr_->getSubMapConstPtrById(first_submap_id);
         constraint_config.second_submap_ptr =
             submap_collection_ptr_->getSubMapConstPtrById(second_submap_id);
-
         CHECK_NOTNULL(constraint_config.first_submap_ptr);
         CHECK_NOTNULL(constraint_config.second_submap_ptr);
 
@@ -262,27 +169,10 @@ void PoseGraphInterface::updateSubmapCollectionPoses() {
 }
 
 void PoseGraphInterface::addReferenceFrameIfMissing(
-    PoseGraphInterface::ReferenceFrames frame) {
-  switch (frame) {
-    case kWorldFrame:
-      if (!pose_graph_.hasReferenceFrameNode(kWorldFrame)) {
-        ReferenceFrameNode::Config node_config;
-        node_config.reference_frame_id = kWorldFrame;
-        // Fix the frame origin at (X, Y, Z, Yaw) = (0, 0, 0, 0)
-        node_config.set_constant = true;
-        node_config.T_world_node_initial.setIdentity();
-        pose_graph_.addReferenceFrameNode(node_config);
-      }
-      break;
-    case kGpsFrame:
-      if (!pose_graph_.hasReferenceFrameNode(kGpsFrame)) {
-        ReferenceFrameNode::Config node_config;
-        node_config.reference_frame_id = kGpsFrame;
-        // Let the frame float freely
-        node_config.set_constant = false;
-        pose_graph_.addReferenceFrameNode(node_config);
-      }
-      break;
+    ReferenceFrameNode::FrameId frame_id) {
+  if (!pose_graph_.hasReferenceFrameNode(frame_id)) {
+    pose_graph_.addReferenceFrameNode(
+        node_templates_.getReferenceFrameConfigById(frame_id));
   }
 }
 }  // namespace voxgraph
