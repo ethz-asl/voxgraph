@@ -252,7 +252,7 @@ int main(int argc, char **argv) {
     reading_submap_ptr->finishSubmap();
   }
 
-  // Format log file path containing current time stamp
+  // Create the log file with the current timestamp as its file name
   time_t raw_time = std::time(nullptr);
   struct tm time_struct;
   localtime_r(&raw_time, &time_struct);
@@ -263,14 +263,13 @@ int main(int argc, char **argv) {
   log_file_path /= time_char_buffer;
   log_file_path += ".csv";
   ROS_INFO_STREAM("Log file will be saved as: " << log_file_path);
-
-  // Create log file and write header
-  // TODO(victorr): Write Git ID into log file
-  // TODO(victorr): Check if log_folder_path exists and create it if it doesn't
   std::ofstream log_file;
   log_file.open(log_file_path.string());
+
+  // Create log file and write header
+  // TODO(victorr): Check if log_folder_path exists and create it if it doesn't
   log_file << "reference_submap_id, reading_submap_id, "
-           << "visuals_enabled, using_esdf_distance\n"
+           << "visuals_enabled, using_esdf_distance, git_branch, git_hash\n"
            << reference_submap_id << ",";
   if (reading_submap_id == INT32_MAX) {
     log_file << reference_submap_id;
@@ -279,7 +278,8 @@ int main(int argc, char **argv) {
   }
   log_file << "," << (registerer_options.registration.visualize_residuals ||
                       registerer_options.registration.visualize_gradients)
-           << "," << registerer_options.registration.use_esdf_distance << "\n"
+           << "," << registerer_options.registration.use_esdf_distance << ","
+           << GIT_BRANCH << "," << GIT_COMMIT_HASH << "\n"
            << "x_true, y_true, z_true, yaw_true, pitch_true, roll_true\n"
            << ground_truth_position.x() << "," << ground_truth_position.y()
            << "," << ground_truth_position.z() << ","

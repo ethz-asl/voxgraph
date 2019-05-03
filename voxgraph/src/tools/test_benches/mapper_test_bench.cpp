@@ -1,7 +1,6 @@
 //
 // Created by victor on 10.04.19.
 //
-
 #include <ros/ros.h>
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
@@ -41,8 +40,13 @@ int main(int argc, char** argv) {
                             ground_truth_tsdf_layer_path));
   double skip_first_n_sec;
   nh_private.param<double>("skip_first_n_sec", skip_first_n_sec, 0);
+  std::vector<std::string> registration_methods;
+  nh_private.param("registration_methods", registration_methods,
+                   {"implicit_to_implicit"});
+  std::vector<double> sampling_ratios;
+  nh_private.param("sampling_ratios", sampling_ratios, {-1});
 
-  // Format log file path containing current time stamp
+  // Create the log file with the current timestamp as its file name
   time_t raw_time = std::time(nullptr);
   struct tm time_struct;
   localtime_r(&raw_time, &time_struct);
@@ -56,9 +60,17 @@ int main(int argc, char** argv) {
   std::ofstream log_file;
   log_file.open(log_file_path.string());
 
+  // Write the log file header
+  log_file << "git_branch, git_hash, hw_concurrency\n"
+           << GIT_BRANCH << "," << GIT_COMMIT_HASH << ","
+           << std::thread::hardware_concurrency() << std::endl;
+  log_file << "registration_method, sampling_ratio, total_milliseconds, "
+              "rmse, max_error, min_error, "
+              "num_evaluated_voxels, num_ignored_voxels, "
+              "num_overlapping_voxels, num_non_overlapping_voxels"
+           << std::endl;
+
   // Loop through all params
-  std::vector<double> sampling_ratios = {-1.0, 1.0, 0.9, 0.8, 0.7, 0.6,
-                                         0.5,  0.4, 0.3, 0.2, 0.1, 0.0};
   for (double sampling_ratio : sampling_ratios) {
     // Set params specific to this run
     nh_private.setParam("measurements/submap_registration/sampling_ratio",
@@ -176,11 +188,17 @@ int main(int argc, char** argv) {
     std::string registration_method;
     nh_private.getParam("measurements/submap_registration/registration_method",
                         registration_method);
-    log_file << registration_method << ", " << sampling_ratio << ", "
-             << std::chrono::duration_cast<std::chrono::seconds>(end_time -
-                                                                 start_time)
+    log_file << registration_method << "," << sampling_ratio << ","
+             << std::chrono::duration_cast<std::chrono::milliseconds>(
+                    end_time - start_time)
                     .count()
-             << ", " << evaluation_details.rmse << "\n";
+             << "," << evaluation_details.rmse << ","
+             << evaluation_details.max_error << ","
+             << evaluation_details.min_error << ","
+             << evaluation_details.num_evaluated_voxels << ","
+             << evaluation_details.num_ignored_voxels << ","
+             << evaluation_details.num_overlapping_voxels << ","
+             << evaluation_details.num_non_overlapping_voxels << std::endl;
 
     // Close the rosbag
     bag.close();
