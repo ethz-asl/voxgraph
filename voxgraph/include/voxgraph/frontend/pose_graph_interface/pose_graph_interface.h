@@ -42,6 +42,10 @@ class PoseGraphInterface {
 
   void updateSubmapCollectionPoses();
 
+  const PoseGraph::SolverSummaryList &getSolverSummaries() {
+    return pose_graph_.getSolverSummaries();
+  }
+
  private:
   bool verbose_;
 

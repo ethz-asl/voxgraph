@@ -5,6 +5,7 @@
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
 #include <rosgraph_msgs/Clock.h>
+#include <algorithm>
 #include <chrono>
 #include <future>
 #include <map>
@@ -22,10 +23,12 @@ int main(int argc, char** argv) {
   using voxgraph::VoxgraphSubmap;
   using voxgraph::VoxgraphSubmapCollection;
   using voxgraph::MapEvaluation;
+  using voxgraph::PoseGraph;
   using cblox::SubmapID;
   using voxblox::Transformation;
   using std::future_status;
-  using std::chrono::microseconds;
+  using std::chrono::milliseconds;
+  using std::chrono::duration_cast;
 
   // Start logging
   google::InitGoogleLogging(argv[0]);
@@ -69,11 +72,16 @@ int main(int argc, char** argv) {
            << GIT_BRANCH << "," << GIT_COMMIT_HASH << ","
            << std::thread::hardware_concurrency() << std::endl;
   log_file << "registration_method, sampling_ratio, total_milliseconds, "
+              "average_submap_pose_error, last_submap_pose_error, "
+              "used_rigid_body_alignment, "
               "rmse, max_error, min_error, "
               "num_evaluated_voxels, num_ignored_voxels, "
               "num_overlapping_voxels, num_non_overlapping_voxels, "
-              "last_submap_pose_error, average_submap_pose_error, "
-              "used_rigid_body_alignment"
+              "average_num_residuals, max_num_residuals, "
+              "average_solver_iterations, max_solver_iterations, "
+              "average_successful_steps, max_successful_steps, "
+              "average_unsuccessful_steps, max_unsuccessful_steps, "
+              "average_solver_time, max_solver_time"
            << std::endl;
 
   // Loop through all params
@@ -161,7 +169,7 @@ int main(int argc, char** argv) {
           // If the mapper is already running, throttle it as required
           if (mapper_async_handle.valid()) {
             // If the mapper is busy but the queue is short, we continue
-            auto status = mapper_async_handle.wait_for(microseconds(0));
+            auto status = mapper_async_handle.wait_for(milliseconds(0));
             if (status != future_status::ready &&
                 pointcloud_queue.size() < 10) {
               continue;
@@ -217,32 +225,77 @@ int main(int argc, char** argv) {
     ROS_INFO("Evaluating reconstruction error");
     const MapEvaluation::EvaluationDetails evaluation_result =
         map_evaluation.evaluate(submap_collection);
-
-    // Evaluate the drift correction by comparing the pose history to ground
-    // truth
-    Transformation::Vector6 submap_pose_error;
-    Transformation::Vector6 average_pose_error =
-        Transformation::Vector6::Zero();
     const Transformation T_ground_truth__reading =
         evaluation_result.T_ground_truth__reading;
-    for (VoxgraphSubmap::ConstPtr voxgraph_submap :
-         submap_collection.getSubMaps()) {
-      // Lookup the submap's ground truth pose
-      const SubmapID submap_id = voxgraph_submap->getID();
-      const auto it = ground_truth_pose_map.find(submap_id);
-      CHECK(it != ground_truth_pose_map.end());
-      const Transformation ground_truth_pose = it->second;
-      // Align the submap's pose to ground truth using the rigid body transform
-      // found during the reconstruction evaluation
-      const Transformation optimized_pose =
-          T_ground_truth__reading * voxgraph_submap->getPose();
-      // Compute the error vector
-      submap_pose_error = optimized_pose.log() - ground_truth_pose.log();
-      average_pose_error += submap_pose_error.cwiseAbs();
+
+    // Evaluate drift correction by comparing the pose history to ground truth
+    Transformation::Vector6 average_pose_error =
+        Transformation::Vector6::Zero();
+    Transformation::Vector6 last_submap_pose_error;
+    {
+      Transformation::Vector6 submap_pose_error;
+      int num_submaps = submap_collection.getSubMaps().size();
+      for (VoxgraphSubmap::ConstPtr voxgraph_submap :
+           submap_collection.getSubMaps()) {
+        // Lookup the submap's ground truth pose
+        const SubmapID submap_id = voxgraph_submap->getID();
+        const auto it = ground_truth_pose_map.find(submap_id);
+        CHECK(it != ground_truth_pose_map.end());
+        const Transformation ground_truth_pose = it->second;
+        // Align the submap's pose to ground truth using the rigid body
+        // transform
+        // found during the reconstruction evaluation
+        const Transformation optimized_pose =
+            T_ground_truth__reading * voxgraph_submap->getPose();
+        // Compute the error vector
+        submap_pose_error = optimized_pose.log() - ground_truth_pose.log();
+        average_pose_error += submap_pose_error.cwiseAbs() / num_submaps;
+      }
+      // Store the last submap pose error
+      last_submap_pose_error = submap_pose_error;
     }
-    // Finish computing the average error and store the last submap pose error
-    average_pose_error /= submap_collection.getSubMaps().size();
-    const Transformation::Vector6 last_submap_pose_error = submap_pose_error;
+
+    // Summarize the pose graph optimization cost
+    int average_num_residuals = 0;
+    int max_num_residuals = 0;
+    int average_solver_iterations = 0;
+    size_t max_solver_iterations = 0;
+    int average_successful_steps = 0;
+    int max_successful_steps = 0;
+    int average_unsuccessful_steps = 0;
+    int max_unsuccessful_steps = 0;
+    double average_solver_time = 0;
+    double max_solver_time = 0;
+    {
+      PoseGraph::SolverSummaryList solver_summaries =
+          voxgraph_mapper.getSolverSummaries();
+      for (const ceres::Solver::Summary &solver_summary : solver_summaries) {
+        // Update the averages
+        average_num_residuals += solver_summary.num_residuals;
+        average_solver_iterations += solver_summary.iterations.size();
+        average_successful_steps += solver_summary.num_successful_steps;
+        average_unsuccessful_steps += solver_summary.num_unsuccessful_steps;
+        average_solver_time += solver_summary.total_time_in_seconds;
+        // Update the maxima
+        max_num_residuals =
+            std::max(solver_summary.num_residuals, max_num_residuals);
+        max_solver_iterations =
+            std::max(solver_summary.iterations.size(), max_solver_iterations);
+        max_successful_steps =
+            std::max(solver_summary.num_successful_steps, max_successful_steps);
+        max_unsuccessful_steps = std::max(solver_summary.num_unsuccessful_steps,
+                                          max_unsuccessful_steps);
+        max_solver_time =
+            std::max(solver_summary.total_time_in_seconds, max_solver_time);
+      }
+      // Finish the averages
+      const int &num_summaries = solver_summaries.size();
+      average_num_residuals /= num_summaries;
+      average_solver_iterations /= num_summaries;
+      average_successful_steps /= num_summaries;
+      average_unsuccessful_steps /= num_summaries;
+      average_solver_time /= num_summaries;
+    }
 
     // Write to log
     Eigen::IOFormat ioformat(Eigen::StreamPrecision, Eigen::DontAlignCols, "; ",
@@ -251,19 +304,23 @@ int main(int argc, char** argv) {
     nh_private.getParam("measurements/submap_registration/registration_method",
                         registration_method);
     log_file << registration_method << "," << sampling_ratio << ","
-             << std::chrono::duration_cast<std::chrono::milliseconds>(
-                    end_time - start_time)
-                    .count()
-             << "," << evaluation_result.reconstruction.rmse << ","
+             << duration_cast<milliseconds>(end_time - start_time).count()
+             << "," << average_pose_error.format(ioformat) << ","
+             << last_submap_pose_error.format(ioformat) << ","
+             << T_ground_truth__reading.log().format(ioformat) << ","
+             << evaluation_result.reconstruction.rmse << ","
              << evaluation_result.reconstruction.max_error << ","
              << evaluation_result.reconstruction.min_error << ","
              << evaluation_result.reconstruction.num_evaluated_voxels << ","
              << evaluation_result.reconstruction.num_ignored_voxels << ","
              << evaluation_result.reconstruction.num_overlapping_voxels << ","
              << evaluation_result.reconstruction.num_non_overlapping_voxels
-             << "," << last_submap_pose_error.format(ioformat) << ","
-             << average_pose_error.format(ioformat) << ","
-             << T_ground_truth__reading.log().format(ioformat) << std::endl;
+             << "," << average_num_residuals << "," << max_num_residuals << ","
+             << average_solver_iterations << "," << max_solver_iterations << ","
+             << average_successful_steps << "," << max_successful_steps << ","
+             << average_unsuccessful_steps << "," << max_unsuccessful_steps
+             << "," << average_solver_time << "," << max_solver_time
+             << std::endl;
 
     // Close the rosbag
     bag.close();

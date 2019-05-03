@@ -224,11 +224,21 @@ void VoxgraphMapper::pointcloudCallback(
                                  odom_frame_corrected_, true,
                                  current_timestamp);
 
-      // Update the submap collection visualization in Rviz
-      //      std::thread meshing_thread(&SubmapVisuals::publishCombinedMesh,
-      //                                 &submap_vis_, *submap_collection_ptr_,
-      //                                 world_frame_, combined_mesh_pub_);
-      //      meshing_thread.detach();
+      // Only auto publish the updated meshes if there are subscribers
+      // NOTE: Users can request new meshes at any time through service calls
+      //       so there's no point in publishing them just in case
+      if (combined_mesh_pub_.getNumSubscribers() > 0) {
+        std::thread combined_mesh_thread(&SubmapVisuals::publishCombinedMesh,
+                                         &submap_vis_, *submap_collection_ptr_,
+                                         world_frame_, combined_mesh_pub_);
+        combined_mesh_thread.detach();
+      }
+      if (separated_mesh_pub_.getNumSubscribers() > 0) {
+        std::thread separated_mesh_thread(&SubmapVisuals::publishSeparatedMesh,
+                                          &submap_vis_, *submap_collection_ptr_,
+                                          world_frame_, separated_mesh_pub_);
+        separated_mesh_thread.detach();
+      }
 
       // Resume playing  the rosbag
       if (auto_pause_rosbag_) {

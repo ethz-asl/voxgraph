@@ -79,7 +79,7 @@ void PoseGraph::optimize() {
   // TODO(victorr): Look into manual parameter block ordering
   ceres_options.parameter_tolerance = 3e-4;
   //  ceres_options.max_num_iterations = 4;
-  ceres_options.max_solver_time_in_seconds = 12;
+  //  ceres_options.max_solver_time_in_seconds = 12;
   ceres_options.num_threads = std::thread::hardware_concurrency();
   ceres_options.linear_solver_type = ceres::LinearSolverType::SPARSE_SCHUR;
   // NOTE: For small problems DENSE_SCHUR is much faster
@@ -87,7 +87,9 @@ void PoseGraph::optimize() {
   ceres::Solver::Summary summary;
   ceres::Solve(ceres_options, problem_ptr_.get(), &summary);
 
+  // Display and store the solver summary
   std::cout << summary.FullReport() << std::endl;
+  solver_summaries_.emplace_back(summary);
 }
 
 std::map<const cblox::SubmapID, const voxblox::Transformation>

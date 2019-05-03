@@ -5,6 +5,7 @@
 #ifndef VOXGRAPH_BACKEND_POSE_GRAPH_H_
 #define VOXGRAPH_BACKEND_POSE_GRAPH_H_
 
+#include <list>
 #include <map>
 #include <memory>
 #include <utility>
@@ -16,6 +17,7 @@ namespace voxgraph {
 class PoseGraph {
  public:
   typedef std::shared_ptr<const PoseGraph> ConstPtr;
+  typedef std::list<ceres::Solver::Summary> SolverSummaryList;
 
   PoseGraph() = default;
 
@@ -33,7 +35,6 @@ class PoseGraph {
   }
 
   void initialize();
-
   void optimize();
 
   std::map<const cblox::SubmapID, const voxblox::Transformation>
@@ -46,6 +47,8 @@ class PoseGraph {
   };
   std::vector<Edge> getEdges() const;
 
+  const SolverSummaryList &getSolverSummaries() { return solver_summaries_; }
+
  private:
   ConstraintCollection constraints_collection_;
   NodeCollection node_collection_;
@@ -53,6 +56,7 @@ class PoseGraph {
   // Ceres problem
   ceres::Problem::Options problem_options_;
   std::shared_ptr<ceres::Problem> problem_ptr_;
+  SolverSummaryList solver_summaries_;
 };
 }  // namespace voxgraph
 

@@ -46,6 +46,10 @@ class VoxgraphMapper {
     return *submap_collection_ptr_;
   }
 
+  const PoseGraph::SolverSummaryList &getSolverSummaries() {
+    return pose_graph_interface_.getSolverSummaries();
+  }
+
  private:
   // Node handles
   ros::NodeHandle nh_;
