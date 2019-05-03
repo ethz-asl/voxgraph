@@ -67,3 +67,33 @@ target_link_libraries(mapper_test_bench ${PROJECT_NAME})
 # EXPORT #
 ##########
 cs_export()
+
+####################
+# GIT VERSION INFO #
+####################
+# Make the git branch name and git commit hash available in the sources as
+# a #define, such that it can easily be appended to logs
+IF(EXISTS ${voxgraph_SOURCE_DIR}/../.git)
+  find_package(Git)
+  IF(GIT_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY "${voxgraph_SOURCE_DIR}"
+        OUTPUT_VARIABLE "voxgraph_GIT_BRANCH"
+        ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} log -1 --format=%h
+        WORKING_DIRECTORY "${voxgraph_SOURCE_DIR}"
+        OUTPUT_VARIABLE "voxgraph_GIT_COMMIT_HASH"
+        ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    message(STATUS "Defining GIT_BRANCH: ${voxgraph_GIT_BRANCH}")
+    message(STATUS "Defining GIT_COMMIT_HASH: ${voxgraph_GIT_COMMIT_HASH}")
+  ELSE(GIT_FOUND)
+    set(voxgraph_GIT_BRANCH 0)
+    set(voxgraph_GIT_COMMIT_HASH 0)
+  ENDIF(GIT_FOUND)
+ENDIF(EXISTS ${voxgraph_SOURCE_DIR}/../.git)
+add_definitions("-DGIT_BRANCH=\"${voxgraph_GIT_BRANCH}\"")
+add_definitions("-DGIT_COMMIT_HASH=\"${voxgraph_GIT_COMMIT_HASH}\"")
