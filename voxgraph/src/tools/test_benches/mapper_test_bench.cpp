@@ -72,7 +72,8 @@ int main(int argc, char** argv) {
               "rmse, max_error, min_error, "
               "num_evaluated_voxels, num_ignored_voxels, "
               "num_overlapping_voxels, num_non_overlapping_voxels, "
-              "last_submap_pose_error, average_submap_pose_error"
+              "last_submap_pose_error, average_submap_pose_error, "
+              "used_rigid_body_alignment"
            << std::endl;
 
   // Loop through all params
@@ -214,7 +215,7 @@ int main(int argc, char** argv) {
 
     // Evaluate the map by comparing it to ground truth
     ROS_INFO("Evaluating reconstruction error");
-    voxblox::utils::VoxelEvaluationDetails evaluation_details =
+    const MapEvaluation::EvaluationDetails evaluation_result =
         map_evaluation.evaluate(submap_collection);
 
     // Evaluate the drift correction by comparing the pose history to ground
@@ -222,19 +223,26 @@ int main(int argc, char** argv) {
     Transformation::Vector6 submap_pose_error;
     Transformation::Vector6 average_pose_error =
         Transformation::Vector6::Zero();
+    const Transformation T_ground_truth__reading =
+        evaluation_result.T_ground_truth__reading;
     for (VoxgraphSubmap::ConstPtr voxgraph_submap :
          submap_collection.getSubMaps()) {
       // Lookup the submap's ground truth pose
       const SubmapID submap_id = voxgraph_submap->getID();
-      const Transformation optimized_pose = voxgraph_submap->getPose();
       const auto it = ground_truth_pose_map.find(submap_id);
       CHECK(it != ground_truth_pose_map.end());
       const Transformation ground_truth_pose = it->second;
+      // Align the submap's pose to ground truth using the rigid body transform
+      // found during the reconstruction evaluation
+      const Transformation optimized_pose =
+          T_ground_truth__reading * voxgraph_submap->getPose();
+      // Compute the error vector
       submap_pose_error = optimized_pose.log() - ground_truth_pose.log();
       average_pose_error += submap_pose_error.cwiseAbs();
     }
-    const Transformation::Vector6 last_submap_pose_error = submap_pose_error;
+    // Finish computing the average error and store the last submap pose error
     average_pose_error /= submap_collection.getSubMaps().size();
+    const Transformation::Vector6 last_submap_pose_error = submap_pose_error;
 
     // Write to log
     Eigen::IOFormat ioformat(Eigen::StreamPrecision, Eigen::DontAlignCols, "; ",
@@ -246,15 +254,16 @@ int main(int argc, char** argv) {
              << std::chrono::duration_cast<std::chrono::milliseconds>(
                     end_time - start_time)
                     .count()
-             << "," << evaluation_details.rmse << ","
-             << evaluation_details.max_error << ","
-             << evaluation_details.min_error << ","
-             << evaluation_details.num_evaluated_voxels << ","
-             << evaluation_details.num_ignored_voxels << ","
-             << evaluation_details.num_overlapping_voxels << ","
-             << evaluation_details.num_non_overlapping_voxels << ","
-             << last_submap_pose_error.format(ioformat) << ","
-             << average_pose_error.format(ioformat) << std::endl;
+             << "," << evaluation_result.reconstruction.rmse << ","
+             << evaluation_result.reconstruction.max_error << ","
+             << evaluation_result.reconstruction.min_error << ","
+             << evaluation_result.reconstruction.num_evaluated_voxels << ","
+             << evaluation_result.reconstruction.num_ignored_voxels << ","
+             << evaluation_result.reconstruction.num_overlapping_voxels << ","
+             << evaluation_result.reconstruction.num_non_overlapping_voxels
+             << "," << last_submap_pose_error.format(ioformat) << ","
+             << average_pose_error.format(ioformat) << ","
+             << T_ground_truth__reading.log().format(ioformat) << std::endl;
 
     // Close the rosbag
     bag.close();

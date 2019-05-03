@@ -57,7 +57,7 @@ MapEvaluation::MapEvaluation(const ros::NodeHandle &node_handle,
   ground_truth_mesh_pub_.publish(marker);
 }
 
-voxblox::utils::VoxelEvaluationDetails MapEvaluation::evaluate(
+MapEvaluation::EvaluationDetails MapEvaluation::evaluate(
     const VoxgraphSubmapCollection &submap_collection) {
   // Get the voxel size and number of voxels per side
   voxblox::FloatingPoint voxel_size =
@@ -82,7 +82,9 @@ voxblox::utils::VoxelEvaluationDetails MapEvaluation::evaluate(
   ground_truth_map_ptr_->finishSubmap();
   alignSubmapAtoSubmapB(ground_truth_map_ptr_, projected_map_ptr);
   // Apply the transform (interpolate TSDF and ESDF layers into world frame)
-  ground_truth_map_ptr_->transformSubmap(ground_truth_map_ptr_->getPose());
+  Transformation T_projected_map__ground_truth =
+      ground_truth_map_ptr_->getPose();
+  ground_truth_map_ptr_->transformSubmap(T_projected_map__ground_truth);
 
   // Compute RMSE of the projected w.r.t. the ground truth map
   EsdfLayer error_layer(voxel_size, voxels_per_side);
@@ -108,7 +110,8 @@ voxblox::utils::VoxelEvaluationDetails MapEvaluation::evaluate(
   rmse_error_pub_.publish(rmse_error_msg);
   rmse_error_slice_pub_.publish(rmse_error_slice_msg);
 
-  return evaluation_details;
+  return EvaluationDetails{evaluation_details,
+                           T_projected_map__ground_truth.inverse()};
 }
 
 void MapEvaluation::alignSubmapAtoSubmapB(

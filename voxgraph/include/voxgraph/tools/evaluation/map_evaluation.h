@@ -19,10 +19,15 @@ class MapEvaluation {
   using TsdfLayer = voxblox::Layer<TsdfVoxel>;
   using EsdfLayer = voxblox::Layer<voxblox::EsdfVoxel>;
 
+  struct EvaluationDetails {
+    voxblox::utils::VoxelEvaluationDetails reconstruction;
+    voxblox::Transformation T_ground_truth__reading;
+  };
+
   MapEvaluation(const ros::NodeHandle &nh,
                 const std::string &ground_truth_tsdf_file_path);
 
-  voxblox::utils::VoxelEvaluationDetails evaluate(
+  MapEvaluation::EvaluationDetails evaluate(
       const VoxgraphSubmapCollection &submap_collection);
 
   // Find and apply the best rigid body alignment of layer A to B
