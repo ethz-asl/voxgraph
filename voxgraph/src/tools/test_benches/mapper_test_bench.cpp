@@ -7,6 +7,7 @@
 #include <rosgraph_msgs/Clock.h>
 #include <chrono>
 #include <future>
+#include <map>
 #include <queue>
 #include <string>
 #include <thread>
@@ -18,8 +19,11 @@
 int main(int argc, char** argv) {
   using voxgraph::VoxgraphMapper;
   using voxgraph::OdometrySimulator;
+  using voxgraph::VoxgraphSubmap;
   using voxgraph::VoxgraphSubmapCollection;
   using voxgraph::MapEvaluation;
+  using cblox::SubmapID;
+  using voxblox::Transformation;
   using std::future_status;
   using std::chrono::microseconds;
 
@@ -67,7 +71,8 @@ int main(int argc, char** argv) {
   log_file << "registration_method, sampling_ratio, total_milliseconds, "
               "rmse, max_error, min_error, "
               "num_evaluated_voxels, num_ignored_voxels, "
-              "num_overlapping_voxels, num_non_overlapping_voxels"
+              "num_overlapping_voxels, num_non_overlapping_voxels, "
+              "last_submap_pose_error, average_submap_pose_error"
            << std::endl;
 
   // Loop through all params
@@ -100,6 +105,10 @@ int main(int argc, char** argv) {
 
     // Setup the map quality evaluation
     MapEvaluation map_evaluation(nh_private, ground_truth_tsdf_layer_path);
+
+    // Setup ground truth pose logging
+    std::map<SubmapID, Transformation> ground_truth_pose_map;
+    voxblox::Transformer transformer(nh, nh_private);
 
     // Process the bag
     for (rosbag::MessageInstance const read_msg :
@@ -165,7 +174,31 @@ int main(int argc, char** argv) {
           // Launch processing of the queue's next ptcloud as an asynchronous
           // task
           mapper_async_handle = std::async(std::launch::async, [&] {
+            // Process the pointcloud
             voxgraph_mapper.pointcloudCallback(pointcloud_queue.front());
+
+            // If a new submap was created, store its ground truth pose
+            const VoxgraphSubmapCollection &submap_collection =
+                voxgraph_mapper.getSubmapCollection();
+            const SubmapID current_submap_id =
+                submap_collection.getActiveSubMapID();
+            SubmapID previous_submap_id;
+            if (ground_truth_pose_map.empty()) {
+              previous_submap_id = -1;
+            } else {
+              previous_submap_id = ground_truth_pose_map.rbegin()->first;
+            }
+            if (current_submap_id != previous_submap_id) {
+              const ros::Time creation_time =
+                  submap_collection.getActiveSubMap().getCreationTime();
+              Transformation ground_truth_pose;
+              CHECK(transformer.lookupTransform("robot_ground_truth", "world",
+                                                creation_time,
+                                                &ground_truth_pose));
+              ground_truth_pose_map.emplace(current_submap_id,
+                                            ground_truth_pose);
+            }
+
             return 1;
           });
           continue;
@@ -175,16 +208,37 @@ int main(int argc, char** argv) {
 
     auto end_time = std::chrono::steady_clock::now();
 
+    // Get a const ref to the submap collection
+    const VoxgraphSubmapCollection &submap_collection =
+        voxgraph_mapper.getSubmapCollection();
+
     // Evaluate the map by comparing it to ground truth
     ROS_INFO("Evaluating reconstruction error");
-    auto evaluation_details =
-        map_evaluation.evaluate(voxgraph_mapper.getSubmapCollection());
+    voxblox::utils::VoxelEvaluationDetails evaluation_details =
+        map_evaluation.evaluate(submap_collection);
 
-    // Evalute the drift correction by comparing the pose history to ground
+    // Evaluate the drift correction by comparing the pose history to ground
     // truth
-    // TODO(victorr): Implement this
+    Transformation::Vector6 submap_pose_error;
+    Transformation::Vector6 average_pose_error =
+        Transformation::Vector6::Zero();
+    for (VoxgraphSubmap::ConstPtr voxgraph_submap :
+         submap_collection.getSubMaps()) {
+      // Lookup the submap's ground truth pose
+      const SubmapID submap_id = voxgraph_submap->getID();
+      const Transformation optimized_pose = voxgraph_submap->getPose();
+      const auto it = ground_truth_pose_map.find(submap_id);
+      CHECK(it != ground_truth_pose_map.end());
+      const Transformation ground_truth_pose = it->second;
+      submap_pose_error = optimized_pose.log() - ground_truth_pose.log();
+      average_pose_error += submap_pose_error.cwiseAbs();
+    }
+    const Transformation::Vector6 last_submap_pose_error = submap_pose_error;
+    average_pose_error /= submap_collection.getSubMaps().size();
 
     // Write to log
+    Eigen::IOFormat ioformat(Eigen::StreamPrecision, Eigen::DontAlignCols, "; ",
+                             "; ", "", "", "", "");
     std::string registration_method;
     nh_private.getParam("measurements/submap_registration/registration_method",
                         registration_method);
@@ -198,7 +252,9 @@ int main(int argc, char** argv) {
              << evaluation_details.num_evaluated_voxels << ","
              << evaluation_details.num_ignored_voxels << ","
              << evaluation_details.num_overlapping_voxels << ","
-             << evaluation_details.num_non_overlapping_voxels << std::endl;
+             << evaluation_details.num_non_overlapping_voxels << ","
+             << last_submap_pose_error.format(ioformat) << ","
+             << average_pose_error.format(ioformat) << std::endl;
 
     // Close the rosbag
     bag.close();
