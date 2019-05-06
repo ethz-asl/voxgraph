@@ -9,6 +9,7 @@
 #include <chrono>
 #include <future>
 #include <map>
+#include <memory>
 #include <queue>
 #include <string>
 #include <thread>
@@ -16,6 +17,18 @@
 #include "voxgraph/frontend/voxgraph_mapper.h"
 #include "voxgraph/tools/evaluation/map_evaluation.h"
 #include "voxgraph/tools/odometry_simulator/odometry_simulator.h"
+
+template <typename T>
+std::string vectorToString(std::vector<T> vector) {
+  std::stringstream ss;
+  for (size_t i = 0; i < vector.size(); i++) {
+    if (i != 0) {
+      ss << ", ";
+    }
+    ss << vector[i];
+  }
+  return ss.str();
+}
 
 int main(int argc, char** argv) {
   using voxgraph::VoxgraphMapper;
@@ -41,17 +54,49 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh_private("~");
 
   // Load ROS params
-  std::string rosbag_path, ground_truth_tsdf_layer_path;
+  ROS_INFO("Loading ROS params");
+
+  std::string rosbag_path;
   CHECK(nh_private.getParam("rosbag_filepath", rosbag_path));
-  CHECK(nh_private.getParam("map_evaluation/ground_truth_tsdf_layer_filepath",
-                            ground_truth_tsdf_layer_path));
+  ROS_INFO_STREAM("- rosbag file path: " << rosbag_path);
+
+  std::string ground_truth_tsdf_layer_path;
+  nh_private.param<std::string>("ground_truth_tsdf_layer_filepath",
+                                ground_truth_tsdf_layer_path, "");
+  ROS_INFO_STREAM(
+      "- ground truth TSDF layer filepath: " << ground_truth_tsdf_layer_path);
+
   double skip_first_n_sec;
   nh_private.param<double>("skip_first_n_sec", skip_first_n_sec, 0);
+  ROS_INFO_STREAM("- skip first n seconds: " << skip_first_n_sec);
+
   std::vector<std::string> registration_methods;
   nh_private.param("registration_methods", registration_methods,
                    {"implicit_to_implicit"});
+  ROS_INFO_STREAM(
+      "- registration methods: " << vectorToString(registration_methods));
+
   std::vector<double> sampling_ratios;
   nh_private.param("sampling_ratios", sampling_ratios, {-1});
+  ROS_INFO_STREAM(
+      "- number of sampling ratios: " << vectorToString(sampling_ratios));
+
+  std::string pointcloud_topic;
+  nh_private.param<std::string>("pointcloud_topic", pointcloud_topic,
+                                "/velodyne_points");
+  ROS_INFO_STREAM("- pointcloud topic: " << pointcloud_topic);
+
+  std::string odometry_simulator_input_topic;
+  nh_private.param<std::string>("odom_simulator_input_topic",
+                                odometry_simulator_input_topic, "");
+  ROS_INFO_STREAM(
+      "- odometry simulator input topic: " << odometry_simulator_input_topic);
+
+  std::string ground_truth_robot_pose_frame;
+  nh_private.param<std::string>("ground_truth_robot_pose_frame",
+                                ground_truth_robot_pose_frame, "");
+  ROS_INFO_STREAM(
+      "- ground truth robot pose TF frame: " << ground_truth_robot_pose_frame);
 
   // Create the log file with the current timestamp as its file name
   time_t raw_time = std::time(nullptr);
@@ -103,23 +148,31 @@ int main(int argc, char** argv) {
 
       // Setup the mapper
       VoxgraphMapper voxgraph_mapper(nh, nh_private);
-      topics_of_interest.emplace_back("/velodyne_points");
+      topics_of_interest.emplace_back(pointcloud_topic);
       std::queue<sensor_msgs::PointCloud2::ConstPtr> pointcloud_queue;
       std::future<int> mapper_async_handle;
 
       // Setup the odometry simulator
       OdometrySimulator odometry_simulator(nh, nh_private);
-      topics_of_interest.emplace_back("/firefly/ground_truth/odometry");
+      topics_of_interest.emplace_back(odometry_simulator_input_topic);
+
+      // Setup TF publishing
+      topics_of_interest.emplace_back("/tf");
+      ros::Publisher tf_pub = nh.advertise<tf::tfMessage>("/tf", 3);
 
       // Setup time related members
-      bool playback_started(false);
+      bool playback_started = (skip_first_n_sec == 0.0);
       ros::Time playback_start_time(0);
       topics_of_interest.emplace_back("/clock");
       ros::Publisher clock_pub =
           nh.advertise<rosgraph_msgs::Clock>("/clock", 1);
 
       // Setup the map quality evaluation
-      MapEvaluation map_evaluation(nh_private, ground_truth_tsdf_layer_path);
+      std::unique_ptr<MapEvaluation> map_evaluation;
+      if (!ground_truth_tsdf_layer_path.empty()) {
+        map_evaluation.reset(
+            new MapEvaluation(nh_private, ground_truth_tsdf_layer_path));
+      }
 
       // Setup ground truth pose logging
       std::map<SubmapID, Transformation> ground_truth_pose_map;
@@ -148,6 +201,13 @@ int main(int argc, char** argv) {
             }
           }
           clock_pub.publish(clock_msg);
+          continue;
+        }
+
+        // Process TF messages
+        tf::tfMessage::ConstPtr tf_msg = read_msg.instantiate<tf::tfMessage>();
+        if (tf_msg != nullptr) {
+          tf_pub.publish(tf_msg);
           continue;
         }
 
@@ -193,25 +253,27 @@ int main(int argc, char** argv) {
               voxgraph_mapper.pointcloudCallback(pointcloud_queue.front());
 
               // If a new submap was created, store its ground truth pose
-              const VoxgraphSubmapCollection &submap_collection =
-                  voxgraph_mapper.getSubmapCollection();
-              const SubmapID current_submap_id =
-                  submap_collection.getActiveSubMapID();
-              SubmapID previous_submap_id;
-              if (ground_truth_pose_map.empty()) {
-                previous_submap_id = -1;
-              } else {
-                previous_submap_id = ground_truth_pose_map.rbegin()->first;
-              }
-              if (current_submap_id != previous_submap_id) {
-                const ros::Time creation_time =
-                    submap_collection.getActiveSubMap().getCreationTime();
-                Transformation ground_truth_pose;
-                CHECK(transformer.lookupTransform("robot_ground_truth", "world",
-                                                  creation_time,
-                                                  &ground_truth_pose));
-                ground_truth_pose_map.emplace(current_submap_id,
-                                              ground_truth_pose);
+              if (!ground_truth_robot_pose_frame.empty()) {
+                const VoxgraphSubmapCollection &submap_collection =
+                    voxgraph_mapper.getSubmapCollection();
+                const SubmapID current_submap_id =
+                    submap_collection.getActiveSubMapID();
+                SubmapID previous_submap_id;
+                if (ground_truth_pose_map.empty()) {
+                  previous_submap_id = -1;
+                } else {
+                  previous_submap_id = ground_truth_pose_map.rbegin()->first;
+                }
+                if (current_submap_id != previous_submap_id) {
+                  const ros::Time creation_time =
+                      submap_collection.getActiveSubMap().getCreationTime();
+                  Transformation ground_truth_pose;
+                  CHECK(transformer.lookupTransform(
+                      ground_truth_robot_pose_frame, "world", creation_time,
+                      &ground_truth_pose));
+                  ground_truth_pose_map.emplace(current_submap_id,
+                                                ground_truth_pose);
+                }
               }
 
               return 1;
@@ -227,38 +289,49 @@ int main(int argc, char** argv) {
       const VoxgraphSubmapCollection &submap_collection =
           voxgraph_mapper.getSubmapCollection();
 
-      // Evaluate the map by comparing it to ground truth
-      ROS_INFO("Evaluating reconstruction error");
-      const MapEvaluation::EvaluationDetails evaluation_result =
-          map_evaluation.evaluate(submap_collection);
-      const Transformation T_ground_truth__reading =
-          evaluation_result.T_ground_truth__reading;
-
-      // Evaluate drift correction by comparing the pose history to ground truth
+      // Evaluate the reconstruction and trajectory error
+      // NOTE: We initialize all logged variables here, such that they are
+      //       simply logged as zeros if these evaluations are skipped
+      MapEvaluation::EvaluationDetails evaluation_result;
       Transformation::Vector6 average_pose_error =
           Transformation::Vector6::Zero();
-      Transformation::Vector6 last_submap_pose_error;
-      {
-        Transformation::Vector6 submap_pose_error;
-        int num_submaps = submap_collection.getSubMaps().size();
-        for (VoxgraphSubmap::ConstPtr voxgraph_submap :
-             submap_collection.getSubMaps()) {
-          // Lookup the submap's ground truth pose
-          const SubmapID submap_id = voxgraph_submap->getID();
-          const auto it = ground_truth_pose_map.find(submap_id);
-          CHECK(it != ground_truth_pose_map.end());
-          const Transformation ground_truth_pose = it->second;
-          // Align the submap's pose to ground truth using the rigid body
-          // transform
-          // found during the reconstruction evaluation
-          const Transformation optimized_pose =
-              T_ground_truth__reading * voxgraph_submap->getPose();
-          // Compute the error vector
-          submap_pose_error = optimized_pose.log() - ground_truth_pose.log();
-          average_pose_error += submap_pose_error.cwiseAbs() / num_submaps;
+      Transformation::Vector6 last_submap_pose_error =
+          Transformation::Vector6::Zero();
+      Transformation T_ground_truth__reading;
+
+      if (!ground_truth_tsdf_layer_path.empty()) {
+        // Evaluate reconstruction error by comparing the map to ground truth
+        CHECK_NOTNULL(map_evaluation);
+        ROS_INFO("Evaluating reconstruction error");
+        evaluation_result = map_evaluation->evaluate(submap_collection);
+        T_ground_truth__reading = evaluation_result.T_ground_truth__reading;
+
+        // Evaluate drift correction by comparing pose history to ground truth
+        // TODO(victorr): Directly align the trajectory to ground truth, instead
+        //                of using the transform from MapEvaluation, such that
+        //                drift can also be evaluated in the absence of a GT map
+        if (!ground_truth_robot_pose_frame.empty()) {
+          Transformation::Vector6 submap_pose_error;
+          int num_submaps = submap_collection.getSubMaps().size();
+          for (VoxgraphSubmap::ConstPtr voxgraph_submap :
+               submap_collection.getSubMaps()) {
+            // Lookup the submap's ground truth pose
+            const SubmapID submap_id = voxgraph_submap->getID();
+            const auto it = ground_truth_pose_map.find(submap_id);
+            CHECK(it != ground_truth_pose_map.end());
+            const Transformation ground_truth_pose = it->second;
+            // Align the submap's pose to ground truth using the rigid body
+            // transform
+            // found during the reconstruction evaluation
+            const Transformation optimized_pose =
+                T_ground_truth__reading * voxgraph_submap->getPose();
+            // Compute the error vector
+            submap_pose_error = optimized_pose.log() - ground_truth_pose.log();
+            average_pose_error += submap_pose_error.cwiseAbs() / num_submaps;
+          }
+          // Store the last submap pose error
+          last_submap_pose_error = submap_pose_error;
         }
-        // Store the last submap pose error
-        last_submap_pose_error = submap_pose_error;
       }
 
       // Summarize the pose graph optimization cost
