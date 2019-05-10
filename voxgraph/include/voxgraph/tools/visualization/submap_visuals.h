@@ -19,10 +19,11 @@ class SubmapVisuals {
  public:
   explicit SubmapVisuals(const VoxgraphSubmap::Config &submap_config);
 
-  void publishMesh(
-      const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
-      const std::string &submap_frame, const ros::Publisher &publisher,
-      const voxblox::ColorMode &color_mode = voxblox::ColorMode::kColor) const;
+  void publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
+                   const std::string &submap_frame,
+                   const ros::Publisher &publisher,
+                   const voxblox::ColorMode &color_mode =
+                       voxblox::ColorMode::kLambertColor) const;
 
   void publishMesh(
       const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
