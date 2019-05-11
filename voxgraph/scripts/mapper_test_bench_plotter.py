@@ -25,7 +25,7 @@ rosbag_duration = 272
 number_solver_calls = 25
 
 plot_performance = True
-plot_solver_summary = False
+plot_solver_summary = True
 
 mapper_test_bench_log_dir = \
     '/home/victor/data/voxgraph/mapper_test_bench_stats/'
@@ -111,16 +111,16 @@ for registration_method in ['explicit_to_implicit', 'implicit_to_implicit']:
                   'average_submap_pose_error_dist', ax5, 'blue',
                   label='Average', degree=3)
         ax5.set_ylim(-0.1, 6.0)
-        ax5.set_ylabel('Pose error')
+        ax5.set_ylabel('Position error')
         ax5.legend(loc='upper left')
 
         # Finish the plot
-        ax5.set_xlabel('Sampling ratio')
+        ax5.set_xlabel('Sampling ratio [log]')
         ax1.set_xlim(1.1, -0.1)
         fig.suptitle('Performance in function of sampling ratio')
         plt.figtext(.50, .92, 'Using ' + registration_method.replace('_', ' ')
                     + ' constraints', horizontalalignment='center')
-        plt.savefig(figure_path + '-performance', format='svg')
+        plt.savefig(figure_path + '-performance' + '.svg', format='svg')
 
     # Solver statistics in function of sampling ratio
     if plot_solver_summary:
@@ -158,11 +158,11 @@ for registration_method in ['explicit_to_implicit', 'implicit_to_implicit']:
         ax5.legend(loc='upper right')
 
         # Finish the plot
-        ax5.set_xlabel('Sampling ratio')
+        ax5.set_xlabel('Sampling ratio [log]')
         ax1.set_xlim(1.1, -0.1)
         fig.suptitle("Solver statistics in function of sampling ratio")
         plt.figtext(.50, .92, 'Using ' + registration_method.replace('_', ' ')
                     + ' constraints', horizontalalignment='center')
-        plt.savefig(figure_path + '-solver_statistics', format='svg')
+        plt.savefig(figure_path + '-solver_statistics' + '.svg', format='svg')
 
 plt.show()
