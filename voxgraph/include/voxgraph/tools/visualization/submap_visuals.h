@@ -7,12 +7,14 @@
 
 #include <cblox/core/submap_collection.h>
 #include <cblox/mesh/submap_mesher.h>
+#include <minkindr_conversions/kindr_msg.h>
 #include <minkindr_conversions/kindr_tf.h>
+#include <nav_msgs/Path.h>
 #include <ros/ros.h>
 #include <voxblox_ros/mesh_vis.h>
 #include <memory>
 #include <string>
-#include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
+#include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 
 namespace voxgraph {
 class SubmapVisuals {
@@ -42,6 +44,10 @@ class SubmapVisuals {
                   const voxblox::Color &box_color, const std::string &frame_id,
                   const std::string &name_space,
                   const ros::Publisher &publisher) const;
+
+  void publishPoseHistory(const VoxgraphSubmapCollection &submap_collection,
+                          const std::string &world_frame,
+                          const ros::Publisher &publisher) const;
 
  private:
   voxblox::MeshIntegratorConfig mesh_config_;

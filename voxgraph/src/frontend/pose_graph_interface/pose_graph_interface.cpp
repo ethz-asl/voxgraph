@@ -16,8 +16,8 @@ PoseGraphInterface::PoseGraphInterface(
   // Advertise the pose graph visuals publisher
   pose_graph_pub_ = node_handle.advertise<visualization_msgs::Marker>(
       "pose_graph", 100, true);
-  submap_pub_ = node_handle.advertise<visualization_msgs::Marker>("submap_info",
-                                                                  100, true);
+  submap_pub_ =
+      node_handle.advertise<visualization_msgs::Marker>("submap_info", 1, true);
 }
 
 void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
@@ -118,10 +118,12 @@ void PoseGraphInterface::updateRegistrationConstraints() {
         submap_collection_ptr_->getSubMap(first_submap_id);
 
     // Publish debug visuals
-    submap_vis_.publishBox(
-        first_submap.getWorldFrameSurfaceAabb().getCornerCoordinates(),
-        voxblox::Color::Blue(), "odom",
-        "surface_abb" + std::to_string(first_submap_id), submap_pub_);
+    if (submap_pub_.getNumSubscribers() > 0) {
+      submap_vis_.publishBox(
+          first_submap.getWorldFrameSurfaceAabb().getCornerCoordinates(),
+          voxblox::Color::Blue(), "odom",
+          "surface_abb" + std::to_string(first_submap_id), submap_pub_);
+    }
 
     for (unsigned int j = i + 1; j < submap_ids.size(); j++) {
       // Get the second submap
@@ -157,8 +159,10 @@ void PoseGraphInterface::optimize() {
   pose_graph_.optimize();
 
   // Publish debug visuals
-  pose_graph_vis_.publishPoseGraph(pose_graph_, "odom", "optimized",
-                                   pose_graph_pub_);
+  if (pose_graph_pub_.getNumSubscribers() > 0) {
+    pose_graph_vis_.publishPoseGraph(pose_graph_, "odom", "optimized",
+                                     pose_graph_pub_);
+  }
 }
 
 void PoseGraphInterface::updateSubmapCollectionPoses() {

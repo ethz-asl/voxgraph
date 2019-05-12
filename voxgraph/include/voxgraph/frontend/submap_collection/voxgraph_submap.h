@@ -19,6 +19,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
  public:
   typedef std::shared_ptr<VoxgraphSubmap> Ptr;
   typedef std::shared_ptr<const VoxgraphSubmap> ConstPtr;
+  typedef std::map<ros::Time, voxblox::Transformation> PoseHistoryMap;
 
   struct Config : cblox::TsdfEsdfSubmap::Config {
     struct RegistrationFilter {
@@ -40,6 +41,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   void addPoseToHistory(const ros::Time &timestamp,
                         const voxblox::Transformation &T_world_robot);
+  const PoseHistoryMap &getPoseHistory() const { return pose_history_; }
 
   // Indicate that the submap is finished and generate all cached members
   // NOTE: These cached members are mainly used in the registration cost funcs
@@ -99,7 +101,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   void findIsosurfaceVertices();
 
   // History of how the robot moved through the submap
-  std::map<ros::Time, voxblox::Transformation> pose_history_;
+  PoseHistoryMap pose_history_;
 };
 }  // namespace voxgraph
 

@@ -9,6 +9,7 @@
 #include <voxblox_ros/ptcloud_vis.h>
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace voxgraph {
 SubmapVisuals::SubmapVisuals(const VoxgraphSubmap::Config &submap_config) {
@@ -112,6 +113,32 @@ void SubmapVisuals::publishBox(const BoxCornerMatrix &box_corner_matrix,
 
   // Publish the visualization
   publisher.publish(marker);
+}
+
+void SubmapVisuals::publishPoseHistory(
+    const VoxgraphSubmapCollection &submap_collection,
+    const std::string &world_frame, const ros::Publisher &publisher) const {
+  // Create the pose history message
+  nav_msgs::Path pose_history_msg;
+  pose_history_msg.header.stamp = ros::Time::now();
+  pose_history_msg.header.frame_id = world_frame;
+
+  // Iterate over all submaps
+  for (VoxgraphSubmap::ConstPtr submap_ptr : submap_collection.getSubMaps()) {
+    // Iterate over all poses in the submap
+    for (const std::pair<const ros::Time, Transformation> &time_pose_pair :
+         submap_ptr->getPoseHistory()) {
+      geometry_msgs::PoseStamped pose_stamped_msg;
+      pose_stamped_msg.header.stamp = time_pose_pair.first;
+      // Transform the pose from submap frame into world frame
+      const Transformation pose = submap_ptr->getPose() * time_pose_pair.second;
+      tf::poseKindrToMsg(pose.cast<double>(), &pose_stamped_msg.pose);
+      pose_history_msg.poses.emplace_back(pose_stamped_msg);
+    }
+  }
+
+  // Publish the message
+  publisher.publish(pose_history_msg);
 }
 
 // TODO(victorr): Implement TSDF visualization

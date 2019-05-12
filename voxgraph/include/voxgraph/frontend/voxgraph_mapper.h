@@ -79,6 +79,7 @@ class VoxgraphMapper {
   // ROS topic publishers
   ros::Publisher separated_mesh_pub_;
   ros::Publisher combined_mesh_pub_;
+  ros::Publisher pose_history_pub_;
 
   // ROS service servers
   ros::ServiceServer publish_separated_mesh_srv_;

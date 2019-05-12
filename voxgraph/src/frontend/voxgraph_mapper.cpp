@@ -4,6 +4,7 @@
 
 #include "voxgraph/frontend/voxgraph_mapper.h"
 #include <minkindr_conversions/kindr_xml.h>
+#include <nav_msgs/Path.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <memory>
 #include <string>
@@ -125,6 +126,8 @@ void VoxgraphMapper::advertiseTopics() {
       "separated_mesh", subscriber_queue_length_, true);
   combined_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
       "combined_mesh", subscriber_queue_length_, true);
+  pose_history_pub_ =
+      nh_private_.advertise<nav_msgs::Path>("pose_history", 1, true);
 }
 
 void VoxgraphMapper::advertiseServices() {
@@ -287,6 +290,12 @@ void VoxgraphMapper::pointcloudCallback(
   // Add the current pose to the submap's pose history
   submap_collection_ptr_->getActiveSubMapPtr()->addPoseToHistory(
       current_timestamp, T_world_robot);
+
+  // Publish the pose history
+  if (pose_history_pub_.getNumSubscribers() > 0) {
+    submap_vis_.publishPoseHistory(*submap_collection_ptr_, world_frame_,
+                                   pose_history_pub_);
+  }
 }
 
 bool VoxgraphMapper::lookup_T_odom_robot(ros::Time timestamp,
