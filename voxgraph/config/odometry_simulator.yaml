@@ -1,7 +1,7 @@
 debug: true
 subscriber_queue_length: 100
 subscribe_to_odom_topic: "/firefly/ground_truth/odometry"
-published_world_frame: "world"
+published_world_frame: "odom"
 published_simulated_robot_frame: "robot"
 published_original_robot_frame: "robot_ground_truth"
 

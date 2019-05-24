@@ -1,6 +1,7 @@
 //
 // Created by victor on 10.04.19.
 //
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <ros/ros.h>
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
@@ -30,6 +31,9 @@ std::string vectorToString(std::vector<T> vector) {
   return ss.str();
 }
 
+// TODO(victorr): Clean this test bench up and split it into smaller functions
+// TODO(victorr): Use MessageInstance::getTopic() instead of directly trying to
+//                instanciate (which also doesn't check if the topic is right)
 int main(int argc, char** argv) {
   using voxgraph::VoxgraphMapper;
   using voxgraph::OdometrySimulator;
@@ -39,9 +43,14 @@ int main(int argc, char** argv) {
   using voxgraph::PoseGraph;
   using cblox::SubmapID;
   using voxblox::Transformation;
+  using TransformationDouble =
+      kindr::minimal::QuatTransformationTemplate<double>;
   using std::future_status;
   using std::chrono::milliseconds;
   using std::chrono::duration_cast;
+  using geometry_msgs::PoseStamped;
+  using geometry_msgs::PoseWithCovarianceStamped;
+  enum class GroundTruthPoseMsgType { Odometry, PoseWithCovarianceStamped };
 
   // Start logging
   google::InitGoogleLogging(argv[0]);
@@ -55,81 +64,147 @@ int main(int argc, char** argv) {
 
   // Load ROS params
   ROS_INFO("Loading ROS params");
-
+  // Rosbag file path
   std::string rosbag_path;
   CHECK(nh_private.getParam("rosbag_filepath", rosbag_path));
   ROS_INFO_STREAM("- rosbag file path: " << rosbag_path);
-
-  std::string ground_truth_tsdf_layer_path;
-  nh_private.param<std::string>("ground_truth_tsdf_layer_filepath",
-                                ground_truth_tsdf_layer_path, "");
-  ROS_INFO_STREAM(
-      "- ground truth TSDF layer filepath: " << ground_truth_tsdf_layer_path);
-
+  // Number of seconds to skip at the start of the rosbag
   double skip_first_n_sec;
   nh_private.param<double>("skip_first_n_sec", skip_first_n_sec, 0);
   ROS_INFO_STREAM("- skip first n seconds: " << skip_first_n_sec);
-
+  // Registration method(s) to test
   std::vector<std::string> registration_methods;
   nh_private.param("registration_methods", registration_methods,
                    {"implicit_to_implicit"});
   ROS_INFO_STREAM(
       "- registration methods: " << vectorToString(registration_methods));
-
+  // Sampling ratio(s) to test (in the registration constraints)
   std::vector<double> sampling_ratios;
   nh_private.param("sampling_ratios", sampling_ratios, {-1});
   ROS_INFO_STREAM(
       "- number of sampling ratios: " << vectorToString(sampling_ratios));
-
+  // TF frame names
+  std::string world_frame;
+  nh_private.param<std::string>("world_frame", world_frame, "world");
+  ROS_INFO_STREAM("- world frame: " << world_frame);
+  std::string uncorrected_robot_pose_frame;
+  nh_private.param<std::string>("uncorrected_robot_pose_frame",
+                                uncorrected_robot_pose_frame, "robot");
+  ROS_INFO_STREAM(
+      "- uncorrected robot pose frame: " << uncorrected_robot_pose_frame);
+  std::string corrected_robot_pose_frame;
+  nh_private.param<std::string>("corrected_robot_pose_frame",
+                                corrected_robot_pose_frame, "robot_corrected");
+  ROS_INFO_STREAM(
+      "- corrected robot pose frame: " << corrected_robot_pose_frame);
+  // Pointcloud topic
   std::string pointcloud_topic;
   nh_private.param<std::string>("pointcloud_topic", pointcloud_topic,
                                 "/velodyne_points");
   ROS_INFO_STREAM("- pointcloud topic: " << pointcloud_topic);
-
+  // Input topic for odometry simulator (usually simulation ground truth)
   std::string odometry_simulator_input_topic;
   nh_private.param<std::string>("odom_simulator_input_topic",
                                 odometry_simulator_input_topic, "");
   ROS_INFO_STREAM(
       "- odometry simulator input topic: " << odometry_simulator_input_topic);
-
-  std::string ground_truth_robot_pose_frame;
-  nh_private.param<std::string>("ground_truth_robot_pose_frame",
-                                ground_truth_robot_pose_frame, "");
+  // Ground truth topic to use for trajectory error evaluation
+  std::string ground_truth_pose_topic;
+  nh_private.param<std::string>("ground_truth_pose_topic",
+                                ground_truth_pose_topic,
+                                "/firefly/ground_truth/odometry");
+  ROS_INFO_STREAM("- ground truth pose topic: " << ground_truth_pose_topic);
+  // Msg type of the ground truth topic defined above
+  GroundTruthPoseMsgType ground_truth_pose_msg_type;
+  std::string ground_truth_pose_msg_type_str;
+  nh_private.param<std::string>("ground_truth_pose_msg_type",
+                                ground_truth_pose_msg_type_str, "Odometry");
+  if (ground_truth_pose_msg_type_str == "Odometry") {
+    ground_truth_pose_msg_type = GroundTruthPoseMsgType::Odometry;
+    ROS_INFO_STREAM("- ground truth pose msg type: Odometry");
+  } else if (ground_truth_pose_msg_type_str == "PoseWithCovarianceStamped") {
+    ground_truth_pose_msg_type =
+        GroundTruthPoseMsgType::PoseWithCovarianceStamped;
+    ROS_INFO_STREAM("- ground truth pose msg type: PoseWithCovarianceStamped");
+  } else {
+    ROS_FATAL_STREAM(
+        "- ground truth pose msg type must be \"Odometry\" "
+        "(default) or \"PoseWithCovarianceStamped\", but received "
+        "\""
+        << ground_truth_pose_msg_type_str << "\"");
+    return -1;
+  }
+  // Max number of ground truth msgs to enqueue before dropping the oldest ones
+  // NOTE: A longer queue means that more attempts will be made to lookup the
+  //       uncorrected and corrected robot poses corresponding to the ground
+  //       truth msg's timestamp. But keep in mind that the TF lookup buffer
+  //       length is limited. Waiting too long before giving up can therefore
+  //       result in all subsequent lookups failing.
+  int max_ground_truth_queue_size;
+  nh_private.param<int>("max_ground_truth_queue_size",
+                        max_ground_truth_queue_size, 20);
   ROS_INFO_STREAM(
-      "- ground truth robot pose TF frame: " << ground_truth_robot_pose_frame);
+      "- max ground truth queue size: " << max_ground_truth_queue_size);
+  // Ground truth decimation factor
+  // NOTE: In simulation, the ground truth comes in at really high frequencies.
+  //       It is therefore convenient to not log all msgs.
+  int ground_truth_log_every_Nth_msg;  // Set to 1 to disable
+  nh_private.param<int>("ground_truth_log_every_Nth_msg",
+                        ground_truth_log_every_Nth_msg, 1);
+  ROS_INFO_STREAM(
+      "- ground truth log every n-th msg: " << ground_truth_log_every_Nth_msg);
 
-  // Create the log file with the current timestamp as its file name
+  // Ground truth reconstruction TSDF file path (e.g. from voxblox_ground_truth)
+  // Leave blank to skip reconstruction evaluation
+  std::string ground_truth_tsdf_layer_path;
+  nh_private.param<std::string>("ground_truth_tsdf_layer_filepath",
+                                ground_truth_tsdf_layer_path, "");
+  ROS_INFO_STREAM("- ground truth TSDF layer filepath: "
+                  << (ground_truth_tsdf_layer_path.empty()
+                          ? "none"
+                          : ground_truth_tsdf_layer_path));
+
+  // Create a log folder based on the current timestamp
   time_t raw_time = std::time(nullptr);
   struct tm time_struct;
   localtime_r(&raw_time, &time_struct);
   char time_char_buffer[80];
   strftime(time_char_buffer, 80, "%Y-%m-%d_%H-%M-%S", &time_struct);
-  boost::filesystem::path log_file_path;
-  log_file_path = "/home/victor/data/voxgraph/mapper_test_bench_stats";
-  log_file_path /= time_char_buffer;
-  log_file_path += ".csv";
+  boost::filesystem::path log_folder_path;
+  log_folder_path = "/home/victor/data/voxgraph/mapper_test_bench_stats";
+  log_folder_path /= time_char_buffer;
+  boost::filesystem::create_directory(log_folder_path);
+
+  // Create and open the main log file
+  boost::filesystem::path log_file_path = log_folder_path;
+  log_file_path /= "main_log.csv";
   ROS_INFO_STREAM("Log file will be saved as: " << log_file_path);
-  std::ofstream log_file;
-  log_file.open(log_file_path.string());
+  std::ofstream main_log_file;
+  main_log_file.open(log_file_path.string());
 
   // Write the log file header
-  log_file << "git_branch, git_hash, hw_concurrency\n"
-           << GIT_BRANCH << "," << GIT_COMMIT_HASH << ","
-           << std::thread::hardware_concurrency() << std::endl;
-  log_file << "registration_method, sampling_ratio, total_milliseconds, "
-              "average_submap_pose_error, last_submap_pose_error, "
-              "used_rigid_body_alignment, "
-              "rmse, max_error, min_error, "
-              "num_evaluated_voxels, num_ignored_voxels, "
-              "num_overlapping_voxels, num_non_overlapping_voxels, "
-              "average_num_residuals, max_num_residuals, "
-              "average_solver_iterations, max_solver_iterations, "
-              "average_successful_steps, max_successful_steps, "
-              "average_unsuccessful_steps, max_unsuccessful_steps, "
-              "average_solver_time, max_solver_time"
-           << std::endl;
+  main_log_file << "git_branch, git_hash, hw_concurrency, rosbag_filepath\n"
+                << GIT_BRANCH << "," << GIT_COMMIT_HASH << ","
+                << std::thread::hardware_concurrency() << "," << rosbag_path
+                << std::endl;
+  main_log_file
+      << "id, registration_method, sampling_ratio, total_milliseconds, "
+         "rmse, max_error, min_error, "
+         "num_evaluated_voxels, num_ignored_voxels, "
+         "num_overlapping_voxels, num_non_overlapping_voxels, "
+         "average_num_residuals, max_num_residuals, "
+         "average_solver_iterations, max_solver_iterations, "
+         "average_successful_steps, max_successful_steps, "
+         "average_unsuccessful_steps, max_unsuccessful_steps, "
+         "average_solver_time, max_solver_time"
+      << std::endl;
+
+  // Define the logging format used for Eigen matrices
+  Eigen::IOFormat ioformat(Eigen::StreamPrecision, Eigen::DontAlignCols, "; ",
+                           "; ", "", "", "", "");
 
   // Loop through all params
+  unsigned int experiment_id = 0;
   for (const std::string &registration_method : registration_methods) {
     for (const double &sampling_ratio : sampling_ratios) {
       // Set params specific to this run
@@ -139,7 +214,6 @@ int main(int argc, char** argv) {
           "measurements/submap_registration/"
           "registration_method",
           registration_method);
-      auto start_time = std::chrono::steady_clock::now();
 
       // Open the rosbag
       rosbag::Bag bag;
@@ -174,11 +248,32 @@ int main(int argc, char** argv) {
             new MapEvaluation(nh_private, ground_truth_tsdf_layer_path));
       }
 
-      // Setup ground truth pose logging
-      std::map<SubmapID, Transformation> ground_truth_pose_map;
+      // Setup logging for the uncorrected and corrected position errors
       voxblox::Transformer transformer(nh, nh_private);
+      topics_of_interest.emplace_back(ground_truth_pose_topic);
+      std::queue<std::shared_ptr<PoseStamped>> ground_truth_pose_queue;
+      // Transform from ground truth to world frame
+      TransformationDouble T_world_D;
+      ros::Time ground_truth_start_time;
+      unsigned int ground_truth_counter = 0;
+      boost::filesystem::path live_position_file_path = log_folder_path;
+      live_position_file_path /=
+          "pose_error_log-" + std::to_string(experiment_id) + ".csv";
+      std::ofstream live_position_log_file;
+      live_position_log_file.open(live_position_file_path.string());
+      live_position_log_file << "timestamp, ground_truth_position, "
+                                "uncorrected_position, corrected_position"
+                             << std::endl;
+      boost::filesystem::path final_pose_history_file_path = log_folder_path;
+      final_pose_history_file_path /=
+          "final_pose_history_log-" + std::to_string(experiment_id) + ".csv";
+      std::ofstream final_pose_history_log_file;
+      final_pose_history_log_file.open(final_pose_history_file_path.string());
+      final_pose_history_log_file << "timestamp, final_corrected_position"
+                                  << std::endl;
 
       // Process the bag
+      auto start_time = std::chrono::steady_clock::now();
       for (rosbag::MessageInstance const read_msg :
            rosbag::View(bag, rosbag::TopicQuery(topics_of_interest))) {
         // Exit if CTRL+C was pressed
@@ -214,6 +309,105 @@ int main(int argc, char** argv) {
         // Start processing odometry and pointcloud msgs only after
         // skip_first_n_sec
         if (playback_started) {
+          // Log the position errors
+          // Convert the ground truth pose msg to a common representation
+          std::shared_ptr<PoseStamped> ground_truth_pose_msg;
+          switch (ground_truth_pose_msg_type) {
+            case GroundTruthPoseMsgType::Odometry: {
+              nav_msgs::Odometry::ConstPtr msg =
+                  read_msg.instantiate<nav_msgs::Odometry>();
+              if (msg) {
+                ground_truth_pose_msg = std::make_shared<PoseStamped>();
+                ground_truth_pose_msg->header = msg->header;
+                ground_truth_pose_msg->pose = msg->pose.pose;
+              }
+              break;
+            }
+            case GroundTruthPoseMsgType::PoseWithCovarianceStamped: {
+              PoseWithCovarianceStamped::ConstPtr msg =
+                  read_msg.instantiate<PoseWithCovarianceStamped>();
+              if (msg) {
+                ground_truth_pose_msg = std::make_shared<PoseStamped>();
+                ground_truth_pose_msg->header = msg->header;
+                ground_truth_pose_msg->pose = msg->pose.pose;
+              }
+              break;
+            }
+          }
+          // Process the ground truth msg
+          if (ground_truth_pose_msg) {
+            // Check if this is the first received ground truth msg
+            if (ground_truth_pose_queue.empty()) {
+              // Initialize transform from ground truth to world frame
+              TransformationDouble T_D_world;
+              tf::poseMsgToKindr(ground_truth_pose_msg->pose, &T_D_world);
+              T_world_D = T_D_world.inverse();
+              // Set its roll and pitch to zero
+              TransformationDouble::Vector3 Q_vec =
+                  T_world_D.getRotation().log();
+              Q_vec[0] = Q_vec[1] = 0;
+              T_world_D.getRotation() =
+                  TransformationDouble::Rotation::exp(Q_vec);
+              // Get the start time
+              ground_truth_start_time = ground_truth_pose_msg->header.stamp;
+            }
+
+            // Only process every n-th ground truth message
+            if (ground_truth_counter % ground_truth_log_every_Nth_msg == 0) {
+              // Add the received ground truth pose to the queue
+              ground_truth_pose_queue.emplace(ground_truth_pose_msg);
+
+              // Get the time and pose of the oldest msg in the queue
+              const ros::Time query_time =
+                  ground_truth_pose_queue.front()->header.stamp;
+              TransformationDouble T_D_ground_truth_pose;
+              tf::poseMsgToKindr(ground_truth_pose_queue.front()->pose,
+                                 &T_D_ground_truth_pose);
+              const TransformationDouble T_world_gt_pose =
+                  T_world_D * T_D_ground_truth_pose;
+
+              // Try to lookup the corresponding corrected and uncorrected pose
+              Transformation T_world_robot_corrected;
+              Transformation T_world_robot_uncorrected;
+              bool corrected_pose_found = transformer.lookupTransform(
+                  corrected_robot_pose_frame, world_frame, query_time,
+                  &T_world_robot_corrected);
+              bool uncorrected_pose_found = transformer.lookupTransform(
+                  uncorrected_robot_pose_frame, world_frame, query_time,
+                  &T_world_robot_uncorrected);
+
+              if (corrected_pose_found && uncorrected_pose_found) {
+                // Pop the ground truth pose msg, now that we found its
+                // corresponding corrected and uncorrected robot poses
+                ground_truth_pose_queue.pop();
+
+                // Log poses to file
+                live_position_log_file
+                    << (query_time - ground_truth_start_time).toSec() << ","
+                    << T_world_gt_pose.getPosition().format(ioformat) << ","
+                    << T_world_robot_uncorrected.getPosition().format(ioformat)
+                    << ","
+                    << T_world_robot_corrected.getPosition().format(ioformat)
+                    << std::endl;
+              } else if (ground_truth_pose_queue.size() >
+                         max_ground_truth_queue_size) {
+                // If the queue becomes to large we give up on the oldest ground
+                // truth msg, even if we haven't found its corresponding robot
+                // poses. This is necessary since we might otherwise exceed the
+                // TF buffer length for the remaining poses (i.e. lose them all)
+                ROS_WARN_STREAM("Could not find transforms from "
+                                << uncorrected_robot_pose_frame << " and/or "
+                                << corrected_robot_pose_frame << " to "
+                                << world_frame << " at time " << query_time);
+                ground_truth_pose_queue.pop();
+              }
+            }
+
+            ground_truth_counter++;
+            // NOTE: We don't call 'continue', since the odometry simulator
+            //       input could come from the same ground truth topic
+          }
+
           // Process odometry messages
           nav_msgs::Odometry::ConstPtr odometry_msg =
               read_msg.instantiate<nav_msgs::Odometry>();
@@ -228,8 +422,8 @@ int main(int argc, char** argv) {
           if (pointcloud_msg != nullptr) {
             // Add the pointcloud to the queue
             // NOTE: Even the first pointcloud is enqueued, since the mapper
-            //       accesses them by const & (i.e. they must be kept in scope
-            //       here)
+            //       accesses them by const ref (i.e. they must be kept in
+            //       scope here)
             pointcloud_queue.emplace(pointcloud_msg);
 
             // If the mapper is already running, throttle it as required
@@ -251,87 +445,26 @@ int main(int argc, char** argv) {
             mapper_async_handle = std::async(std::launch::async, [&] {
               // Process the pointcloud
               voxgraph_mapper.pointcloudCallback(pointcloud_queue.front());
-
-              // If a new submap was created, store its ground truth pose
-              if (!ground_truth_robot_pose_frame.empty()) {
-                const VoxgraphSubmapCollection &submap_collection =
-                    voxgraph_mapper.getSubmapCollection();
-                const SubmapID current_submap_id =
-                    submap_collection.getActiveSubMapID();
-                SubmapID previous_submap_id;
-                if (ground_truth_pose_map.empty()) {
-                  previous_submap_id = -1;
-                } else {
-                  previous_submap_id = ground_truth_pose_map.rbegin()->first;
-                }
-                if (current_submap_id != previous_submap_id) {
-                  const ros::Time creation_time =
-                      submap_collection.getActiveSubMap().getCreationTime();
-                  Transformation ground_truth_pose;
-                  CHECK(transformer.lookupTransform(
-                      ground_truth_robot_pose_frame, "world", creation_time,
-                      &ground_truth_pose));
-                  ground_truth_pose_map.emplace(current_submap_id,
-                                                ground_truth_pose);
-                }
-              }
-
               return 1;
             });
+
             continue;
           }
         }
       }
-
       auto end_time = std::chrono::steady_clock::now();
 
       // Get a const ref to the submap collection
       const VoxgraphSubmapCollection &submap_collection =
           voxgraph_mapper.getSubmapCollection();
 
-      // Evaluate the reconstruction and trajectory error
-      // NOTE: We initialize all logged variables here, such that they are
-      //       simply logged as zeros if these evaluations are skipped
+      // Evaluate the reconstruction error
       MapEvaluation::EvaluationDetails evaluation_result;
-      Transformation::Vector6 average_pose_error =
-          Transformation::Vector6::Zero();
-      Transformation::Vector6 last_submap_pose_error =
-          Transformation::Vector6::Zero();
-      Transformation T_ground_truth__reading;
-
       if (!ground_truth_tsdf_layer_path.empty()) {
         // Evaluate reconstruction error by comparing the map to ground truth
         CHECK_NOTNULL(map_evaluation);
         ROS_INFO("Evaluating reconstruction error");
         evaluation_result = map_evaluation->evaluate(submap_collection);
-        T_ground_truth__reading = evaluation_result.T_ground_truth__reading;
-
-        // Evaluate drift correction by comparing pose history to ground truth
-        // TODO(victorr): Directly align the trajectory to ground truth, instead
-        //                of using the transform from MapEvaluation, such that
-        //                drift can also be evaluated in the absence of a GT map
-        if (!ground_truth_robot_pose_frame.empty()) {
-          Transformation::Vector6 submap_pose_error;
-          int num_submaps = submap_collection.getSubMaps().size();
-          for (VoxgraphSubmap::ConstPtr voxgraph_submap :
-               submap_collection.getSubMaps()) {
-            // Lookup the submap's ground truth pose
-            const SubmapID submap_id = voxgraph_submap->getID();
-            const auto it = ground_truth_pose_map.find(submap_id);
-            CHECK(it != ground_truth_pose_map.end());
-            const Transformation ground_truth_pose = it->second;
-            // Align the submap's pose to ground truth using the rigid body
-            // transform
-            // found during the reconstruction evaluation
-            const Transformation optimized_pose =
-                T_ground_truth__reading * voxgraph_submap->getPose();
-            // Compute the error vector
-            submap_pose_error = optimized_pose.log() - ground_truth_pose.log();
-            average_pose_error += submap_pose_error.cwiseAbs() / num_submaps;
-          }
-          // Store the last submap pose error
-          last_submap_pose_error = submap_pose_error;
-        }
       }
 
       // Summarize the pose graph optimization cost
@@ -377,35 +510,44 @@ int main(int argc, char** argv) {
       }
 
       // Write to log
-      Eigen::IOFormat ioformat(Eigen::StreamPrecision, Eigen::DontAlignCols,
-                               "; ", "; ", "", "", "", "");
-      log_file << registration_method << "," << sampling_ratio << ","
-               << duration_cast<milliseconds>(end_time - start_time).count()
-               << "," << average_pose_error.format(ioformat) << ","
-               << last_submap_pose_error.format(ioformat) << ","
-               << T_ground_truth__reading.log().format(ioformat) << ","
-               << evaluation_result.reconstruction.rmse << ","
-               << evaluation_result.reconstruction.max_error << ","
-               << evaluation_result.reconstruction.min_error << ","
-               << evaluation_result.reconstruction.num_evaluated_voxels << ","
-               << evaluation_result.reconstruction.num_ignored_voxels << ","
-               << evaluation_result.reconstruction.num_overlapping_voxels << ","
-               << evaluation_result.reconstruction.num_non_overlapping_voxels
-               << "," << average_num_residuals << "," << max_num_residuals
-               << "," << average_solver_iterations << ","
-               << max_solver_iterations << "," << average_successful_steps
-               << "," << max_successful_steps << ","
-               << average_unsuccessful_steps << "," << max_unsuccessful_steps
-               << "," << average_solver_time << "," << max_solver_time
-               << std::endl;
+      main_log_file
+          << experiment_id << "," << registration_method << ","
+          << sampling_ratio << ","
+          << duration_cast<milliseconds>(end_time - start_time).count() << ","
+          << evaluation_result.reconstruction.rmse << ","
+          << evaluation_result.reconstruction.max_error << ","
+          << evaluation_result.reconstruction.min_error << ","
+          << evaluation_result.reconstruction.num_evaluated_voxels << ","
+          << evaluation_result.reconstruction.num_ignored_voxels << ","
+          << evaluation_result.reconstruction.num_overlapping_voxels << ","
+          << evaluation_result.reconstruction.num_non_overlapping_voxels << ","
+          << average_num_residuals << "," << max_num_residuals << ","
+          << average_solver_iterations << "," << max_solver_iterations << ","
+          << average_successful_steps << "," << max_successful_steps << ","
+          << average_unsuccessful_steps << "," << max_unsuccessful_steps << ","
+          << average_solver_time << "," << max_solver_time << std::endl;
+
+      // Log the final corrected pose history to a file
+      VoxgraphSubmapCollection::PoseStampedVector final_pose_history =
+          voxgraph_mapper.getSubmapCollection().getPoseHistory();
+      for (const auto &stamped_pose : final_pose_history) {
+        TransformationDouble pose;
+        tf::poseMsgToKindr(stamped_pose.pose, &pose);
+        final_pose_history_log_file
+            << (stamped_pose.header.stamp - ground_truth_start_time).toSec()
+            << "," << pose.getPosition().format(ioformat) << std::endl;
+      }
 
       // Close the rosbag
       bag.close();
+      live_position_log_file.close();
+      final_pose_history_log_file.close();
+      experiment_id++;
     }
   }
 
   // Close the log file
-  log_file.close();
+  main_log_file.close();
 
   // Keep the ROS node alive in order to interact with its topics in Rviz
   std::cout << "Done" << std::endl;

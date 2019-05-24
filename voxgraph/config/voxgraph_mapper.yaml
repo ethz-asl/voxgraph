@@ -26,7 +26,7 @@ tsdf_integrator:
 measurements:
   submap_registration:
     enabled: true
-    sampling_ratio: 0.2
+    sampling_ratio: 0.05
     registration_method: "explicit_to_implicit"
     information_matrix:
       x_x:     1.0
