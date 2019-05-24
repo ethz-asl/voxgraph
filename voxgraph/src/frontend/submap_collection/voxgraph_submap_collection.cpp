@@ -3,6 +3,7 @@
 //
 
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+#include <utility>
 #include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {
@@ -59,5 +60,24 @@ void VoxgraphSubmapCollection::createNewSubmap(
 
   // Add the new submap to the timeline
   submap_timeline_.addNextSubmap(timestamp, new_submap_id);
+}
+
+VoxgraphSubmapCollection::PoseStampedVector
+VoxgraphSubmapCollection::getPoseHistory() const {
+  PoseStampedVector poses;
+  // Iterate over all submaps
+  for (VoxgraphSubmap::ConstPtr submap_ptr : getSubMaps()) {
+    // Iterate over all poses in the submap
+    for (const std::pair<const ros::Time, Transformation> &time_pose_pair :
+         submap_ptr->getPoseHistory()) {
+      geometry_msgs::PoseStamped pose_stamped_msg;
+      pose_stamped_msg.header.stamp = time_pose_pair.first;
+      // Transform the pose from submap frame into world frame
+      const Transformation pose = submap_ptr->getPose() * time_pose_pair.second;
+      tf::poseKindrToMsg(pose.cast<double>(), &pose_stamped_msg.pose);
+      poses.emplace_back(pose_stamped_msg);
+    }
+  }
+  return poses;
 }
 }  // namespace voxgraph

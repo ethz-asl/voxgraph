@@ -7,10 +7,13 @@
 
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <minkindr_conversions/kindr_msg.h>
 #include <ros/ros.h>
 #include <voxblox/core/common.h>
 #include <memory>
 #include <utility>
+#include <vector>
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
@@ -21,6 +24,7 @@ class VoxgraphSubmapCollection
  public:
   typedef std::shared_ptr<VoxgraphSubmapCollection> Ptr;
   typedef std::shared_ptr<const VoxgraphSubmapCollection> ConstPtr;
+  typedef std::vector<geometry_msgs::PoseStamped> PoseStampedVector;
 
   explicit VoxgraphSubmapCollection(VoxgraphSubmap::Config submap_config,
                                     bool verbose = false)
@@ -45,6 +49,8 @@ class VoxgraphSubmapCollection
   SubmapID getPreviousSubmapId() {
     return submap_timeline_.getPreviousSubmapId();
   }
+
+  PoseStampedVector getPoseHistory() const;
 
  private:
   bool verbose_;

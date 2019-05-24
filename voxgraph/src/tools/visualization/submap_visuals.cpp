@@ -122,20 +122,7 @@ void SubmapVisuals::publishPoseHistory(
   nav_msgs::Path pose_history_msg;
   pose_history_msg.header.stamp = ros::Time::now();
   pose_history_msg.header.frame_id = world_frame;
-
-  // Iterate over all submaps
-  for (VoxgraphSubmap::ConstPtr submap_ptr : submap_collection.getSubMaps()) {
-    // Iterate over all poses in the submap
-    for (const std::pair<const ros::Time, Transformation> &time_pose_pair :
-         submap_ptr->getPoseHistory()) {
-      geometry_msgs::PoseStamped pose_stamped_msg;
-      pose_stamped_msg.header.stamp = time_pose_pair.first;
-      // Transform the pose from submap frame into world frame
-      const Transformation pose = submap_ptr->getPose() * time_pose_pair.second;
-      tf::poseKindrToMsg(pose.cast<double>(), &pose_stamped_msg.pose);
-      pose_history_msg.poses.emplace_back(pose_stamped_msg);
-    }
-  }
+  pose_history_msg.poses = submap_collection.getPoseHistory();
 
   // Publish the message
   publisher.publish(pose_history_msg);
