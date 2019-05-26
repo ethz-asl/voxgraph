@@ -1,7 +1,3 @@
-//
-// Created by victor on 03.04.19.
-//
-
 #include "voxgraph/backend/constraint/relative_pose_constraint.h"
 #include "voxgraph/backend/constraint/cost_functions/relative_pose_cost_function.h"
 

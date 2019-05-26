@@ -1,7 +1,3 @@
-//
-// Created by victor on 14.01.19.
-//
-
 #include "voxgraph/backend/pose_graph.h"
 #include <cblox/core/submap_collection.h>
 #include <cblox/io/tsdf_submap_io.h>

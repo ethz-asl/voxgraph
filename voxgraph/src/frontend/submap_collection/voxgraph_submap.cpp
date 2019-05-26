@@ -1,7 +1,3 @@
-//
-// Created by victor on 17.01.19.
-//
-
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include <voxblox/integrator/merge_integration.h>
 #include <voxblox/interpolator/interpolator.h>

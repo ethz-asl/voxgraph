@@ -1,7 +1,3 @@
-//
-// Created by victor on 16.11.18.
-//
-
 #include <glog/logging.h>
 #include <ros/ros.h>
 #include "voxgraph/frontend/voxgraph_mapper.h"

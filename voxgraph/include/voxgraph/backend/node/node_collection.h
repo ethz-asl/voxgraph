@@ -1,7 +1,3 @@
-//
-// Created by victor on 18.01.19.
-//
-
 #ifndef VOXGRAPH_BACKEND_NODE_NODE_COLLECTION_H_
 #define VOXGRAPH_BACKEND_NODE_NODE_COLLECTION_H_
 

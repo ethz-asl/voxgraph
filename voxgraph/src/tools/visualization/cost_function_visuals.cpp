@@ -1,7 +1,3 @@
-//
-// Created by victor on 05.01.19.
-//
-
 #include "voxgraph/tools/visualization/cost_function_visuals.h"
 
 namespace voxgraph {

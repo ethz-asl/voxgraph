@@ -1,7 +1,3 @@
-//
-// Created by victor on 16.11.18.
-//
-
 #include "voxgraph/frontend/voxgraph_mapper.h"
 #include <minkindr_conversions/kindr_xml.h>
 #include <nav_msgs/Path.h>

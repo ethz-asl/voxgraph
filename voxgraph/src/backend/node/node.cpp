@@ -1,7 +1,3 @@
-//
-// Created by victor on 04.04.19.
-//
-
 #include "voxgraph/backend/node/node.h"
 
 namespace voxgraph {

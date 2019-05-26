@@ -1,7 +1,4 @@
-//
-// Created by victor on 05.04.19.
-// This function comes directly from the ceres::examples
-//
+// NOTE: This function comes directly from the ceres::examples
 
 #ifndef VOXGRAPH_BACKEND_LOCAL_PARAMETERIZATION_ANGLE_LOCAL_PARAMETERIZATION_H_
 #define VOXGRAPH_BACKEND_LOCAL_PARAMETERIZATION_ANGLE_LOCAL_PARAMETERIZATION_H_

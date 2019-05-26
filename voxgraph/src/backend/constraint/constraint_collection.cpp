@@ -1,7 +1,3 @@
-//
-// Created by victor on 09.04.19.
-//
-
 #include "voxgraph/backend/constraint/constraint_collection.h"
 
 namespace voxgraph {

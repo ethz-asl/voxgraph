@@ -1,7 +1,3 @@
-//
-// Created by victor on 10.04.19.
-//
-
 #include "voxgraph/tools/evaluation/map_evaluation.h"
 #include <ceres/ceres.h>
 #include <ros/ros.h>

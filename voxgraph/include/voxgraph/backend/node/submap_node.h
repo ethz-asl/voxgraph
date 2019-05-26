@@ -1,7 +1,3 @@
-//
-// Created by victor on 16.01.19.
-//
-
 #ifndef VOXGRAPH_BACKEND_NODE_SUBMAP_NODE_H_
 #define VOXGRAPH_BACKEND_NODE_SUBMAP_NODE_H_
 

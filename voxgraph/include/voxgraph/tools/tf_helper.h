@@ -1,7 +1,3 @@
-//
-// Created by victor on 05.01.19.
-//
-
 #ifndef VOXGRAPH_TOOLS_TF_HELPER_H_
 #define VOXGRAPH_TOOLS_TF_HELPER_H_
 

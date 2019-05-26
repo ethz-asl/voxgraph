@@ -1,7 +1,3 @@
-//
-// Created by victor on 09.04.19.
-//
-
 #ifndef VOXGRAPH_TOOLS_ROSBAG_HELPER_H_
 #define VOXGRAPH_TOOLS_ROSBAG_HELPER_H_
 

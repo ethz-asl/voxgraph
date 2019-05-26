@@ -1,7 +1,3 @@
-//
-// Created by victor on 09.04.19.
-//
-
 #ifndef VOXGRAPH_COMMON_H_
 #define VOXGRAPH_COMMON_H_
 

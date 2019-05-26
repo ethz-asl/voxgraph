@@ -1,7 +1,3 @@
-//
-// Created by victor on 06.04.19.
-//
-
 #include "voxgraph/frontend/submap_collection/bounding_box.h"
 #include <bitset>
 #include <memory>

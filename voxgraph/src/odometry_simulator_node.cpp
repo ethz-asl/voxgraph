@@ -1,7 +1,3 @@
-//
-// Created by victor on 30.01.19.
-//
-
 #include "voxgraph/tools/odometry_simulator/odometry_simulator.h"
 #include <glog/logging.h>
 #include <ros/ros.h>

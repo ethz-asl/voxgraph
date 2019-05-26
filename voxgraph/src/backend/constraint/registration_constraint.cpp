@@ -1,7 +1,3 @@
-//
-// Created by victor on 17.01.19.
-//
-
 #include "voxgraph/backend/constraint/registration_constraint.h"
 #include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 

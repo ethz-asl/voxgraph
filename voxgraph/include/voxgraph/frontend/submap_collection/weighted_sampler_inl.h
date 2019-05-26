@@ -1,7 +1,3 @@
-//
-// Created by victor on 27.05.19.
-//
-
 #ifndef VOXGRAPH_WEIGHTED_SAMPLER_INL_H
 #define VOXGRAPH_WEIGHTED_SAMPLER_INL_H
 

@@ -1,7 +1,3 @@
-//
-// Created by victor on 29.11.18.
-//
-
 #include <cblox/core/submap_collection.h>
 #include <cblox/io/tsdf_submap_io.h>
 #include <cblox/utils/quat_transformation_protobuf_utils.h>

@@ -1,7 +1,3 @@
-//
-// Created by victor on 16.11.18.
-//
-
 #ifndef VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 #define VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 

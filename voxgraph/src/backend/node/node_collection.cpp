@@ -1,7 +1,3 @@
-//
-// Created by victor on 04.04.19.
-//
-
 #include "voxgraph/backend/node/node_collection.h"
 #include <memory>
 #include "voxgraph/backend/local_parameterization/angle_local_parameterization.h"

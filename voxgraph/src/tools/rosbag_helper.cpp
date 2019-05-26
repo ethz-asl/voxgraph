@@ -1,7 +1,3 @@
-//
-// Created by victor on 09.04.19.
-//
-
 #include "voxgraph/tools/rosbag_helper.h"
 
 namespace voxgraph {

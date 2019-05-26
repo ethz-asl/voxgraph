@@ -1,7 +1,3 @@
-//
-// Created by victor on 06.03.19.
-//
-
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 
 namespace voxgraph {

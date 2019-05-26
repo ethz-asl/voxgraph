@@ -1,7 +1,3 @@
-//
-// Created by victor on 04.12.18.
-//
-
 #include "voxgraph/tools/submap_registration_helper.h"
 #include <voxblox/interpolator/interpolator.h>
 #include <utility>

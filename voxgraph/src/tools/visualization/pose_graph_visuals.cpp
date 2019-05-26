@@ -1,7 +1,3 @@
-//
-// Created by victor on 23.01.19.
-//
-
 #include "voxgraph/tools/visualization/pose_graph_visuals.h"
 #include <string>
 #include <vector>

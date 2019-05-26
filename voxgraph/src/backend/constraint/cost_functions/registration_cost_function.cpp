@@ -1,7 +1,3 @@
-//
-// Created by victor on 30.04.19.
-//
-
 #include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 #include <minkindr_conversions/kindr_tf.h>
 #include <voxblox/interpolator/interpolator.h>

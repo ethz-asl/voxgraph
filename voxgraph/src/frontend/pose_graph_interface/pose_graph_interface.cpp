@@ -1,7 +1,3 @@
-//
-// Created by victor on 09.04.19.
-//
-
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
 #include <utility>
 #include <vector>

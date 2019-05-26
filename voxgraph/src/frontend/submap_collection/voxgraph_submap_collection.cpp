@@ -1,7 +1,3 @@
-//
-// Created by victor on 08.04.19.
-//
-
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 #include <utility>
 #include "voxgraph/tools/tf_helper.h"

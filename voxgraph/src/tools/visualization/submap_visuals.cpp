@@ -1,7 +1,3 @@
-//
-// Created by victor on 19.12.18.
-//
-
 #include "voxgraph/tools/visualization/submap_visuals.h"
 #include <cblox/mesh/submap_mesher.h>
 #include <eigen_conversions/eigen_msg.h>

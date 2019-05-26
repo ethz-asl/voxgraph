@@ -1,7 +1,3 @@
-//
-// Created by victor on 17.01.19.
-//
-
 #include "voxgraph/backend/pose_graph.h"
 #include <map>
 #include <memory>

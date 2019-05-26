@@ -1,6 +1,3 @@
-//
-// Created by victor on 10.04.19.
-//
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <ros/ros.h>
 #include <rosbag/bag.h>

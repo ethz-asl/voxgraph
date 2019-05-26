@@ -1,7 +1,3 @@
-//
-// Created by victor on 09.04.19.
-//
-
 #include "voxgraph/frontend/measurement_processors/pointcloud_processor.h"
 #include <pcl_conversions/pcl_conversions.h>
 #include <voxblox_ros/ros_params.h>
