@@ -53,12 +53,9 @@ class RegistrationCostFunction : public ceres::CostFunction {
  protected:
   Config config_;
 
-  // Pointers and const refs to the submaps that will be aligned
-  VoxgraphSubmap::ConstPtr ref_submap_ptr_;
+  // Pointers and const refs to the reading submap that will be aligned
   VoxgraphSubmap::ConstPtr reading_submap_ptr_;
-  const voxblox::Layer<voxblox::TsdfVoxel> &reference_tsdf_layer_;
   const voxblox::Layer<voxblox::TsdfVoxel> &reading_tsdf_layer_;
-  const voxblox::Layer<voxblox::EsdfVoxel> &reference_esdf_layer_;
   const voxblox::Layer<voxblox::EsdfVoxel> &reading_esdf_layer_;
 
   // Reference to registration point sampler

@@ -15,7 +15,7 @@ bool VoxgraphSubmapCollection::shouldCreateNewSubmap(
                   "Should create first submap");
     return true;
   } else {
-    // TODO(victorr): Also take the pose uncertainty etc into account
+    // TODO(victorr): Add options to also consider distance traveled etc
     ros::Time new_submap_creation_deadline =
         getActiveSubMap().getCreationTime() + submap_creation_interval_;
     ROS_INFO_STREAM_COND(verbose_,

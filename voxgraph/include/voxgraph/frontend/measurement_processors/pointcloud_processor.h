@@ -29,7 +29,7 @@ class PointcloudProcessor {
 
   cblox::SubmapCollection<VoxgraphSubmap>::Ptr submap_collection_ptr_;
 
-  // Tools to integrate the pointclouds into submaps
+  // Tools used when integrating the pointclouds into submaps
   voxblox::TsdfIntegratorBase::Config tsdf_integrator_config_;
   std::unique_ptr<voxblox::FastTsdfIntegrator> tsdf_integrator_;
 };

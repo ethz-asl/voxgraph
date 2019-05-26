@@ -14,7 +14,6 @@ class RosbagHelper {
   explicit RosbagHelper(ros::NodeHandle node_handle);
 
   void pauseRosbag();
-
   void playRosbag();
 
  private:

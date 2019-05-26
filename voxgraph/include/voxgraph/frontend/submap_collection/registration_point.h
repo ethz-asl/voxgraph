@@ -6,7 +6,7 @@
 #define VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_REGISTRATION_POINT_H_
 
 namespace voxgraph {
-// Small struct that can be used to hold voxels or points on the isosurface
+// Small struct that can be used to store voxels or points on the isosurface
 struct RegistrationPoint {
   voxblox::Point position;
   float distance;

@@ -15,10 +15,6 @@
 namespace voxgraph {
 class MapEvaluation {
  public:
-  using TsdfVoxel = voxblox::TsdfVoxel;
-  using TsdfLayer = voxblox::Layer<TsdfVoxel>;
-  using EsdfLayer = voxblox::Layer<voxblox::EsdfVoxel>;
-
   struct EvaluationDetails {
     voxblox::utils::VoxelEvaluationDetails reconstruction;
     voxblox::Transformation T_ground_truth__reading;
@@ -35,6 +31,9 @@ class MapEvaluation {
                              VoxgraphSubmap::ConstPtr submap_B);
 
  private:
+  using TsdfVoxel = voxblox::TsdfVoxel;
+  using TsdfLayer = voxblox::Layer<TsdfVoxel>;
+  using EsdfLayer = voxblox::Layer<voxblox::EsdfVoxel>;
   using VoxelEvaluationMode = voxblox::utils::VoxelEvaluationMode;
   using PointcloudMsg = pcl::PointCloud<pcl::PointXYZI>;
 

@@ -43,7 +43,7 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
   ROS_INFO_STREAM_COND(verbose_,
                        "Added node to graph for submap: " << submap_id);
 
-  // TODO(victorr): Move this to addOdometryMeasurement
+  // TODO(victorr): Move this to the addOdometryMeasurement method
   // Easy way to add an odometry constraint between the previous and new submap
   // NOTE: This method assumes that the current submap pose purely comes from
   //       odometry and has not yet been corrected through other means

@@ -9,7 +9,7 @@
 #include <ceres/ceres.h>
 
 namespace voxgraph {
-// Normalizes the angle in radians between [-pi and pi).
+// Normalize the angle to stay within [-pi and pi) radians
 template <typename T>
 inline T NormalizeAngle(const T& angle_radians) {
   // Use ceres::floor because it is specialized for double and Jet types.

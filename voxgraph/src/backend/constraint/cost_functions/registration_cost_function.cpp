@@ -14,11 +14,8 @@ RegistrationCostFunction::RegistrationCostFunction(
     VoxgraphSubmap::ConstPtr reference_submap_ptr,
     VoxgraphSubmap::ConstPtr reading_submap_ptr,
     const RegistrationCostFunction::Config &config)
-    : ref_submap_ptr_(reference_submap_ptr),
-      reading_submap_ptr_(reading_submap_ptr),
-      reference_tsdf_layer_(reference_submap_ptr->getTsdfMap().getTsdfLayer()),
+    : reading_submap_ptr_(reading_submap_ptr),
       reading_tsdf_layer_(reading_submap_ptr->getTsdfMap().getTsdfLayer()),
-      reference_esdf_layer_(reference_submap_ptr->getEsdfMap().getEsdfLayer()),
       reading_esdf_layer_(reading_submap_ptr->getEsdfMap().getEsdfLayer()),
       tsdf_interpolator_(&reading_submap_ptr->getTsdfMap().getTsdfLayer()),
       esdf_interpolator_(&reading_submap_ptr->getEsdfMap().getEsdfLayer()),
@@ -27,12 +24,12 @@ RegistrationCostFunction::RegistrationCostFunction(
       config_(config) {
   // Ensure that the reference and reading submaps have gravity aligned Z-axes
   voxblox::Transformation::Vector6 T_vec_reference =
-      ref_submap_ptr_->getPose().log();
+      reference_submap_ptr->getPose().log();
   voxblox::Transformation::Vector6 T_vec_reading =
       reading_submap_ptr->getPose().log();
   CHECK(T_vec_reference[3] < 1e-6 && T_vec_reference[4] < 1e-6)
       << "Submap Z axes should be gravity aligned, yet submap "
-      << ref_submap_ptr_->getID() << " had non-zero roll & pitch: ["
+      << reference_submap_ptr->getID() << " had non-zero roll & pitch: ["
       << T_vec_reference[3] << ", " << T_vec_reference[4] << "]";
   CHECK(T_vec_reading[3] < 1e-6 && T_vec_reading[4] < 1e-6)
       << "Submap Z axes should be gravity aligned, yet submap "

@@ -10,8 +10,7 @@
 #include "voxgraph/backend/local_parameterization/normalize_angle.h"
 
 namespace voxgraph {
-// Defines a local parameterization for updating the angle to be constrained in
-// [-pi to pi).
+// Define a local parameterization that keeps the angle within [-pi to pi) rad.
 class AngleLocalParameterization {
  public:
   template <typename T>

@@ -37,7 +37,12 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
                  const cblox::SubmapID &submap_id,
                  const voxblox::Layer<voxblox::TsdfVoxel> &tsdf_layer);
 
-  void transformSubmap(const voxblox::Transformation &T_new_old);
+  // Setter method for the registration filter config
+  // NOTE: This method is mainly useful for copy or proto constructed submaps
+  void setRegistrationFilterConfig(
+      const Config::RegistrationFilter &registration_filter_config);
+
+  const ros::Time getCreationTime() const;
 
   void addPoseToHistory(const ros::Time &timestamp,
                         const voxblox::Transformation &T_world_robot);
@@ -47,16 +52,11 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   // NOTE: These cached members are mainly used in the registration cost funcs
   void finishSubmap();
 
-  // Setter method for the registration filter config
-  // NOTE: This method is mainly useful for copy or proto constructed submaps
-  void setRegistrationFilterConfig(
-      const Config::RegistrationFilter &registration_filter_config);
+  void transformSubmap(const voxblox::Transformation &T_new_old);
 
-  const ros::Time getCreationTime() const;
-
-  // The type of registration points implemented by this submap
+  // The type of registration points supported by this submap
   enum class RegistrationPointType { kIsosurfacePoints = 0, kVoxels };
-  // Getter to the registration points of a certain type
+  // Getter to get the registration points of a certain type
   const WeightedSampler<RegistrationPoint> &getRegistrationPoints(
       RegistrationPointType registration_point_type) const;
 

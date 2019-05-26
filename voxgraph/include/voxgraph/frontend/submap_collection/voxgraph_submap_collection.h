@@ -55,7 +55,7 @@ class VoxgraphSubmapCollection
  private:
   bool verbose_;
 
-  // New submap creation stats
+  // Length of the time interval between the creation of subsequent submaps
   ros::Duration submap_creation_interval_;  // In seconds
 
   // Timeline to enable lookups of submaps by time

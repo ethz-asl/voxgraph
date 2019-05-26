@@ -9,8 +9,8 @@ catkin_simple(ALL_DEPS_REQUIRED)
 #############
 # LIBRARIES #
 #############
-# NOTE: The library is static to avoid segfaults
-#       following voxblox multi threading
+# NOTE: The library is static to avoid segfaults that
+#       otherwise occur in voxblox multi threading
 cs_add_library(${PROJECT_NAME} STATIC
     src/frontend/voxgraph_mapper.cpp
     src/frontend/pose_graph_interface/pose_graph_interface.cpp

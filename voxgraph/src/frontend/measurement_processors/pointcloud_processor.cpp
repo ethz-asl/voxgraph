@@ -57,8 +57,8 @@ void PointcloudProcessor::integratePointcloud(
     ROS_INFO("Initialized TSDF Integrator");
   }
 
-  // TODO(victorr): Implement Cartographer style simultaneous integration into
-  //                multiple submaps for guaranteed overlap
+  // TODO(victorr): Implement optional Cartographer style simultaneous
+  //                integration into multiple submaps for guaranteed overlap
 
   // Point the integrator to the current submap
   VoxgraphSubmap::Ptr active_submap_ptr =

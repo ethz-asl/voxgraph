@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
 
   // Add odometry constraints between the submaps
   for (const cblox::SubmapID& submap_id : submap_ids) {
-    // TODO(victorr): Implement odometry constraints
+    // TODO(victorr): Implement odometry constraint testing
   }
 
   // Add a registration constraint for each overlapping submap pair
