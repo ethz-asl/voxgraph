@@ -10,7 +10,12 @@ NodeTemplates::NodeTemplates()
   world_frame_.T_world_node_initial.setIdentity();
 
   // Initialize the GPS frame config
-  // NOTE: We let the frame float freely w.r.t. the optimization's world frame
+  // NOTE: We let the frame float freely w.r.t. the optimization's world frame.
+  //       This way the submap positions will not jump when the first GPS
+  //       measurement is received even if the robot started mapping before
+  //       getting an absolute position fix. The absolute pose of a submap can
+  //       still be retrieved by multiplying the GPS reference frame's absolute
+  //       pose with the transform between the GPS frame and the submap.
   gps_frame_.reference_frame_id = kGpsFrame;
   gps_frame_.set_constant = false;
 }

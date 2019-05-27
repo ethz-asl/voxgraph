@@ -30,7 +30,8 @@ std::string vectorToString(std::vector<T> vector) {
 
 // TODO(victorr): Clean this test bench up and split it into smaller functions
 // TODO(victorr): Use MessageInstance::getTopic() instead of directly trying to
-//                instanciate (which also doesn't check if the topic is right)
+//                instanciate. This would also ensure that the right topic is
+//                used, instead of only filtering by msg type.
 int main(int argc, char** argv) {
   using voxgraph::VoxgraphMapper;
   using voxgraph::OdometrySimulator;

@@ -2,7 +2,7 @@
 <package format="2">
   <name>voxgraph</name>
   <version>1.0.0</version>
-  <description>The voxgraph package</description>
+  <description>Pose graph optimization of voxblox submaps</description>
 
   <maintainer email="victorr@ethz.ch">Victor Reijgwart</maintainer>
 
@@ -17,6 +17,5 @@
   <depend>voxblox</depend>
   <depend>voxblox_ros</depend>
   <depend>cblox</depend>
-
 
 </package>

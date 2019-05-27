@@ -18,11 +18,11 @@ MeasurementTemplates::MeasurementTemplates(bool verbose)
   // Initialize the default GPS measurement config
   gps_.information_matrix.setZero();
   gps_.reference_frame_id = NodeTemplates::kGpsFrame;
+  // NOTE: We allow semi definite information matrices s.t. an infinite
+  //       covariance on Yaw (e.g. a zero in the information matrix) can be used
   gps_.allow_semi_definite_information_matrix = true;
 
   // Initialize the default height measurement config
-  // NOTE: We model these as absolute pose constraints
-  //       with infinite covariance on X, Y, Yaw
   height_.information_matrix.setZero();
   height_.reference_frame_id = NodeTemplates::kWorldFrame;
   height_.allow_semi_definite_information_matrix = true;
@@ -67,6 +67,9 @@ void MeasurementTemplates::setFromRosParams(
   if (node_handle.hasParam("height")) {
     // Set the information matrix
     height_.information_matrix.setZero();
+    // NOTE: We model height constraints as absolute pose constraints with
+    //       infinite covariance on X, Y, Yaw. The information matrix therefore
+    //       consists entirely of zeros except for the Z (height) entry.
     node_handle.param("height/information_zz", height_.information_matrix(2, 2),
                       0.0);
     ROS_INFO_STREAM_COND(verbose_,

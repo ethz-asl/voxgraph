@@ -67,18 +67,18 @@ int main(int argc, char** argv) {
   PoseGraph pose_graph;
 
   // Add noise to the submap collection
-  // NOTE: This is a poor approximation of drift, since it doesn't simulate
-  //       distortion within the submaps themselves. Only use it for quick
-  //       tests. For proper validation, use the noisy odometry simulator
-  //       from voxgraph_mapper to create a distorted submap collection and
-  //       disable the noise below.
+  // NOTE: The noise approximation below is a poor approximation of drift,
+  //       since it doesn't simulate distortion within the submaps themselves.
+  //       Only use it for quick tests. For proper validation, use the
+  //       mapper_test_bench which builds the submaps online based on simulated
+  //       noisy odometry.
   std::mt19937 random_engine;
   // Get a standard normal distribution
   std::normal_distribution<double> std_normal_dist(0.0, 1.0);
   std::vector<cblox::SubmapID> submap_ids = submap_collection_ptr->getIDs();
   for (const cblox::SubmapID& submap_id : submap_ids) {
-    // NOTE: Submap 0 should not be perturbed,
-    //       since its pose is not being optimized
+    // NOTE: Submap 0 should not be perturbed, since its pose is held
+    //       fixed in the optimization (i.e. does not get corrected).
     if (submap_id != 0) {
       // Get the submap pose; perturb it; then update it
       voxblox::Transformation pose;

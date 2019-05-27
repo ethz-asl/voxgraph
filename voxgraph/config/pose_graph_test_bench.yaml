@@ -3,9 +3,9 @@ log_folder_path: "/home/victor/catkin_ws/voxgraph/pose_graph_test_bench_stats"
 
 # NOTE: The noise approximation below is a poor approximation of drift,
 #       since it doesn't simulate distortion within the submaps themselves.
-#       Only use it for quick tests. For proper validation, use the noisy
-#       odometry simulator from voxgraph_mapper to create a distorted submap
-#       collection and disable the noise below.
+#       Only use it for quick tests. For proper validation, use the
+#       mapper_test_bench which builds the submaps online based on simulated
+#       noisy odometry.
 submap_noise:
   x:
     mean: 0.0
