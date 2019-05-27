@@ -20,7 +20,7 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
   // Indicate that the submap is finished s.t. its cached members are generated
   {
     VoxgraphSubmap::Ptr submap_ptr =
-        submap_collection_ptr_->getSubMapPtrById(submap_id);
+        submap_collection_ptr_->getSubMapPtr(submap_id);
     CHECK_NOTNULL(submap_ptr)->finishSubmap();
   }
 
@@ -137,9 +137,9 @@ void PoseGraphInterface::updateRegistrationConstraints() {
 
         // Add pointers to both submaps
         constraint_config.first_submap_ptr =
-            submap_collection_ptr_->getSubMapConstPtrById(first_submap_id);
+            submap_collection_ptr_->getSubMapConstPtr(first_submap_id);
         constraint_config.second_submap_ptr =
-            submap_collection_ptr_->getSubMapConstPtrById(second_submap_id);
+            submap_collection_ptr_->getSubMapConstPtr(second_submap_id);
         CHECK_NOTNULL(constraint_config.first_submap_ptr);
         CHECK_NOTNULL(constraint_config.second_submap_ptr);
 

@@ -62,7 +62,7 @@ VoxgraphSubmapCollection::PoseStampedVector
 VoxgraphSubmapCollection::getPoseHistory() const {
   PoseStampedVector poses;
   // Iterate over all submaps
-  for (VoxgraphSubmap::ConstPtr submap_ptr : getSubMaps()) {
+  for (const VoxgraphSubmap::ConstPtr &submap_ptr : getSubMapConstPtrs()) {
     // Iterate over all poses in the submap
     for (const std::pair<const ros::Time, Transformation> &time_pose_pair :
          submap_ptr->getPoseHistory()) {

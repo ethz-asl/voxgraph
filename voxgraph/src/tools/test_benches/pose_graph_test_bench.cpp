@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
   // Finish the submaps such that their cached members are generated
   for (const cblox::SubmapID& submap_id : submap_ids) {
     VoxgraphSubmap::Ptr submap_ptr =
-        submap_collection_ptr->getSubMapPtrById(submap_id);
+        submap_collection_ptr->getSubMapPtr(submap_id);
     CHECK_NOTNULL(submap_ptr)->finishSubmap();
   }
 
@@ -207,9 +207,9 @@ int main(int argc, char** argv) {
 
         // Add pointers to both submaps
         registration_constraint_config.first_submap_ptr =
-            submap_collection_ptr->getSubMapConstPtrById(first_submap_id);
+            submap_collection_ptr->getSubMapConstPtr(first_submap_id);
         registration_constraint_config.second_submap_ptr =
-            submap_collection_ptr->getSubMapConstPtrById(second_submap_id);
+            submap_collection_ptr->getSubMapConstPtr(second_submap_id);
 
         CHECK_NOTNULL(registration_constraint_config.first_submap_ptr);
         CHECK_NOTNULL(registration_constraint_config.second_submap_ptr);

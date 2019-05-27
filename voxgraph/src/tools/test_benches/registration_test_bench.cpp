@@ -237,9 +237,9 @@ int main(int argc, char **argv) {
   // Finish the submaps such that their cached members are generated
   {
     VoxgraphSubmap::Ptr ref_submap_ptr =
-        submap_collection_ptr->getSubMapPtrById(reference_submap_id);
+        submap_collection_ptr->getSubMapPtr(reference_submap_id);
     VoxgraphSubmap::Ptr reading_submap_ptr =
-        submap_collection_ptr->getSubMapPtrById(reading_submap_id);
+        submap_collection_ptr->getSubMapPtr(reading_submap_id);
     CHECK_NOTNULL(ref_submap_ptr);
     CHECK_NOTNULL(reading_submap_ptr);
     ref_submap_ptr->setRegistrationFilterConfig(registration_filter_config);

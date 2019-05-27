@@ -12,16 +12,11 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>roscpp</build_depend>
-  <build_depend>voxblox</build_depend>
-  <build_depend>voxblox_ros</build_depend>
-  <build_depend>cblox</build_depend>
-  <build_depend>ceres_catkin</build_depend>
+  <depend>roscpp</depend>
+  <depend>ceres_catkin</depend>
+  <depend>voxblox</depend>
+  <depend>voxblox_ros</depend>
+  <depend>cblox</depend>
 
-  <exec_depend>roscpp</exec_depend>
-  <exec_depend>voxblox</exec_depend>
-  <exec_depend>voxblox_ros</exec_depend>
-  <exec_depend>cblox</exec_depend>
-  <exec_depend>ceres_catkin</exec_depend>
 
 </package>
