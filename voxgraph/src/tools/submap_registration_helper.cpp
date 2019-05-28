@@ -16,9 +16,9 @@ bool SubmapRegistrationHelper::testRegistration(
     ceres::Solver::Summary *summary) {
   // Get shared pointers to the reference and reading submaps
   VoxgraphSubmap::ConstPtr reference_submap_ptr =
-      submap_collection_ptr_->getSubMapConstPtr(reference_submap_id);
+      submap_collection_ptr_->getSubmapConstPtr(reference_submap_id);
   VoxgraphSubmap::ConstPtr reading_submap_ptr =
-      submap_collection_ptr_->getSubMapConstPtr(reading_submap_id);
+      submap_collection_ptr_->getSubmapConstPtr(reading_submap_id);
   CHECK_NOTNULL(reference_submap_ptr);
   CHECK_NOTNULL(reading_submap_ptr);
 

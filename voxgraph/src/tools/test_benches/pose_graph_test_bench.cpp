@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
     if (submap_id != 0) {
       // Get the submap pose; perturb it; then update it
       voxblox::Transformation pose;
-      CHECK(submap_collection_ptr->getSubMapPose(submap_id, &pose));
+      CHECK(submap_collection_ptr->getSubmapPose(submap_id, &pose));
       voxblox::Transformation::Vector6 T_vec = pose.log();
       T_vec[0] += submap_perturbation.x.mean +
                   submap_perturbation.x.stddev * std_normal_dist(random_engine);
@@ -100,14 +100,14 @@ int main(int argc, char** argv) {
           submap_perturbation.yaw.mean +
           submap_perturbation.yaw.stddev * std_normal_dist(random_engine);
       pose = voxblox::Transformation::exp(T_vec);
-      submap_collection_ptr->setSubMapPose(submap_id, pose);
+      submap_collection_ptr->setSubmapPose(submap_id, pose);
     }
   }
 
   // Finish the submaps such that their cached members are generated
   for (const cblox::SubmapID& submap_id : submap_ids) {
     VoxgraphSubmap::Ptr submap_ptr =
-        submap_collection_ptr->getSubMapPtr(submap_id);
+        submap_collection_ptr->getSubmapPtr(submap_id);
     CHECK_NOTNULL(submap_ptr)->finishSubmap();
   }
 
@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
   {
     // Configure the submap_config
     const VoxgraphSubmap& submap =
-        submap_collection_ptr->getSubMap(submap_ids[0]);
+        submap_collection_ptr->getSubmap(submap_ids[0]);
     submap_config.tsdf_voxel_size =
         submap.getTsdfMap().getTsdfLayer().voxel_size();
     submap_config.tsdf_voxels_per_side =
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
   for (const cblox::SubmapID& submap_id : submap_ids) {
     SubmapNode::Config node_config;
     node_config.submap_id = submap_id;
-    CHECK(submap_collection_ptr->getSubMapPose(
+    CHECK(submap_collection_ptr->getSubmapPose(
         submap_id, &node_config.T_world_node_initial));
     if (submap_id == 0) {
       ROS_INFO("Setting pose of submap 0 to constant");
@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
     // Get a pointer to the first submap
     cblox::SubmapID first_submap_id = submap_ids[i];
     const VoxgraphSubmap& first_submap =
-        submap_collection_ptr->getSubMap(first_submap_id);
+        submap_collection_ptr->getSubmap(first_submap_id);
 
     // Publish the submap's bounding boxes
     submap_vis.publishBox(first_submap.getWorldFrameSurfaceObbCorners(),
@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
       // Get the second submap
       cblox::SubmapID second_submap_id = submap_ids[j];
       const VoxgraphSubmap& second_submap =
-          submap_collection_ptr->getSubMap(second_submap_id);
+          submap_collection_ptr->getSubmap(second_submap_id);
 
       // Check whether the first and second submap overlap
       if (first_submap.overlapsWith(second_submap)) {
@@ -207,9 +207,9 @@ int main(int argc, char** argv) {
 
         // Add pointers to both submaps
         registration_constraint_config.first_submap_ptr =
-            submap_collection_ptr->getSubMapConstPtr(first_submap_id);
+            submap_collection_ptr->getSubmapConstPtr(first_submap_id);
         registration_constraint_config.second_submap_ptr =
-            submap_collection_ptr->getSubMapConstPtr(second_submap_id);
+            submap_collection_ptr->getSubmapConstPtr(second_submap_id);
 
         CHECK_NOTNULL(registration_constraint_config.first_submap_ptr);
         CHECK_NOTNULL(registration_constraint_config.second_submap_ptr);
@@ -232,7 +232,7 @@ int main(int argc, char** argv) {
 
   // Update the submap poses
   for (const auto& submap_pose_kv : pose_graph.getSubmapPoses()) {
-    submap_collection_ptr->setSubMapPose(submap_pose_kv.first,
+    submap_collection_ptr->setSubmapPose(submap_pose_kv.first,
                                          submap_pose_kv.second);
   }
 

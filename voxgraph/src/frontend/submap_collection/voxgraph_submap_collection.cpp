@@ -13,7 +13,7 @@ bool VoxgraphSubmapCollection::shouldCreateNewSubmap(
   } else {
     // TODO(victorr): Add options to also consider distance traveled etc
     ros::Time new_submap_creation_deadline =
-        getActiveSubMap().getCreationTime() + submap_creation_interval_;
+        getActiveSubmap().getCreationTime() + submap_creation_interval_;
     ROS_INFO_STREAM_COND(verbose_,
                          "Current time: " << current_time << "\n"
                                           << "New creation submap deadline: "
@@ -48,7 +48,7 @@ void VoxgraphSubmapCollection::createNewSubmap(
 
   // Create the new submap
   SubmapID new_submap_id =
-      cblox::SubmapCollection<VoxgraphSubmap>::createNewSubMap(
+      cblox::SubmapCollection<VoxgraphSubmap>::createNewSubmap(
           T_world__new_submap);
 
   ROS_INFO_STREAM("Created submap: " << new_submap_id << " with pose\n"
@@ -62,7 +62,7 @@ VoxgraphSubmapCollection::PoseStampedVector
 VoxgraphSubmapCollection::getPoseHistory() const {
   PoseStampedVector poses;
   // Iterate over all submaps
-  for (const VoxgraphSubmap::ConstPtr &submap_ptr : getSubMapConstPtrs()) {
+  for (const VoxgraphSubmap::ConstPtr &submap_ptr : getSubmapConstPtrs()) {
     // Iterate over all poses in the submap
     for (const std::pair<const ros::Time, Transformation> &time_pose_pair :
          submap_ptr->getPoseHistory()) {

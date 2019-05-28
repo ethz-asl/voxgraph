@@ -20,14 +20,14 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
   // Indicate that the submap is finished s.t. its cached members are generated
   {
     VoxgraphSubmap::Ptr submap_ptr =
-        submap_collection_ptr_->getSubMapPtr(submap_id);
+        submap_collection_ptr_->getSubmapPtr(submap_id);
     CHECK_NOTNULL(submap_ptr)->finishSubmap();
   }
 
   // Configure the submap node and add it to the pose graph
   SubmapNode::Config node_config = node_templates_.submap;
   node_config.submap_id = submap_id;
-  CHECK(submap_collection_ptr_->getSubMapPose(
+  CHECK(submap_collection_ptr_->getSubmapPose(
       submap_id, &node_config.T_world_node_initial));
   if (submap_id == 0) {
     ROS_INFO("Setting pose of submap 0 to constant");
@@ -55,9 +55,9 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
     // Set the relative transformation
     Transformation T_world__previous_submap;
     Transformation T_world__current_submap;
-    CHECK(submap_collection_ptr_->getSubMapPose(previous_submap_id,
+    CHECK(submap_collection_ptr_->getSubmapPose(previous_submap_id,
                                                 &T_world__previous_submap));
-    CHECK(submap_collection_ptr_->getSubMapPose(submap_id,
+    CHECK(submap_collection_ptr_->getSubmapPose(submap_id,
                                                 &T_world__current_submap));
     constraint_config.T_origin_destination =
         T_world__previous_submap.inverse() * T_world__current_submap;
@@ -68,7 +68,7 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
                 << "From: " << constraint_config.origin_submap_id << "\n"
                 << "To: " << constraint_config.destination_submap_id << "\n"
                 << "Submap currently being built in submap collection: "
-                << submap_collection_ptr_->getActiveSubMapID() << "\n"
+                << submap_collection_ptr_->getActiveSubmapID() << "\n"
                 << "T_w_s1:\n"
                 << T_world__previous_submap << "\n"
                 << "yaw_w_s1:" << T_world__previous_submap.log()[5] << "\n"
@@ -111,7 +111,7 @@ void PoseGraphInterface::updateRegistrationConstraints() {
     // Get a pointer to the first submap
     cblox::SubmapID first_submap_id = submap_ids[i];
     const VoxgraphSubmap &first_submap =
-        submap_collection_ptr_->getSubMap(first_submap_id);
+        submap_collection_ptr_->getSubmap(first_submap_id);
 
     // Publish debug visuals
     if (submap_pub_.getNumSubscribers() > 0) {
@@ -125,7 +125,7 @@ void PoseGraphInterface::updateRegistrationConstraints() {
       // Get the second submap
       cblox::SubmapID second_submap_id = submap_ids[j];
       const VoxgraphSubmap &second_submap =
-          submap_collection_ptr_->getSubMap(second_submap_id);
+          submap_collection_ptr_->getSubmap(second_submap_id);
 
       // Check whether the first and second submap overlap
       if (first_submap.overlapsWith(second_submap)) {
@@ -137,9 +137,9 @@ void PoseGraphInterface::updateRegistrationConstraints() {
 
         // Add pointers to both submaps
         constraint_config.first_submap_ptr =
-            submap_collection_ptr_->getSubMapConstPtr(first_submap_id);
+            submap_collection_ptr_->getSubmapConstPtr(first_submap_id);
         constraint_config.second_submap_ptr =
-            submap_collection_ptr_->getSubMapConstPtr(second_submap_id);
+            submap_collection_ptr_->getSubmapConstPtr(second_submap_id);
         CHECK_NOTNULL(constraint_config.first_submap_ptr);
         CHECK_NOTNULL(constraint_config.second_submap_ptr);
 
@@ -163,7 +163,7 @@ void PoseGraphInterface::optimize() {
 
 void PoseGraphInterface::updateSubmapCollectionPoses() {
   for (const auto &submap_pose_kv : pose_graph_.getSubmapPoses()) {
-    submap_collection_ptr_->setSubMapPose(submap_pose_kv.first,
+    submap_collection_ptr_->setSubmapPose(submap_pose_kv.first,
                                           submap_pose_kv.second);
   }
 }

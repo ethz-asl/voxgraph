@@ -183,7 +183,7 @@ void VoxgraphMapper::pointcloudCallback(
       }
 
       // Add the finished submap to the pose graph, including an odometry link
-      SubmapID finished_submap_id = submap_collection_ptr_->getActiveSubMapID();
+      SubmapID finished_submap_id = submap_collection_ptr_->getActiveSubmapID();
       pose_graph_interface_.addSubmap(finished_submap_id,
                                       odometry_constraints_enabled_);
 
@@ -205,13 +205,13 @@ void VoxgraphMapper::pointcloudCallback(
       pose_graph_interface_.optimize();
 
       // Remember the pose of the current submap (used later to eliminate drift)
-      Transformation T_W_S_old = submap_collection_ptr_->getActiveSubMapPose();
+      Transformation T_W_S_old = submap_collection_ptr_->getActiveSubmapPose();
 
       // Update the submap poses
       pose_graph_interface_.updateSubmapCollectionPoses();
 
       // Update the fictional odometry origin to cancel out drift
-      Transformation T_W_S_new = submap_collection_ptr_->getActiveSubMapPose();
+      Transformation T_W_S_new = submap_collection_ptr_->getActiveSubmapPose();
       T_world_odom_corrected_ =
           T_W_S_new * T_W_S_old.inverse() * T_world_odom_corrected_,
       T_world_robot = T_W_S_new * T_W_S_old.inverse() * T_world_robot;
@@ -248,7 +248,7 @@ void VoxgraphMapper::pointcloudCallback(
     // Create the new submap
     submap_collection_ptr_->createNewSubmap(T_world_robot, current_timestamp);
     if (debug_) {
-      TfHelper::publishTransform(submap_collection_ptr_->getActiveSubMapPose(),
+      TfHelper::publishTransform(submap_collection_ptr_->getActiveSubmapPose(),
                                  world_frame_, "new_submap_origin", true,
                                  current_timestamp);
     }
@@ -284,7 +284,7 @@ void VoxgraphMapper::pointcloudCallback(
   pointcloud_processor_.integratePointcloud(pointcloud_msg, T_world_sensor);
 
   // Add the current pose to the submap's pose history
-  submap_collection_ptr_->getActiveSubMapPtr()->addPoseToHistory(
+  submap_collection_ptr_->getActiveSubmapPtr()->addPoseToHistory(
       current_timestamp, T_world_robot);
 
   // Publish the pose history

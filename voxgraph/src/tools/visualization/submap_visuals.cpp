@@ -33,7 +33,7 @@ void SubmapVisuals::publishMesh(
     const std::string &submap_frame, const ros::Publisher &publisher) const {
   // Get a pointer to the submap
   VoxgraphSubmap::ConstPtr submap_ptr =
-      submap_collection.getSubMapConstPtr(submap_id);
+      submap_collection.getSubmapConstPtr(submap_id);
   CHECK_NOTNULL(submap_ptr);
 
   // Generate the mesh

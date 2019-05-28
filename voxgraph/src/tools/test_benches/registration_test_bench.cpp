@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
         "Reference and reading submap IDs are the same, "
         "duplicating the reference...");
     reading_submap_id = INT32_MAX;
-    CHECK(submap_collection_ptr->duplicateSubMap(reference_submap_id,
+    CHECK(submap_collection_ptr->duplicateSubmap(reference_submap_id,
                                                  reading_submap_id));
   }
 
@@ -189,10 +189,10 @@ int main(int argc, char **argv) {
 
   // Save the reference submap pose and the original reading submap pose
   Transformation transform_getter;
-  CHECK(submap_collection_ptr->getSubMapPose(reference_submap_id,
+  CHECK(submap_collection_ptr->getSubmapPose(reference_submap_id,
                                              &transform_getter));
   const Transformation T_world__reference = transform_getter;
-  CHECK(submap_collection_ptr->getSubMapPose(reading_submap_id,
+  CHECK(submap_collection_ptr->getSubmapPose(reading_submap_id,
                                              &transform_getter));
   const Transformation T_world__reading_original = transform_getter;
   const Eigen::Vector3f &ground_truth_position =
@@ -237,9 +237,9 @@ int main(int argc, char **argv) {
   // Finish the submaps such that their cached members are generated
   {
     VoxgraphSubmap::Ptr ref_submap_ptr =
-        submap_collection_ptr->getSubMapPtr(reference_submap_id);
+        submap_collection_ptr->getSubmapPtr(reference_submap_id);
     VoxgraphSubmap::Ptr reading_submap_ptr =
-        submap_collection_ptr->getSubMapPtr(reading_submap_id);
+        submap_collection_ptr->getSubmapPtr(reading_submap_id);
     CHECK_NOTNULL(ref_submap_ptr);
     CHECK_NOTNULL(reading_submap_ptr);
     ref_submap_ptr->setRegistrationFilterConfig(registration_filter_config);
@@ -308,7 +308,7 @@ int main(int argc, char **argv) {
               Transformation::Vector3 translation(x, y, z);
               T_world__reading_perturbed.getPosition() =
                   T_world__reading_original.getPosition() + translation;
-              submap_collection_ptr->setSubMapPose(reading_submap_id,
+              submap_collection_ptr->setSubmapPose(reading_submap_id,
                                                    T_world__reading_perturbed);
 
               // Announce progress
@@ -346,7 +346,7 @@ int main(int argc, char **argv) {
                 T_vec_read[5] = world_pose_reading[3];
                 const Transformation T_world__reading_optimized =
                     Transformation::exp(T_vec_read);
-                submap_collection_ptr->setSubMapPose(
+                submap_collection_ptr->setSubmapPose(
                     reading_submap_id, T_world__reading_optimized);
 
                 // Announce results

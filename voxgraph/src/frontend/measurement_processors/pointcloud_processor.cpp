@@ -21,7 +21,7 @@ void PointcloudProcessor::integratePointcloud(
     const voxblox::Transformation &T_world_sensor) {
   // Transform the sensor pose into the submap frame
   const Transformation T_world_submap =
-      submap_collection_ptr_->getActiveSubMapPose();
+      submap_collection_ptr_->getActiveSubmapPose();
   const Transformation T_submap_sensor =
       T_world_submap.inverse() * T_world_sensor;
 
@@ -58,7 +58,7 @@ void PointcloudProcessor::integratePointcloud(
 
   // Point the integrator to the current submap
   VoxgraphSubmap::Ptr active_submap_ptr =
-      submap_collection_ptr_->getActiveSubMapPtr();
+      submap_collection_ptr_->getActiveSubmapPtr();
   tsdf_integrator_->setLayer(
       active_submap_ptr->getTsdfMapPtr()->getTsdfLayerPtr());
 
@@ -71,7 +71,7 @@ void PointcloudProcessor::integratePointcloud(
   ROS_INFO_COND(
       verbose_,
       "Finished integrating in %f seconds, submap %u now has %lu blocks.",
-      (end - start).toSec(), submap_collection_ptr_->getActiveSubMapID(),
+      (end - start).toSec(), submap_collection_ptr_->getActiveSubmapID(),
       submap_collection_ptr_->getActiveTsdfMap()
           .getTsdfLayer()
           .getNumberOfAllocatedBlocks());
