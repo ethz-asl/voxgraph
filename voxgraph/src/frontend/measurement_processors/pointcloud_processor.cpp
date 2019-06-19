@@ -1,6 +1,8 @@
 #include "voxgraph/frontend/measurement_processors/pointcloud_processor.h"
 #include <pcl_conversions/pcl_conversions.h>
+#include <voxblox_ros/conversions.h>
 #include <voxblox_ros/ros_params.h>
+#include <string>
 #include <utility>
 
 namespace voxgraph {
@@ -8,7 +10,11 @@ PointcloudProcessor::PointcloudProcessor(
     cblox::SubmapCollection<VoxgraphSubmap>::Ptr submap_collection_ptr,
     bool verbose)
     : verbose_(verbose),
-      submap_collection_ptr_(std::move(submap_collection_ptr)) {}
+      submap_collection_ptr_(std::move(submap_collection_ptr)),
+      color_map_(new voxblox::RainbowColorMap()) {
+  // Configure the color map
+  color_map_->setMaxValue(100.0);
+}
 
 void PointcloudProcessor::setTsdfIntegratorConfigFromRosParam(
     const ros::NodeHandle &node_handle) {
@@ -17,7 +23,7 @@ void PointcloudProcessor::setTsdfIntegratorConfigFromRosParam(
 }
 
 void PointcloudProcessor::integratePointcloud(
-    const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg,
+    const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
     const voxblox::Transformation &T_world_sensor) {
   // Transform the sensor pose into the submap frame
   const Transformation T_world_submap =
@@ -25,32 +31,40 @@ void PointcloudProcessor::integratePointcloud(
   const Transformation T_submap_sensor =
       T_world_submap.inverse() * T_world_sensor;
 
-  // Convert pointcloud_msg into voxblox::Pointcloud
-  pcl::PointCloud<pcl::PointXYZ> pointcloud_pcl;
-  pcl::fromROSMsg(*pointcloud_msg, pointcloud_pcl);
+  // Convert the pointcloud msg into a voxblox::Pointcloud
   voxblox::Pointcloud pointcloud;
   voxblox::Colors colors;
-  pointcloud.reserve(pointcloud_pcl.size());
-  colors.reserve(pointcloud_pcl.size());
-
-  // Filter out NaNs while compiling the voxblox pointcloud
-  for (const auto &point : pointcloud_pcl.points) {
-    if (!std::isfinite(point.x) || !std::isfinite(point.y) ||
-        !std::isfinite(point.z)) {
-      continue;
+  // Detect the PCL pointcloud type
+  bool color_pointcloud = false;
+  bool has_intensity = false;
+  for (size_t d = 0; d < pointcloud_msg->fields.size(); ++d) {
+    if (pointcloud_msg->fields[d].name == std::string("rgb")) {
+      color_pointcloud = true;
+      // Quick hack to fix PCL color parsing
+      pointcloud_msg->fields[d].datatype = sensor_msgs::PointField::FLOAT32;
+    } else if (pointcloud_msg->fields[d].name == std::string("intensity")) {
+      has_intensity = true;
     }
-
-    // Store the point's coordinates
-    pointcloud.push_back(voxblox::Point(point.x, point.y, point.z));
-    colors.push_back(voxblox::Color(0, 0, 0, 1));
   }
-
-  // Initialize the TSDF integrator if this has not yet been done
-  if (!tsdf_integrator_) {
-    tsdf_integrator_.reset(new voxblox::FastTsdfIntegrator(
-        tsdf_integrator_config_,
-        submap_collection_ptr_->getActiveTsdfMapPtr()->getTsdfLayerPtr()));
-    ROS_INFO("Initialized TSDF Integrator");
+  // Convert differently depending on RGB or I type
+  if (color_pointcloud) {
+    pcl::PointCloud<pcl::PointXYZRGB> pointcloud_pcl;
+    // pointcloud_pcl is modified below:
+    pcl::fromROSMsg(*pointcloud_msg, pointcloud_pcl);
+    voxblox::convertPointcloud(pointcloud_pcl, color_map_, &pointcloud,
+                               &colors);
+  } else if (has_intensity) {
+    pcl::PointCloud<pcl::PointXYZI> pointcloud_pcl;
+    // pointcloud_pcl is modified below:
+    pcl::fromROSMsg(*pointcloud_msg, pointcloud_pcl);
+    voxblox::convertPointcloud(pointcloud_pcl, color_map_, &pointcloud,
+                               &colors);
+  } else {
+    pcl::PointCloud<pcl::PointXYZ> pointcloud_pcl;
+    // pointcloud_pcl is modified below:
+    pcl::fromROSMsg(*pointcloud_msg, pointcloud_pcl);
+    voxblox::convertPointcloud(pointcloud_pcl, color_map_, &pointcloud,
+                               &colors);
   }
 
   // TODO(victorr): Implement optional Cartographer style simultaneous

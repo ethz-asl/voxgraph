@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
       // Setup the mapper
       VoxgraphMapper voxgraph_mapper(nh, nh_private);
       topics_of_interest.emplace_back(pointcloud_topic);
-      std::queue<sensor_msgs::PointCloud2::ConstPtr> pointcloud_queue;
+      std::queue<sensor_msgs::PointCloud2::Ptr> pointcloud_queue;
       std::future<int> mapper_async_handle;
 
       // Setup the odometry simulator
@@ -415,7 +415,7 @@ int main(int argc, char** argv) {
           }
 
           // Process pointcloud messages
-          sensor_msgs::PointCloud2::ConstPtr pointcloud_msg =
+          sensor_msgs::PointCloud2::Ptr pointcloud_msg =
               read_msg.instantiate<sensor_msgs::PointCloud2>();
           if (pointcloud_msg != nullptr) {
             // Add the pointcloud to the queue

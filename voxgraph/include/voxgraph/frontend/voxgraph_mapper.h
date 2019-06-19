@@ -24,8 +24,7 @@ class VoxgraphMapper {
   ~VoxgraphMapper() = default;
 
   // ROS topic callbacks
-  void pointcloudCallback(
-      const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg);
+  void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(

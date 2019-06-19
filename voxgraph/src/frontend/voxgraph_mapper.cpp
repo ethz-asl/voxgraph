@@ -159,7 +159,7 @@ bool VoxgraphMapper::saveToFileCallback(
 }
 
 void VoxgraphMapper::pointcloudCallback(
-    const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg) {
+    const sensor_msgs::PointCloud2::Ptr &pointcloud_msg) {
   // Lookup the robot pose at the time of the pointcloud message
   ros::Time current_timestamp = pointcloud_msg->header.stamp;
   Transformation T_odom_robot;

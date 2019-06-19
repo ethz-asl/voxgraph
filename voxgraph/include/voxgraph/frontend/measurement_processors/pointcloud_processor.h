@@ -3,6 +3,7 @@
 
 #include <sensor_msgs/PointCloud2.h>
 #include <voxblox/integrator/tsdf_integrator.h>
+#include <voxblox/utils/color_maps.h>
 #include <memory>
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
@@ -16,9 +17,8 @@ class PointcloudProcessor {
 
   void setTsdfIntegratorConfigFromRosParam(const ros::NodeHandle &node_handle);
 
-  void integratePointcloud(
-      const sensor_msgs::PointCloud2::ConstPtr &pointcloud_msg,
-      const voxblox::Transformation &T_world_sensor);
+  void integratePointcloud(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
+                           const voxblox::Transformation &T_world_sensor);
 
  private:
   bool verbose_;
@@ -26,6 +26,7 @@ class PointcloudProcessor {
   cblox::SubmapCollection<VoxgraphSubmap>::Ptr submap_collection_ptr_;
 
   // Tools used when integrating the pointclouds into submaps
+  std::shared_ptr<voxblox::ColorMap> color_map_;
   voxblox::TsdfIntegratorBase::Config tsdf_integrator_config_;
   std::unique_ptr<voxblox::FastTsdfIntegrator> tsdf_integrator_;
 };
