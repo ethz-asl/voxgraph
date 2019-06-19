@@ -1,4 +1,5 @@
 #include "voxgraph/tools/visualization/pose_graph_visuals.h"
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -20,18 +21,25 @@ void PoseGraphVisuals::publishPoseGraph(const PoseGraph &pose_graph,
   marker.frame_locked = false;
 
   // Get the costs and endpoints for all pose graph edges
-  std::vector<PoseGraph::Edge> edges = pose_graph.getEdges();
+  std::vector<PoseGraph::VisualizationEdge> edges =
+      pose_graph.getVisualizationEdges();
+
+  // Assert that the 'infinity' numeric limit is available at compile time,
+  // such that it can be used below
+  static_assert(std::numeric_limits<double>::has_infinity,
+                "Support for "
+                "std::numeric_limits<double>::infinity() is required");
 
   // Compute the maximum cost, for normalization of the edge colors
-  double max_cost = -INFINITY;
-  for (const PoseGraph::Edge &edge : edges) {
+  double max_cost = -std::numeric_limits<double>::infinity();
+  for (const PoseGraph::VisualizationEdge &edge : edges) {
     if (edge.residual > max_cost) {
       max_cost = edge.residual;
     }
   }
 
   // Add the edges to the marker
-  for (const PoseGraph::Edge &edge : edges) {
+  for (const PoseGraph::VisualizationEdge &edge : edges) {
     // Add edge endpoints
     geometry_msgs::Point point_msg;
     tf::pointEigenToMsg(edge.first_node_position.cast<double>(), point_msg);

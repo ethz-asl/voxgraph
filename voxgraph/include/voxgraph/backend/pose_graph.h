@@ -37,12 +37,12 @@ class PoseGraph {
 
   PoseMap getSubmapPoses();
 
-  struct Edge {
+  struct VisualizationEdge {
     Transformation::Position first_node_position;
     Transformation::Position second_node_position;
     double residual;
   };
-  std::vector<Edge> getEdges() const;
+  std::vector<VisualizationEdge> getVisualizationEdges() const;
 
   const SolverSummaryList &getSolverSummaries() { return solver_summaries_; }
 

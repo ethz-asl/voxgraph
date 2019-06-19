@@ -98,7 +98,8 @@ PoseGraph::PoseMap PoseGraph::getSubmapPoses() {
   return submap_poses;
 }
 
-std::vector<PoseGraph::Edge> PoseGraph::getEdges() const {
+std::vector<PoseGraph::VisualizationEdge> PoseGraph::getVisualizationEdges()
+    const {
   // Check if the problem has been initialized
   CHECK_NOTNULL(problem_ptr_);
 
@@ -110,10 +111,10 @@ std::vector<PoseGraph::Edge> PoseGraph::getEdges() const {
                          nullptr, nullptr);
 
   // Iterate over all residual blocks and setup the corresponding edges
-  std::vector<Edge> edges;
+  std::vector<VisualizationEdge> edges;
   size_t residual_idx = 0;
   for (const ceres::ResidualBlockId &residual_block_id : residual_block_ids) {
-    Edge edge;
+    VisualizationEdge edge;
 
     // Find and store the edge endpoints
     std::vector<double *> edge_endpoints;
