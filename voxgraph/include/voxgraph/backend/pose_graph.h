@@ -8,12 +8,14 @@
 #include <vector>
 #include "voxgraph/backend/constraint/constraint_collection.h"
 #include "voxgraph/backend/node/node_collection.h"
+#include "voxgraph/common.h"
 
 namespace voxgraph {
 class PoseGraph {
  public:
   typedef std::shared_ptr<const PoseGraph> ConstPtr;
   typedef std::list<ceres::Solver::Summary> SolverSummaryList;
+  typedef std::map<const SubmapID, const Transformation> PoseMap;
 
   PoseGraph() = default;
 
@@ -33,12 +35,11 @@ class PoseGraph {
   void initialize();
   void optimize();
 
-  std::map<const cblox::SubmapID, const voxblox::Transformation>
-  getSubmapPoses();
+  PoseMap getSubmapPoses();
 
   struct Edge {
-    voxblox::Transformation::Position first_node_position;
-    voxblox::Transformation::Position second_node_position;
+    Transformation::Position first_node_position;
+    Transformation::Position second_node_position;
     double residual;
   };
   std::vector<Edge> getEdges() const;

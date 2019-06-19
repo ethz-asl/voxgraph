@@ -4,6 +4,7 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include "voxgraph/backend/node/pose/pose.h"
 
 namespace voxgraph {
 void PoseGraph::addSubmapNode(const SubmapNode::Config &config) {
@@ -88,9 +89,8 @@ void PoseGraph::optimize() {
   solver_summaries_.emplace_back(summary);
 }
 
-std::map<const cblox::SubmapID, const voxblox::Transformation>
-PoseGraph::getSubmapPoses() {
-  std::map<const cblox::SubmapID, const voxblox::Transformation> submap_poses;
+PoseGraph::PoseMap PoseGraph::getSubmapPoses() {
+  PoseMap submap_poses;
   for (const auto &submap_node_kv : node_collection_.getSubmapNodes()) {
     submap_poses.emplace(submap_node_kv.second->getSubmapId(),
                          submap_node_kv.second->getPose());

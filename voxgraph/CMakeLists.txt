@@ -24,6 +24,7 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/backend/pose_graph.cpp
     src/backend/node/node.cpp
     src/backend/node/node_collection.cpp
+    src/backend/node/pose/pose_4d.cpp
     src/backend/constraint/constraint.cpp
     src/backend/constraint/constraint_collection.cpp
     src/backend/constraint/relative_pose_constraint.cpp

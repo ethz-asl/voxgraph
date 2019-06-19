@@ -3,6 +3,7 @@
 
 #include <ceres/ceres.h>
 #include <voxblox/core/common.h>
+#include <voxgraph/backend/node/pose/pose_4d.h>
 #include <memory>
 
 namespace voxgraph {
@@ -10,17 +11,19 @@ class Node {
  public:
   typedef std::shared_ptr<Node> Ptr;
   typedef unsigned int NodeId;
-  typedef std::array<double, 4> Pose;
 
   struct Config {
     bool set_constant;
     voxblox::Transformation T_world_node_initial;
   };
 
-  explicit Node(const NodeId &node_id, const Config &config);
+  Node(const Node::NodeId &node_id, const Config &config)
+      : node_id_(node_id),
+        config_(config),
+        optimized_pose_(config.T_world_node_initial) {}
   virtual ~Node() = default;
 
-  const voxblox::Transformation getPose() const;
+  const Pose &getPose() const { return optimized_pose_; }
   Pose *getPosePtr() { return &optimized_pose_; }
 
   void setConstant(bool constant) { config_.set_constant = constant; }
@@ -33,7 +36,7 @@ class Node {
   const NodeId node_id_;
   Config config_;
 
-  Pose optimized_pose_{};
+  Pose4D optimized_pose_;
 };
 }  // namespace voxgraph
 

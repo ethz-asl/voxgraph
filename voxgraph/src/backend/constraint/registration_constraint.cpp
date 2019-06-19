@@ -36,7 +36,8 @@ void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
 
   // Add the constraint to the optimization and keep track of it
   residual_block_id_ = problem->AddResidualBlock(
-      cost_function, loss_function, first_submap_node_ptr->getPosePtr()->data(),
-      second_submap_node_ptr->getPosePtr()->data());
+      cost_function, loss_function,
+      first_submap_node_ptr->getPosePtr()->optimizationVectorData(),
+      second_submap_node_ptr->getPosePtr()->optimizationVectorData());
 }
 }  // namespace voxgraph

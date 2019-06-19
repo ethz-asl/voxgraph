@@ -27,7 +27,7 @@ void RelativePoseConstraint::addToProblem(const NodeCollection &node_collection,
       config_.T_origin_destination, sqrt_information_matrix_);
   residual_block_id_ = problem->AddResidualBlock(
       cost_function, loss_function,
-      origin_submap_node_ptr->getPosePtr()->data(),
-      destination_submap_node_ptr->getPosePtr()->data());
+      origin_submap_node_ptr->getPosePtr()->optimizationVectorData(),
+      destination_submap_node_ptr->getPosePtr()->optimizationVectorData());
 }
 }  // namespace voxgraph
