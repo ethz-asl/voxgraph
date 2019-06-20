@@ -18,6 +18,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       debug_(false),
       auto_pause_rosbag_(false),
       subscriber_queue_length_(100),
+      loop_closure_subscriber_queue_length_(1000),
       pointcloud_topic_("pointcloud"),
       transformer_(nh, nh_private),
       world_frame_("world"),
@@ -115,6 +116,9 @@ void VoxgraphMapper::subscribeToTopics() {
   pointcloud_subscriber_ =
       nh_.subscribe(pointcloud_topic_, subscriber_queue_length_,
                     &VoxgraphMapper::pointcloudCallback, this);
+  loop_closure_subscriber_ =
+      nh_.subscribe(loop_closure_topic_, loop_closure_subscriber_queue_length_,
+                    &VoxgraphMapper::loopClosureCallback, this);
 }
 
 void VoxgraphMapper::advertiseTopics() {
@@ -292,6 +296,11 @@ void VoxgraphMapper::pointcloudCallback(
     submap_vis_.publishPoseHistory(*submap_collection_ptr_, world_frame_,
                                    pose_history_pub_);
   }
+}
+
+void VoxgraphMapper::loopClosureCallback(
+    const voxgraph_msgs::LoopClosure &loop_closure_msg) {
+  // TODO(victorr): Create a LoopClosureProcessor that adds it to the pose graph
 }
 
 bool VoxgraphMapper::lookup_T_odom_robot(ros::Time timestamp,

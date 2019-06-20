@@ -6,6 +6,7 @@
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
 #include <voxblox_ros/transformer.h>
+#include <voxgraph_msgs/LoopClosure.h>
 #include <memory>
 #include <string>
 #include "voxgraph/common.h"
@@ -25,6 +26,7 @@ class VoxgraphMapper {
 
   // ROS topic callbacks
   void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
+  void loopClosureCallback(const voxgraph_msgs::LoopClosure &loop_closure_msg);
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
@@ -70,6 +72,10 @@ class VoxgraphMapper {
   int subscriber_queue_length_;
   std::string pointcloud_topic_;
   ros::Subscriber pointcloud_subscriber_;
+  std::string loop_closure_topic_;
+  int loop_closure_subscriber_queue_length_;
+  ros::Subscriber loop_closure_subscriber_;
+  // TODO(victorr): Add support for absolute pose measurements
 
   // ROS topic publishers
   ros::Publisher separated_mesh_pub_;
@@ -80,7 +86,6 @@ class VoxgraphMapper {
   ros::ServiceServer publish_separated_mesh_srv_;
   ros::ServiceServer publish_combined_mesh_srv_;
   ros::ServiceServer save_to_file_srv_;
-  // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
 
   // Constraints to be used
   bool registration_constraints_enabled_;
