@@ -67,6 +67,14 @@ void PointcloudProcessor::integratePointcloud(
                                &colors);
   }
 
+  // Initialize the TSDF integrator if this has not yet been done
+  if (!tsdf_integrator_) {
+    tsdf_integrator_.reset(new voxblox::FastTsdfIntegrator(
+        tsdf_integrator_config_,
+        submap_collection_ptr_->getActiveTsdfMapPtr()->getTsdfLayerPtr()));
+    ROS_INFO("Initialized TSDF Integrator");
+  }
+
   // TODO(victorr): Implement optional Cartographer style simultaneous
   //                integration into multiple submaps for guaranteed overlap
 
