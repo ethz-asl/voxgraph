@@ -43,6 +43,8 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   void addPoseToHistory(const ros::Time &timestamp,
                         const voxblox::Transformation &T_world_robot);
   const PoseHistoryMap &getPoseHistory() const { return pose_history_; }
+  bool lookupPoseByTime(const ros::Time &timestamp,
+                        voxblox::Transformation *T_submap_robot) const;
 
   // Indicate that the submap is finished and generate all cached members
   // NOTE: These cached members are mainly used in the registration cost funcs

@@ -30,7 +30,9 @@ class PoseGraphInterface {
   void updateRegistrationConstraints();
 
   void addOdometryMeasurement() {}
-  void addLoopClosureMeasurement() {}
+  void addLoopClosureMeasurement(const SubmapID &from_submap,
+                                 const SubmapID &to_submap,
+                                 const Transformation &transform);
   void addGpsMeasurement() {}
   void addHeightMeasurement(const SubmapID &submap_id, const double &height);
 

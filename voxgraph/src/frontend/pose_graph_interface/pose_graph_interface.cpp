@@ -86,6 +86,26 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
   }
 }
 
+void PoseGraphInterface::addLoopClosureMeasurement(
+    const SubmapID &from_submap, const SubmapID &to_submap,
+    const Transformation &transform) {
+  RelativePoseConstraint::Config constraint_config =
+      measurement_templates_.loop_closure;
+  constraint_config.origin_submap_id = from_submap;
+  constraint_config.destination_submap_id = to_submap;
+  constraint_config.T_origin_destination = transform;
+  pose_graph_.addRelativePoseConstraint(constraint_config);
+  ROS_INFO_STREAM_COND(verbose_,
+                       "Added loop closure as relative pose constraint "
+                       "from submap "
+                           << constraint_config.origin_submap_id << " to "
+                           << constraint_config.destination_submap_id
+                           << " with transform\n"
+                           << constraint_config.T_origin_destination
+                           << "\nand information matrix\n"
+                           << constraint_config.information_matrix);
+}
+
 void PoseGraphInterface::addHeightMeasurement(const SubmapID &submap_id,
                                               const double &height) {
   // Configure the constraint
