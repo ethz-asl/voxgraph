@@ -4,6 +4,8 @@
 namespace voxgraph {
 // Small struct that can be used to store voxels or points on the isosurface
 struct RegistrationPoint {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  
   voxblox::Point position;
   float distance;
   float weight;

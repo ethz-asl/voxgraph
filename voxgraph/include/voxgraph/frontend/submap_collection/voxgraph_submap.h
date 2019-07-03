@@ -13,8 +13,11 @@
 namespace voxgraph {
 class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   typedef std::shared_ptr<VoxgraphSubmap> Ptr;
   typedef std::shared_ptr<const VoxgraphSubmap> ConstPtr;
+  //TODO(victorr): Use Eigen aligned map
   typedef std::map<ros::Time, voxblox::Transformation> PoseHistoryMap;
 
   struct Config : cblox::TsdfEsdfSubmap::Config {

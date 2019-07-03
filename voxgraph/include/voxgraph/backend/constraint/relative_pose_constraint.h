@@ -9,6 +9,7 @@ class RelativePoseConstraint : public Constraint {
  public:
   typedef std::shared_ptr<RelativePoseConstraint> Ptr;
   struct Config : Constraint::Config {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     cblox::SubmapID origin_submap_id;
     cblox::SubmapID destination_submap_id;
     voxblox::Transformation T_origin_destination;

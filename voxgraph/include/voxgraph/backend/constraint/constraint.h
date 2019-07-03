@@ -8,11 +8,14 @@
 namespace voxgraph {
 class Constraint {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   typedef std::shared_ptr<Constraint> Ptr;
   typedef unsigned int ConstraintId;
   typedef Eigen::Matrix<double, 4, 4> InformationMatrix;
 
   struct Config {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     InformationMatrix information_matrix;
     bool allow_semi_definite_information_matrix = false;
   };

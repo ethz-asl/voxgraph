@@ -11,6 +11,8 @@
 namespace voxgraph {
 class RegistrationCostFunction : public ceres::CostFunction {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   enum class JacobianEvaluationMethod { kAnalytic = 0, kNumeric };
 
   struct Config {

@@ -12,6 +12,7 @@ namespace voxgraph {
 class MapEvaluation {
  public:
   struct EvaluationDetails {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     voxblox::utils::VoxelEvaluationDetails reconstruction;
     voxblox::Transformation T_ground_truth__reading;
   };
