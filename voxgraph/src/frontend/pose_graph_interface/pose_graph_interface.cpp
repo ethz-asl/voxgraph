@@ -21,7 +21,8 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
   {
     VoxgraphSubmap::Ptr submap_ptr =
         submap_collection_ptr_->getSubmapPtr(submap_id);
-    CHECK_NOTNULL(submap_ptr)->finishSubmap();
+    CHECK(submap_ptr);
+    submap_ptr->finishSubmap();
   }
 
   // Configure the submap node and add it to the pose graph

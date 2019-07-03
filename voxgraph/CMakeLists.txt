@@ -1,10 +1,26 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(voxgraph)
 
-add_definitions(-std=c++11)
+add_definitions(-std=c++11 -Wall)
 
 find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
+
+############
+# PROTOBUF #
+############
+# General idea: first check if we have protobuf catkin, then use that.
+# Otherwise use system protobuf.
+set(PROTO_LIBRARIES "")
+find_package(protobuf_catkin QUIET)
+if (protobuf_catkin_FOUND)
+  message(STATUS "Using protobuf_catkin")
+  set(PROTO_LIBRARIES ${protobuf_catkin_LIBRARIES})
+else()
+  message(STATUS "Using system protobuf")
+  find_package(Protobuf REQUIRED)
+  set(PROTO_LIBRARIES ${PROTOBUF_LIBRARIES})
+endif()
 
 #############
 # LIBRARIES #
@@ -46,23 +62,23 @@ cs_add_library(${PROJECT_NAME} STATIC
 ############
 cs_add_executable(voxgraph_mapping_node
     src/voxgraph_mapping_node.cpp)
-target_link_libraries(voxgraph_mapping_node ${PROJECT_NAME})
+target_link_libraries(voxgraph_mapping_node ${PROJECT_NAME} ${PROTO_LIBRARIES})
 
 cs_add_executable(odometry_simulator
     src/odometry_simulator_node.cpp)
-target_link_libraries(odometry_simulator ${PROJECT_NAME})
+target_link_libraries(odometry_simulator ${PROJECT_NAME} ${PROTO_LIBRARIES})
 
 cs_add_executable(registration_test_bench
     src/tools/test_benches/registration_test_bench.cpp)
-target_link_libraries(registration_test_bench ${PROJECT_NAME})
+target_link_libraries(registration_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES})
 
 cs_add_executable(pose_graph_test_bench
     src/tools/test_benches/pose_graph_test_bench.cpp)
-target_link_libraries(pose_graph_test_bench ${PROJECT_NAME})
+target_link_libraries(pose_graph_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES})
 
 cs_add_executable(mapper_test_bench
     src/tools/test_benches/mapper_test_bench.cpp)
-target_link_libraries(mapper_test_bench ${PROJECT_NAME})
+target_link_libraries(mapper_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES})
 
 ##########
 # EXPORT #

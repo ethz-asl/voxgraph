@@ -17,5 +17,6 @@
   <depend>voxblox</depend>
   <depend>voxblox_ros</depend>
   <depend>cblox</depend>
+  <depend>eigen_catkin</depend>
 
 </package>
