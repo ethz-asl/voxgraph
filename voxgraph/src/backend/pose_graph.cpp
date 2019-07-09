@@ -78,7 +78,8 @@ void PoseGraph::optimize() {
   //  ceres_options.max_num_iterations = 4;
   //  ceres_options.max_solver_time_in_seconds = 12;
   ceres_options.num_threads = std::thread::hardware_concurrency();
-  ceres_options.linear_solver_type = ceres::LinearSolverType::SPARSE_SCHUR;
+  ceres_options.linear_solver_type = ceres::LinearSolverType::DENSE_SCHUR;
+  // ceres_options.linear_solver_type = ceres::LinearSolverType::SPARSE_SCHUR;
   // NOTE: For small problems DENSE_SCHUR is much faster
 
   ceres::Solver::Summary summary;
