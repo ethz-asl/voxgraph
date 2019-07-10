@@ -1,0 +1,43 @@
+#ifndef VOXGRAPH_BACKEND_NODE_NODE_H_
+#define VOXGRAPH_BACKEND_NODE_NODE_H_
+
+#include <ceres/ceres.h>
+#include <voxblox/core/common.h>
+#include <voxgraph/backend/node/pose/pose_4d.h>
+#include <memory>
+
+namespace voxgraph {
+class Node {
+ public:
+  typedef std::shared_ptr<Node> Ptr;
+  typedef unsigned int NodeId;
+
+  struct Config {
+    bool set_constant;
+    voxblox::Transformation T_world_node_initial;
+  };
+
+  Node(const Node::NodeId &node_id, const Config &config)
+      : node_id_(node_id),
+        config_(config),
+        optimized_pose_(config.T_world_node_initial) {}
+  virtual ~Node() = default;
+
+  const Pose &getPose() const { return optimized_pose_; }
+  Pose *getPosePtr() { return &optimized_pose_; }
+
+  void setConstant(bool constant) { config_.set_constant = constant; }
+  bool isConstant() { return config_.set_constant; }
+
+  void addToProblem(ceres::Problem *problem,
+                    ceres::LocalParameterization *local_parameterization);
+
+ protected:
+  const NodeId node_id_;
+  Config config_;
+
+  Pose4D optimized_pose_;
+};
+}  // namespace voxgraph
+
+#endif  // VOXGRAPH_BACKEND_NODE_NODE_H_

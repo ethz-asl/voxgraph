@@ -1,0 +1,45 @@
+verbose: false
+debug: true
+submap_creation_interval: 10
+pointcloud_topic: "/velodyne_points"
+subscriber_queue_length: 1000
+world_frame: "world"
+odom_frame: "odom"
+robot_frame: "robot"
+odom_frame_corrected: "odom_corrected"
+robot_frame_corrected: "robot_corrected"
+sensor_frame_corrected: "velodyne_corrected"
+use_gt_ptcloud_pose_from_sensor_tf: false
+T_robot_sensor:
+  - [0.877583,  0.0, 0.479426,  7.43428e-05]
+  - [0.0,       1.0, 0.0,       0.0]
+  - [-0.479426, 0.0, 0.877583, -0.0669151]
+  - [0.0,       0.0, 0.0,       1.0]
+tsdf_integrator:
+  tsdf_voxel_size: 0.20
+  truncation_distance: 0.60
+  max_ray_length_m: 20.0
+  use_const_weight: true
+  use_weight_dropoff: true
+  use_sparsity_compensation_factor: true
+  sparsity_compensation_factor: 8.0
+measurements:
+  submap_registration:
+    enabled: true
+    sampling_ratio: 0.05
+    registration_method: "explicit_to_implicit"
+    information_matrix:
+      x_x:     1.0
+      y_y:     1.0
+      z_z:     1.0
+      yaw_yaw: 1.0
+  odometry:
+    enabled: false
+    information_matrix:
+      x_x:     1.0
+      y_y:     1.0
+      z_z:     1000.0
+      yaw_yaw: 1000.0
+  height:
+    enabled: false
+    information_zz: 1000.0

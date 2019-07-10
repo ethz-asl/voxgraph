@@ -1,0 +1,40 @@
+debug: true
+subscriber_queue_length: 100
+subscribe_to_odom_topic: "/firefly/ground_truth/odometry"
+published_world_frame: "odom"
+published_simulated_robot_frame: "robot"
+published_original_robot_frame: "robot_ground_truth"
+
+odometry_noise:
+  velocity:
+    x:
+      mean: 0.05
+      stddev: 0.01
+    y:
+      mean: 0.05
+      stddev: 0.01
+    z:
+      mean: 0.0001
+      stddev: 0.0001
+    yaw:
+      mean: 0.005
+      stddev: 0.00001
+  position:
+    x:
+      mean: 0
+      stddev: 0
+    y:
+      mean: 0
+      stddev: 0
+    z:
+      mean: 0
+      stddev: 0
+    yaw:
+      mean: 0
+      stddev: 0
+    pitch:
+      mean: 0
+      stddev: 0
+    roll:
+      mean: 0
+      stddev: 0

@@ -1,0 +1,17 @@
+<launch>
+  <param name="/use_sim_time" value="true" />
+
+  <!-- Static transform from odom to world frame such that Rviz displays everything correctly -->
+  <node pkg="tf" type="static_transform_publisher" name="world_odom_tf"
+        args="0.0 0.0 0.0 0.0 0.0 0.0 1.0 world odom 100" />
+
+  <node name="mapper_test_bench" pkg="voxgraph" type="mapper_test_bench" output="screen">
+    <!--  launch-prefix="gdb -ex run &#45;&#45;args">-->
+    <rosparam file="$(find voxgraph)/config/odometry_simulator.yaml"/>
+    <rosparam file="$(find voxgraph)/config/voxgraph_mapper.yaml"/>
+    <rosparam file="$(find voxgraph)/config/mapper_test_bench.yaml"/>
+  </node>
+
+  <arg name="rviz_file" default="$(find voxgraph)/config/mapper_test_bench.rviz" />
+  <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" args="-d $(arg rviz_file)" output="screen"/>
+</launch>

@@ -1,0 +1,9 @@
+<launch>
+  <node name="registration_test_bench" pkg="voxgraph" type="registration_test_bench" output="screen">
+    <!--  launch-prefix="gdb -ex run &#45;&#45;args">-->
+    <rosparam file="$(find voxgraph)/config/registration_test_bench.yaml"/>
+  </node>
+
+  <arg name="rviz_file" default="$(find voxgraph)/config/registration_test_bench.rviz" />
+  <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" args="-d $(arg rviz_file)" output="screen"/>
+</launch>

@@ -1,0 +1,31 @@
+submap_collection_file_path: "/home/victor/data/voxgraph/submap_collections/burning_house_rubble_gt_truncdist06_z-aligned"
+log_folder_path: "/home/victor/data/voxgraph/registration_test_bench_stats"
+
+reference_submap_id: 3
+reading_submap_id: 3
+
+solver_report_style: "brief"  # "brief", "full" or "none"
+
+test_range:
+  x: [-0.6, 0, 0.3]
+  y: [-0.6, 0, 0.3]
+  z: [-0.6, 0, 0.3]
+  yaw: [-0.2, 0, 0.1]
+  # pitch: [-0.17, 0, 0.17]
+  # roll: [-0.17, 0, 0.17]
+
+submap_registration:
+  solver:
+    max_num_iterations: 40
+    parameter_tolerance: 3e-9
+  cost:
+    use_esdf_distance: true
+    jacobian_evaluation_method: "analytic"  # "analytic" or "numeric"
+    registration_method: "explicit_to_implicit"  # "implicit_to_implicit" or "explicit_to_implicit"
+    min_voxel_weight: 1
+    max_voxel_distance: 0.4
+    sampling_ratio: 0.2  # Set to -1 or leave out to disable
+    no_correspondence_cost: 0.0
+    visualize_residuals: false
+    visualize_gradients: false
+    visualize_transforms: true

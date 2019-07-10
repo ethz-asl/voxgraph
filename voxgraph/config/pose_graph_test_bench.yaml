@@ -1,0 +1,27 @@
+submap_collection_file_path: "/home/victor/catkin_ws/voxgraph/submap_collections/burning_house_rubble_gt_truncdist06_z-aligned"
+log_folder_path: "/home/victor/catkin_ws/voxgraph/pose_graph_test_bench_stats"
+
+# NOTE: The noise approximation below is a poor approximation of drift,
+#       since it doesn't simulate distortion within the submaps themselves.
+#       Only use it for quick tests. For proper validation, use the
+#       mapper_test_bench which builds the submaps online based on simulated
+#       noisy odometry.
+submap_noise:
+  x:
+    mean: 0.0
+    stddev: 0.4
+  y:
+    mean: 0.0
+    stddev: 0.4
+  z:
+    mean: 0.0
+    stddev: 0.4
+  roll:
+    mean: 0.0
+    stddev: 0.0
+  pitch:
+    mean: 0.0
+    stddev: 0.0
+  yaw:
+    mean: 0.0
+    stddev: 0.05
