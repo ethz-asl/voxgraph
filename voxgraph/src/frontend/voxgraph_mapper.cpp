@@ -32,7 +32,8 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       registration_constraints_enabled_(false),
       odometry_constraints_enabled_(false),
       height_constraints_enabled_(false),
-      rosbag_helper_(nh) {
+      rosbag_helper_(nh),
+      scan_to_map_registerer_(submap_collection_ptr_) {
   // Setup interaction with ROS
   getParametersFromRos();
   subscribeToTopics();
@@ -279,6 +280,26 @@ void VoxgraphMapper::pointcloudCallback(
                                  current_timestamp);
     }
   }
+
+  // Refine the camera pose using scan to submap matching
+//  // TODO(victorr): Clean up this shit
+//  const Transformation T_world_submap = submap_collection_ptr_->getActiveSubmapPose();
+//  const Transformation T_submap_sensor_prior =
+//      T_world_submap.inverse() * T_world_sensor;
+//  Transformation T_submap_sensor_refined;
+//  bool registration_successful = scan_to_map_registerer_.refineOdometry(
+//      pointcloud_msg, T_submap_sensor_prior, &T_submap_sensor_refined);
+//  if (registration_successful) {
+//    const Transformation T_world_sensor_new =
+//        T_world_submap * T_submap_sensor_refined;
+//    ROS_INFO_STREAM("Applying pose refinement:\n"
+//                    << (T_world_sensor.inverse() * T_world_sensor_new).log());
+//    T_world_sensor = T_world_sensor_new;
+//    // TODO(victorr): Also update T_world_robot
+//    // TODO(victorr): Update T_world_odom_corrected_
+//  } else {
+//    ROS_WARN("Pose refinement failed");
+//  }
 
   // Integrate the pointcloud
   pointcloud_processor_.integratePointcloud(pointcloud_msg, T_world_sensor);

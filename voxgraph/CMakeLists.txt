@@ -21,10 +21,12 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/frontend/submap_collection/submap_timeline.cpp
     src/frontend/submap_collection/voxgraph_submap.cpp
     src/frontend/submap_collection/voxgraph_submap_collection.cpp
+    src/frontend/map_tracker/scan_to_map_registerer.cpp
     src/backend/pose_graph.cpp
     src/backend/node/node.cpp
     src/backend/node/node_collection.cpp
     src/backend/node/pose/pose_4d.cpp
+    src/backend/node/pose/pose_6d.cpp
     src/backend/constraint/constraint.cpp
     src/backend/constraint/constraint_collection.cpp
     src/backend/constraint/relative_pose_constraint.cpp

@@ -1,0 +1,81 @@
+<launch>
+  <param name="use_sim_time" value="true"/>
+
+  <node if="0" name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -s 5 -q --clock /home/kiwi/begs/arche_day_2/flight1_2ms.bag"/>
+  <node if="0" name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -s 5 -q --clock /home/kiwi/begs/arche_day_3/2019-07-03-14-24-45.bag"/>
+  <node if="1" name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -s 5 -q --clock /media/victorr/ASL_DARAPA/arche_day_3/2019-07-03-14-24-45.bag"/>
+
+  <node pkg="tf" type="static_transform_publisher" name="odom_to_world" args="0 0 0 0 0 0 1 odom world 100"/> 
+  <node pkg="tf" type="static_transform_publisher" name="os1_stuff" args="0 0 0 0 0 1 0 os1_sensor os1_lidar 100"/>
+
+    <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen" args="-alsologtostderr">
+<!--          launch-prefix="gdb -ex run &#45;&#45;args">-->
+      <rosparam>
+        verbose: false
+        debug: true
+        submap_creation_interval: 10
+        pointcloud_topic: "/penguin/os1_cloud_node/points"
+        subscriber_queue_length: 10
+        world_frame: "world"
+        odom_frame: "odom"
+        robot_frame: "imu"
+        odom_frame_corrected: "odom_corrected"
+        robot_frame_corrected: "imu_corrected"
+        sensor_frame_corrected: "sensor_corrected"
+        use_tf_transforms: true
+        use_gt_ptcloud_pose_from_sensor_tf: false
+        # Tuned calibration (0.01 rad off - final error without odom constraints [-0.04, -0.03, 0.35])
+        # For calibration according to TFs, see STIX launch file
+        T_robot_sensor:
+          - [ -0.9908275, -0.0196803, 0.1336922, -0.024]
+          - [ 0.0202159, -0.9997921, 0.0026504, -0.011]
+          - [ 0.1336122, 0.0053288, 0.9910194, -0.131]
+          - [ 0, 0, 0, 1]
+       #   -[ -0.9908275,  0.0202159, 0.1336122, -0.006]
+       #   -[ -0.0196803, -0.9997921, 0.0053288, -0.011]
+       #   -[  0.1336922,  0.0026504, 0.9910194,  0.133]
+       #   -[  0.0,        0.0,       0.0,        1.0]
+         # -[    0.99261,   0.0349823,   -0.116192,   0.0244337]
+         # -[  0.0355736,   -0.999367,  0.00301829,  0.00613349]
+         # -[  -0.116013, -0.00712937,   -0.993226,    0.137747]
+         # -[          0,           0,           0,           1]
+       #   -[-0.992615,  -0.0349823,  0.116192,   -0.0244337]
+       #   -[ 0.0355736, -0.999367,   0.00301829,  0.00613349]
+       #   -[ 0.116013,   0.00712937, 0.993222,   -0.137747]
+       #   -[ 0,          0,          0,           1]
+         # -[   -0.99261,   0.0355736,    0.116013, -0.00849099]
+         # -[ -0.0349823,   -0.999362,  0.00712937,  0.00625691]
+         # -[   0.116192,  0.00301829,    0.993222,    0.139634]
+         # -[          0,           0,           0,           1]
+        tsdf_integrator:
+          tsdf_voxel_size: 0.05
+          truncation_distance: 0.20
+          max_ray_length_m: 20.0
+          use_const_weight: true
+          use_weight_dropoff: true
+          use_sparsity_compensation_factor: true
+          sparsity_compensation_factor: 20.0
+          integration_order_mode: "sorted"
+        measurements:
+          submap_registration:
+            enabled: true
+            sampling_ratio: 0.05
+            registration_method: "explicit_to_implicit"
+            information_matrix:
+              x_x:     1.0
+              y_y:     1.0
+              z_z:     1.0
+              yaw_yaw: 1.0
+          odometry:
+            enabled: true
+            information_matrix:
+              x_x:     1.0
+              y_y:     1.0
+              z_z:     2500.0
+              yaw_yaw: 2500.0
+          height:
+            enabled: false
+            information_zz: 2500.0
+      </rosparam>
+    </node>
+</launch>

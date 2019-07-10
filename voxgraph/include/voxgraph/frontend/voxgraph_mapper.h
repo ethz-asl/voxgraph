@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include "voxgraph/common.h"
+#include "voxgraph/frontend/map_tracker/scan_to_map_registerer.h"
 #include "voxgraph/frontend/measurement_processors/gps_processor.h"
 #include "voxgraph/frontend/measurement_processors/pointcloud_processor.h"
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
@@ -129,6 +130,10 @@ class VoxgraphMapper {
   // Whether to use ground truth T_world__sensor,
   // instead of its estimated pose (for validation purposes)
   bool use_gt_ptcloud_pose_from_sensor_tf_;
+
+  // Scan to submap registerer to refine the robot pose before integrating the
+  // pointcloud; similar to voxblox ICP
+  ScanToMapRegisterer scan_to_map_registerer_;
 };
 }  // namespace voxgraph
 

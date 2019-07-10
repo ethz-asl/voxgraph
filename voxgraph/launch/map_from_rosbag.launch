@@ -9,7 +9,7 @@
   </node>
 
   <node name="player" pkg="rosbag" type="play" output="screen"
-        args="--quiet -s50 /home/victor/data/building_sim/terrain_coverage_2019-01-21-23-26-31.bag"/>
+        args="--quiet -s50 /media/victorr/ASL_DARAPA/arche_day_3/2019-07-03-14-24-45.bag"/>
 
   <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen"/>
 </launch>
