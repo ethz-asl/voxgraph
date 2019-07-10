@@ -8,6 +8,7 @@
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
+#include "voxgraph/io.h"
 
 namespace voxgraph {
 VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
@@ -135,6 +136,9 @@ void VoxgraphMapper::advertiseServices() {
       this);
   save_to_file_srv_ = nh_private_.advertiseService(
       "save_to_file", &VoxgraphMapper::saveToFileCallback, this);
+  save_pose_history_to_file_srv_ = nh_private_.advertiseService(
+      "save_pose_history_to_file",
+      &VoxgraphMapper::savePoseHistoryToFileCallback, this);
 }
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
@@ -155,6 +159,15 @@ bool VoxgraphMapper::saveToFileCallback(
     voxblox_msgs::FilePath::Request &request,
     voxblox_msgs::FilePath::Response &response) {
   submap_collection_ptr_->saveToFile(request.file_path);
+  return true;
+}
+
+bool VoxgraphMapper::savePoseHistoryToFileCallback(
+    voxblox_msgs::FilePath::Request &request,
+    voxblox_msgs::FilePath::Response &response) {
+  ROS_INFO_STREAM("Writing pose history to bag at: " << request.file_path);
+  io::savePoseHistoryToFile(request.file_path,
+                            submap_collection_ptr_->getPoseHistory());
   return true;
 }
 
