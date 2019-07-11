@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <chrono>
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
@@ -320,7 +321,8 @@ bool VoxgraphMapper::lookup_T_odom_robot(ros::Time timestamp,
       *T_odom_robot = T_odom_robot_received;
       return true;
     }
-    timeout.sleep();
+    //timeout.sleep();
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
     t_waited += timeout.toSec();
   }
   ROS_WARN("Waited %.3fs, but still could not get the TF from %s to %s",
