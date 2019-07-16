@@ -3,15 +3,15 @@
 
 namespace voxgraph {
 template<typename T>
-bool ScanRegistrationCostFunction::operator()(const T *const t_S_O_estimate_ptr,
-                                              const T *const q_S_O_estimate_ptr,
+bool ScanRegistrationCostFunction::operator()(const T *const t_S_C_estimate_ptr,
+                                              const T *const q_S_C_estimate_ptr,
                                               T *residuals_ptr) const {
   // Wrap the data pointers into a minkindr transformation
   Eigen::Map<Eigen::Matrix<T, 6, 1>> residuals(residuals_ptr);
-  Eigen::Map<const Eigen::Matrix<T, 3, 1>> t_S_O_estimate(t_S_O_estimate_ptr);
-  Eigen::Map<const Eigen::Quaternion<T>> q_S_O_estimate(q_S_O_estimate_ptr);
-  kindr::minimal::QuatTransformationTemplate<T> T_S_O(q_S_O_estimate,
-                                                      t_S_O_estimate);
+  Eigen::Map<const Eigen::Matrix<T, 3, 1>> t_S_C_estimate(t_S_C_estimate_ptr);
+  Eigen::Map<const Eigen::Quaternion<T>> q_S_C_estimate(q_S_C_estimate_ptr);
+  kindr::minimal::QuatTransformationTemplate<T> t_S_C(q_S_C_estimate,
+                                                      t_S_C_estimate);
 
   // Iterate over all points
   sensor_msgs::PointCloud2ConstIterator<float> pointcloud_it(
@@ -23,11 +23,20 @@ bool ScanRegistrationCostFunction::operator()(const T *const t_S_O_estimate_ptr,
   for (unsigned int residual_idx = 0; residual_idx < points_per_pointcloud_;
        residual_idx++) {
     if (pointcloud_it != pointcloud_it.end()) {
-      // Get the position of the current point P in submap frame S
+      // Get the position of the current point P in sensor frame C
       voxblox::Point t_C_P(pointcloud_it[0],
                            pointcloud_it[1],
                            pointcloud_it[2]);
-      Eigen::Matrix<T, 3, 1> t_S_P = T_S_O * t_C_P.cast<T>();
+
+      // Filter out points that are too far
+      // TODO(victorr): Check why this makes it unstable
+      // if (t_C_P.norm() > 40.0) {
+      //   residuals[residual_idx] = T(0.0);
+      //   continue;
+      // }
+
+      // Transform the point into Submap frame S
+      Eigen::Matrix<T, 3, 1> t_S_P = t_S_C * t_C_P.cast<T>();
 
       // Get the neighboring voxels
       const voxblox::TsdfVoxel *neighboring_voxels[8];
@@ -38,30 +47,27 @@ bool ScanRegistrationCostFunction::operator()(const T *const t_S_O_estimate_ptr,
       if (lookup_succeeded) {
         // Get the neighboring voxel distances
         voxblox::InterpVector neighboring_distances;
-        voxblox::InterpVector neighboring_weights;
         for (int i = 0; i < neighboring_distances.size(); ++i) {
           neighboring_distances[i] = static_cast<voxblox::FloatingPoint>(
               neighboring_voxels[i]->distance);
-          neighboring_weights[i] = static_cast<voxblox::FloatingPoint>(
-              neighboring_voxels[i]->weight);
         }
+        // TODO(victorr): Look into better weights and make sure that unobserved
+        //                space and space behind surfaces is handled well
+        const double nearest_weight = neighboring_voxels[0]->weight;
+
 
         // Interpolate distance at point P
         const T interpolated_distance =
             jet_q_vector
                 * (interp_table_.cast<T>()
                     * neighboring_distances.transpose().cast<T>());
-//        const T interpolated_weight =
-//            jet_q_vector
-//                * (interp_table_.cast<T>()
-//                    * neighboring_weights.transpose().cast<T>());
-        // TODO(victorr): Also use the voxel weight
-        residuals[residual_idx] = -interpolated_distance;  // * interpolated_weight;
+        residuals[residual_idx] = -interpolated_distance * nearest_weight;
       } else {
         residuals[residual_idx] = T(0.0); // no_correspondence_cost;
       }
 
-      ++pointcloud_it;
+      // TODO(victorr): Make the decimation rate configurable
+      ++(++(++pointcloud_it));
     } else {
       // Log when we first ran out of points (i.e. size of the pointcloud)
       if (!early_stop.triggered) {
@@ -76,8 +82,8 @@ bool ScanRegistrationCostFunction::operator()(const T *const t_S_O_estimate_ptr,
   if (early_stop.triggered) {
     ROS_WARN_STREAM("Pointcloud only contained "
                     << early_stop.triggered_at_index
-                    << " points, instead of the expected "
-                    << points_per_pointcloud_);
+                    << " points (expected "
+                    << points_per_pointcloud_ << " points)");
   }
 
   return true;

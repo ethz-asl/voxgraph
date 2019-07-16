@@ -3,45 +3,59 @@
 #include "voxgraph/frontend/map_tracker/cost_functions/odometry_cost_function.h"
 
 namespace voxgraph {
-bool ScanToMapRegisterer::refineOdometry(
+bool ScanToMapRegisterer::refineSensorPose(
     const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
-    const Transformation &T_submap__odometry_prior,
-    Transformation *T_submap__refined_odometry) {
-  CHECK_NOTNULL(T_submap__refined_odometry);
+    const Transformation &T_world__sensor_prior,
+    Transformation *T_world__sensor_refined) const {
+  CHECK_NOTNULL(T_world__sensor_refined);
 
-  // Get shared pointers to the reference and reading submaps
-  SubmapID active_submap_id = submap_collection_ptr_->getActiveSubmapID();
-  VoxgraphSubmap::ConstPtr active_submap_ptr =
-      submap_collection_ptr_->getSubmapConstPtr(active_submap_id);
+  // NOTE: The frame convention is:
+  //       - W: World
+  //       - S: Submap
+  //       - C: Sensor
+  // TODO(victorr): Update the code below s.t. the odom_information matrix is
+  //                applied in odom frame (currently in sensor frame)
+
+  // Get a pointer to the submap we track and convert the pose into its frame
+  const SubmapID tracked_submap_id =
+      submap_collection_ptr_->getActiveSubmapID();
+  VoxgraphSubmap::ConstPtr tracked_submap_ptr =
+      submap_collection_ptr_->getSubmapConstPtr(tracked_submap_id);
+  Transformation T_W_S;
+  CHECK(submap_collection_ptr_->getSubmapPose(tracked_submap_id, &T_W_S));
+  const Transformation T_S_C_prior =
+      T_W_S.inverse() * T_world__sensor_prior;
 
   // Create Ceres problem
   ceres::Problem::Options problem_options;
   problem_options.local_parameterization_ownership =
       ceres::DO_NOT_TAKE_OWNERSHIP;
+  problem_options.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
   ceres::Problem problem(problem_options);
-  ceres::LossFunction *loss_function = nullptr;
+  // TODO(victorr): Evaluate this
   ceres::Solver::Options solver_options;
-  solver_options.parameter_tolerance = 3e-4;
-  solver_options.max_num_iterations = 4;
-  solver_options.max_solver_time_in_seconds = 0.10;
+  solver_options.parameter_tolerance = 3e-3;
+  solver_options.max_num_iterations = 2;
+  solver_options.max_solver_time_in_seconds = 0.08;
   solver_options.num_threads = std::thread::hardware_concurrency();
-//  solver_options.linear_solver_type = ceres::LinearSolverType::DENSE_SCHUR;
+//  solver_options.linear_solver_type = ceres::LinearSolverType::DENSE_QR;
+  solver_options.linear_solver_type = ceres::LinearSolverType::DENSE_NORMAL_CHOLESKY;
   ceres::Solver::Summary solver_summary;
 
   // Initialize and add the translation parameter block
-  Eigen::Vector3d t_S_O_refined =
-      T_submap__odometry_prior.getPosition().cast<double>();
-  problem.AddParameterBlock(t_S_O_refined.data(), 3);
+  Eigen::Vector3d t_S_C_refined =
+      T_S_C_prior.getPosition().cast<double>();
+  problem.AddParameterBlock(t_S_C_refined.data(), 3);
 
   // Initialize and add the rotation parameter block
   // NOTE: An Eigen quaternion local parameterization is used s.t. Ceres takes
   //       into account that the quaternion coefficients should remain on the
   //       quaternion's unit length manifold during the optimization
-  Eigen::Quaterniond q_S_O_refined =
-      T_submap__odometry_prior.getEigenQuaternion().cast<double>();
+  Eigen::Quaterniond q_S_C_refined =
+      T_S_C_prior.getEigenQuaternion().cast<double>();
   ceres::EigenQuaternionParameterization eigen_quaternion_parameterization;
-  problem.AddParameterBlock(q_S_O_refined.coeffs().data(), 4);
-  problem.SetParameterization(q_S_O_refined.coeffs().data(),
+  problem.AddParameterBlock(q_S_C_refined.coeffs().data(), 4);
+  problem.SetParameterization(q_S_C_refined.coeffs().data(),
                               &eigen_quaternion_parameterization);
 
   // TODO(victorr): Instead of the above, use Pose6D to elegantly go back and
@@ -50,37 +64,53 @@ bool ScanToMapRegisterer::refineOdometry(
   // Create and add the relative pose cost function
   Eigen::Matrix<double, 6, 6> odom_sqrt_information;
   odom_sqrt_information.setIdentity();
-  odom_sqrt_information *= 10;
+  odom_sqrt_information.topLeftCorner(3,3) *= 1e5;  // translation xyz
+  odom_sqrt_information.bottomRightCorner(3,3) *= 1e8;  // rotation rpy
   ceres::CostFunction* odom_cost_function = OdometryCostFunction::Create(
-      T_submap__odometry_prior.getPosition().cast<double>(),
-      T_submap__odometry_prior.getEigenQuaternion().cast<double>(),
+      T_S_C_prior.getPosition().cast<double>(),
+      T_S_C_prior.getEigenQuaternion().cast<double>(),
       odom_sqrt_information);
   problem.AddResidualBlock(odom_cost_function,
-                           loss_function,
-                           t_S_O_refined.data(),
-                           q_S_O_refined.coeffs().data());
+                           nullptr,
+                           t_S_C_refined.data(),
+                           q_S_C_refined.coeffs().data());
 
   // Create and add the scan-to-map registration cost function
   ceres::CostFunction* registration_cost_function =
-      ScanRegistrationCostFunction::Create(pointcloud_msg, active_submap_ptr);
+      ScanRegistrationCostFunction::Create(pointcloud_msg, tracked_submap_ptr);
+  ceres::HuberLoss registration_loss_function(1e5);
   problem.AddResidualBlock(registration_cost_function,
-                           loss_function,
-                           t_S_O_refined.data(),
-                           q_S_O_refined.coeffs().data());
+                           &registration_loss_function,
+                           t_S_C_refined.data(),
+                           q_S_C_refined.coeffs().data());
 
   // Run the solver
   ceres::Solve(solver_options, &problem, &solver_summary);
-  std::cout << solver_summary.FullReport() << std::endl;
 
   // Return solution
   if (solver_summary.IsSolutionUsable()) {
-    T_submap__refined_odometry->getPosition() =
-        t_S_O_refined.cast<voxblox::FloatingPoint>();
-    T_submap__refined_odometry->getRotation() =
-        Transformation::Rotation(q_S_O_refined.cast<voxblox::FloatingPoint>());
+    // Extract the refined pose
+    Transformation T_S_C_refined;
+    T_S_C_refined.getPosition() = t_S_C_refined.cast<voxblox::FloatingPoint>();
+    T_S_C_refined.getRotation() =
+        Transformation::Rotation(q_S_C_refined.cast<voxblox::FloatingPoint>());
+    *T_world__sensor_refined = T_W_S * T_S_C_refined;
+
+    // Print runtime stats
+    printf("-- voxgraph icp: reduced cost by %.2f%% from %.0fe3 to %.0fe3 "
+           "in %.0fms (%.0u iterations)\n",
+           (solver_summary.initial_cost - solver_summary.final_cost)
+             / solver_summary.initial_cost *100,
+           solver_summary.initial_cost/1000,
+           solver_summary.final_cost/1000,
+           solver_summary.total_time_in_seconds*1000,
+           static_cast<unsigned int>(solver_summary.iterations.size()));
+//    Transformation::Vector6 delta_vec = (T_world__sensor_prior.inverse()
+//        * (*T_world__sensor_refined)).log();
+//    std::cout << "--> " << delta_vec.format(ioformat_) << std::endl;
     return true;
   } else {
-    T_submap__refined_odometry = nullptr;
+    T_world__sensor_refined = nullptr;
     return false;
   }
 }

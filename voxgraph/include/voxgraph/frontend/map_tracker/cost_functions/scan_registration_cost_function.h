@@ -17,8 +17,8 @@ class ScanRegistrationCostFunction {
         voxel_size_inv_(submap_ptr->getTsdfMap().getTsdfLayer().voxel_size_inv()) {}
 
   template <typename T>
-  bool operator()(const T* const t_S_O_estimate_ptr,
-                  const T* const q_S_O_estimate_ptr,
+  bool operator()(const T* const t_S_C_estimate_ptr,
+                  const T* const q_S_C_estimate_ptr,
                   T* residuals_ptr) const;
 
   static ceres::CostFunction* Create(
@@ -69,7 +69,7 @@ class ScanRegistrationCostFunction {
                                  1, -1,  0,  0, -1,  1,  0,  0,
                                 -1,  1,  1, -1,  1, -1, -1,  1).finished();
 
-  static constexpr size_t points_per_pointcloud_ = 64*1024;
+  static constexpr size_t points_per_pointcloud_ = 64*1024 / 3;
 };
 }  // namespace voxgraph
 

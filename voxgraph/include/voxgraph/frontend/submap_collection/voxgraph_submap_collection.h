@@ -42,7 +42,7 @@ class VoxgraphSubmapCollection
                        const SubmapID submap_id) = delete;
   SubmapID createNewSubmap(const Transformation &T_M_S) = delete;
 
-  SubmapID getPreviousSubmapId() {
+  SubmapID getPreviousSubmapId() const {
     return submap_timeline_.getPreviousSubmapId();
   }
 
