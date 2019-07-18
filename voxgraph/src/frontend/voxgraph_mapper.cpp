@@ -49,6 +49,7 @@ void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("debug", debug_, debug_);
   nh_private_.param("verbose", verbose_, verbose_);
   pose_graph_interface_.setVerbosity(verbose_);
+  scan_to_map_registerer_.setVerbosity(verbose_);
 
   nh_private_.param("subscriber_queue_length", subscriber_queue_length_,
                     subscriber_queue_length_);

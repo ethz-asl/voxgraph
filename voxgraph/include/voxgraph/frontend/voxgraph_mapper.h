@@ -131,8 +131,8 @@ class VoxgraphMapper {
   // instead of its estimated pose (for validation purposes)
   bool use_gt_ptcloud_pose_from_sensor_tf_;
 
-  // Scan to submap registerer to refine the robot pose before integrating the
-  // pointcloud; similar to voxblox ICP
+  // Scan to submap registerer used to refine the odometry estimate,
+  // akin to voxblox ICP
   ScanToMapRegisterer scan_to_map_registerer_;
 };
 }  // namespace voxgraph

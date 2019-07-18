@@ -1,9 +1,10 @@
-#ifndef VOXGRAPH_FRONTEND_MAP_TRACKER_SCAN_REGISTRATION_COST_FUNCTION_H_
-#define VOXGRAPH_FRONTEND_MAP_TRACKER_SCAN_REGISTRATION_COST_FUNCTION_H_
+#ifndef VOXGRAPH_FRONTEND_MAP_TRACKER_COST_FUNCTIONS_SCAN_REGISTRATION_COST_FUNCTION_H_
+#define VOXGRAPH_FRONTEND_MAP_TRACKER_COST_FUNCTIONS_SCAN_REGISTRATION_COST_FUNCTION_H_
 
 #include <ceres/ceres.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
+#include <utility>
 #include "voxgraph/common.h"
 
 namespace voxgraph {
@@ -14,7 +15,8 @@ class ScanRegistrationCostFunction {
       : pointcloud_msg_ptr_(std::move(pointcloud_msg_ptr)),
         submap_ptr_(submap_ptr),
         tsdf_interpolator_(&submap_ptr->getTsdfMap().getTsdfLayer()),
-        voxel_size_inv_(submap_ptr->getTsdfMap().getTsdfLayer().voxel_size_inv()) {}
+        voxel_size_inv_(
+            submap_ptr->getTsdfMap().getTsdfLayer().voxel_size_inv()) {}
 
   template <typename T>
   bool operator()(const T* const t_S_C_estimate_ptr,
@@ -24,10 +26,10 @@ class ScanRegistrationCostFunction {
   static ceres::CostFunction* Create(
       sensor_msgs::PointCloud2::Ptr pointcloud_msg_ptr,
       VoxgraphSubmap::ConstPtr submap_ptr) {
-    return new ceres::AutoDiffCostFunction<
-        ScanRegistrationCostFunction, points_per_pointcloud_, 3, 4>(
-            new ScanRegistrationCostFunction(std::move(pointcloud_msg_ptr),
-                                             std::move(submap_ptr)));
+    return new ceres::AutoDiffCostFunction<ScanRegistrationCostFunction,
+                                           num_residuals_per_pointcloud_, 3, 4>(
+        new ScanRegistrationCostFunction(std::move(pointcloud_msg_ptr),
+                                         std::move(submap_ptr)));
   }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -69,10 +71,16 @@ class ScanRegistrationCostFunction {
                                  1, -1,  0,  0, -1,  1,  0,  0,
                                 -1,  1,  1, -1,  1, -1, -1,  1).finished();
 
-  static constexpr size_t points_per_pointcloud_ = 64*1024 / 3;
+  // Hardcode the pointcloud size and decimation rate
+  // NOTE: These are hardcoded s.t. an efficient fixed size Ceres cost function
+  //       can be used (number of residuals must be known at compile time)
+  static constexpr size_t num_points_per_pointcloud__ = 64 * 1024;
+  static constexpr int use_every_nth_pointcloud_point_ = 3;
+  static constexpr size_t num_residuals_per_pointcloud_ =
+      num_points_per_pointcloud__ / use_every_nth_pointcloud_point_;
 };
 }  // namespace voxgraph
 
-#include "scan_registration_cost_function_inl.h"
+#include "voxgraph/frontend/map_tracker/cost_functions/scan_registration_cost_function_inl.h"
 
-#endif  // VOXGRAPH_FRONTEND_MAP_TRACKER_SCAN_REGISTRATION_COST_FUNCTION_H_
+#endif  // VOXGRAPH_FRONTEND_MAP_TRACKER_COST_FUNCTIONS_SCAN_REGISTRATION_COST_FUNCTION_H_

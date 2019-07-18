@@ -1,5 +1,5 @@
-#ifndef VOXGRAPH_SCAN_REGISTRATION_COST_FUNCTION_INL_H
-#define VOXGRAPH_SCAN_REGISTRATION_COST_FUNCTION_INL_H
+#ifndef VOXGRAPH_FRONTEND_MAP_TRACKER_COST_FUNCTIONS_SCAN_REGISTRATION_COST_FUNCTION_INL_H_
+#define VOXGRAPH_FRONTEND_MAP_TRACKER_COST_FUNCTIONS_SCAN_REGISTRATION_COST_FUNCTION_INL_H_
 
 namespace voxgraph {
 template<typename T>
@@ -13,28 +13,23 @@ bool ScanRegistrationCostFunction::operator()(const T *const t_S_C_estimate_ptr,
   kindr::minimal::QuatTransformationTemplate<T> t_S_C(q_S_C_estimate,
                                                       t_S_C_estimate);
 
-  // Iterate over all points
-  sensor_msgs::PointCloud2ConstIterator<float> pointcloud_it(
-      *pointcloud_msg_ptr_, "x");
+  // Create a small struct to store error info in case the pointcloud_msg
+  // contains less points than what was expected from points_per_pointcloud_
   struct {
     bool triggered = false;
     unsigned int triggered_at_index = 0;
   } early_stop;
-  for (unsigned int residual_idx = 0; residual_idx < points_per_pointcloud_;
-       residual_idx++) {
+
+  // Iterate over all points
+  sensor_msgs::PointCloud2ConstIterator<float> pointcloud_it(
+      *pointcloud_msg_ptr_, "x");
+  for (unsigned int residual_idx = 0;
+       residual_idx < num_residuals_per_pointcloud_; residual_idx++) {
     if (pointcloud_it != pointcloud_it.end()) {
       // Get the position of the current point P in sensor frame C
       voxblox::Point t_C_P(pointcloud_it[0],
                            pointcloud_it[1],
                            pointcloud_it[2]);
-
-      // Filter out points that are too far
-      // TODO(victorr): Check why this makes it unstable
-      // if (t_C_P.norm() > 40.0) {
-      //   residuals[residual_idx] = T(0.0);
-      //   continue;
-      // }
-
       // Transform the point into Submap frame S
       Eigen::Matrix<T, 3, 1> t_S_P = t_S_C * t_C_P.cast<T>();
 
@@ -63,11 +58,13 @@ bool ScanRegistrationCostFunction::operator()(const T *const t_S_C_estimate_ptr,
                     * neighboring_distances.transpose().cast<T>());
         residuals[residual_idx] = -interpolated_distance * nearest_weight;
       } else {
-        residuals[residual_idx] = T(0.0); // no_correspondence_cost;
+        residuals[residual_idx] = T(0.0);  // no_correspondence_cost;
       }
 
-      // TODO(victorr): Make the decimation rate configurable
-      ++(++(++pointcloud_it));
+      // Move N points ahead, where N corresponds to the point decimation rate
+      for (int i = 0; i < use_every_nth_pointcloud_point_; ++i) {
+        ++pointcloud_it;
+      }
     } else {
       // Log when we first ran out of points (i.e. size of the pointcloud)
       if (!early_stop.triggered) {
@@ -80,10 +77,10 @@ bool ScanRegistrationCostFunction::operator()(const T *const t_S_C_estimate_ptr,
   }
 
   if (early_stop.triggered) {
-    ROS_WARN_STREAM("Pointcloud only contained "
-                    << early_stop.triggered_at_index
-                    << " points (expected "
-                    << points_per_pointcloud_ << " points)");
+    ROS_WARN_STREAM(
+        "Pointcloud only contained "
+        << early_stop.triggered_at_index * use_every_nth_pointcloud_point_
+        << " points (expected " << num_points_per_pointcloud__ << " points)");
   }
 
   return true;
@@ -169,4 +166,4 @@ bool ScanRegistrationCostFunction::getVoxelsAndJetQVector(
 }
 }  // namespace voxgraph
 
-#endif //VOXGRAPH_SCAN_REGISTRATION_COST_FUNCTION_INL_H
+#endif  // VOXGRAPH_FRONTEND_MAP_TRACKER_COST_FUNCTIONS_SCAN_REGISTRATION_COST_FUNCTION_INL_H_

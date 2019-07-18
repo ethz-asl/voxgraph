@@ -39,7 +39,8 @@ bool ScanToMapRegisterer::refineSensorPose(
   solver_options.max_solver_time_in_seconds = 0.08;
   solver_options.num_threads = std::thread::hardware_concurrency();
 //  solver_options.linear_solver_type = ceres::LinearSolverType::DENSE_QR;
-  solver_options.linear_solver_type = ceres::LinearSolverType::DENSE_NORMAL_CHOLESKY;
+  solver_options.linear_solver_type =
+      ceres::LinearSolverType::DENSE_NORMAL_CHOLESKY;
   ceres::Solver::Summary solver_summary;
 
   // Initialize and add the translation parameter block
@@ -64,8 +65,8 @@ bool ScanToMapRegisterer::refineSensorPose(
   // Create and add the relative pose cost function
   Eigen::Matrix<double, 6, 6> odom_sqrt_information;
   odom_sqrt_information.setIdentity();
-  odom_sqrt_information.topLeftCorner(3,3) *= 1e5;  // translation xyz
-  odom_sqrt_information.bottomRightCorner(3,3) *= 1e8;  // rotation rpy
+  odom_sqrt_information.topLeftCorner(3, 3) *= 1e7;      // translation xyz
+  odom_sqrt_information.bottomRightCorner(3, 3) *= 1e8;  // rotation rpy
   ceres::CostFunction* odom_cost_function = OdometryCostFunction::Create(
       T_S_C_prior.getPosition().cast<double>(),
       T_S_C_prior.getEigenQuaternion().cast<double>(),
@@ -78,11 +79,8 @@ bool ScanToMapRegisterer::refineSensorPose(
   // Create and add the scan-to-map registration cost function
   ceres::CostFunction* registration_cost_function =
       ScanRegistrationCostFunction::Create(pointcloud_msg, tracked_submap_ptr);
-  ceres::HuberLoss registration_loss_function(1e5);
-  problem.AddResidualBlock(registration_cost_function,
-                           &registration_loss_function,
-                           t_S_C_refined.data(),
-                           q_S_C_refined.coeffs().data());
+  problem.AddResidualBlock(registration_cost_function, nullptr,
+                           t_S_C_refined.data(), q_S_C_refined.coeffs().data());
 
   // Run the solver
   ceres::Solve(solver_options, &problem, &solver_summary);
@@ -97,17 +95,19 @@ bool ScanToMapRegisterer::refineSensorPose(
     *T_world__sensor_refined = T_W_S * T_S_C_refined;
 
     // Print runtime stats
-    printf("-- voxgraph icp: reduced cost by %.2f%% from %.0fe3 to %.0fe3 "
-           "in %.0fms (%.0u iterations)\n",
-           (solver_summary.initial_cost - solver_summary.final_cost)
-             / solver_summary.initial_cost *100,
-           solver_summary.initial_cost/1000,
-           solver_summary.final_cost/1000,
-           solver_summary.total_time_in_seconds*1000,
-           static_cast<unsigned int>(solver_summary.iterations.size()));
-//    Transformation::Vector6 delta_vec = (T_world__sensor_prior.inverse()
-//        * (*T_world__sensor_refined)).log();
-//    std::cout << "--> " << delta_vec.format(ioformat_) << std::endl;
+    if (verbose_) {
+      printf(
+          "-- voxgraph icp: reduced cost by %.2f%% from %.0fe3 to %.0fe3 "
+          "in %.0fms (%.0u iterations)\n",
+          (solver_summary.initial_cost - solver_summary.final_cost) /
+              solver_summary.initial_cost * 100,
+          solver_summary.initial_cost / 1000, solver_summary.final_cost / 1000,
+          solver_summary.total_time_in_seconds * 1000,
+          static_cast<unsigned int>(solver_summary.iterations.size()));
+      Transformation::Vector6 delta_vec =
+          (T_world__sensor_prior.inverse() * (*T_world__sensor_refined)).log();
+      std::cout << "--> " << delta_vec.format(ioformat_) << std::endl;
+    }
     return true;
   } else {
     T_world__sensor_refined = nullptr;
