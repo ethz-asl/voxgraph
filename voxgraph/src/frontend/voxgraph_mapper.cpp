@@ -23,7 +23,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       world_frame_("world"),
       odom_frame_("odom"),
       robot_frame_("robot"),
-      use_gt_ptcloud_pose_from_sensor_tf_(false),
+      use_tf_transforms_(false),
       submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
       pose_graph_interface_(nh_private, submap_collection_ptr_),
@@ -63,9 +63,8 @@ void VoxgraphMapper::getParametersFromRos() {
                     robot_frame_corrected_);
   nh_private_.param("sensor_frame_corrected", sensor_frame_corrected_,
                     sensor_frame_corrected_);
-  nh_private_.param("use_gt_ptcloud_pose_from_sensor_tf",
-                    use_gt_ptcloud_pose_from_sensor_tf_,
-                    use_gt_ptcloud_pose_from_sensor_tf_);
+  nh_private_.param("use_tf_transforms", use_tf_transforms_,
+                    use_tf_transforms_);
 
   // Get the submap creation interval as a ros::Duration
   double interval_temp;
@@ -256,30 +255,21 @@ void VoxgraphMapper::pointcloudCallback(
     }
   }
 
-  // Lookup the sensor's pose in world frame
-  Transformation T_world_sensor;
-  if (use_gt_ptcloud_pose_from_sensor_tf_) {
-    ROS_WARN_STREAM_THROTTLE(20, "Using ground truth pointcloud poses"
-                                     << " provided by TF from " << world_frame_
-                                     << " to "
-                                     << pointcloud_msg->header.frame_id);
-    transformer_.lookupTransform(pointcloud_msg->header.frame_id, world_frame_,
-                                 current_timestamp, &T_world_sensor);
-    if (debug_) {
-      TfHelper::publishTransform(T_world_sensor, world_frame_, "sensor", false,
-                                 current_timestamp);
-    }
-  } else {
-    // Get the pose of the sensor in world frame
-    T_world_sensor = T_world_robot * T_robot_sensor_;
-    if (debug_) {
-      TfHelper::publishTransform(T_world_robot, world_frame_,
-                                 robot_frame_corrected_, false,
-                                 current_timestamp);
-      TfHelper::publishTransform(T_robot_sensor_, robot_frame_corrected_,
-                                 sensor_frame_corrected_, true,
-                                 current_timestamp);
-    }
+  // Lookup the sensor's pose through TFs if appropriate
+  if (use_tf_transforms_) {
+    transformer_.lookupTransform(pointcloud_msg->header.frame_id, robot_frame_,
+                                 current_timestamp, &T_robot_sensor_);
+  }
+
+  // Get the pose of the sensor in world frame
+  Transformation T_world_sensor = T_world_robot * T_robot_sensor_;
+  if (debug_) {
+    TfHelper::publishTransform(T_world_robot, world_frame_,
+                               robot_frame_corrected_, false,
+                               current_timestamp);
+    TfHelper::publishTransform(T_robot_sensor_, robot_frame_corrected_,
+                               sensor_frame_corrected_, true,
+                               current_timestamp);
   }
 
   // Refine the camera pose using scan to submap matching

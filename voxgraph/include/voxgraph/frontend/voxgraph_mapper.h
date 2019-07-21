@@ -127,9 +127,8 @@ class VoxgraphMapper {
   // the robot to the odom frame is not immediately available
   bool lookup_T_odom_robot(ros::Time timestamp, Transformation *T_odom_robot);
 
-  // Whether to use ground truth T_world__sensor,
-  // instead of its estimated pose (for validation purposes)
-  bool use_gt_ptcloud_pose_from_sensor_tf_;
+  // Whether to get the odometry input through TF lookups
+  bool use_tf_transforms_;
 
   // Scan to submap registerer used to refine the odometry estimate,
   // akin to voxblox ICP
