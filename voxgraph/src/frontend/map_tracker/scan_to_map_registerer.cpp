@@ -65,8 +65,12 @@ bool ScanToMapRegisterer::refineSensorPose(
   // Create and add the relative pose cost function
   Eigen::Matrix<double, 6, 6> odom_sqrt_information;
   odom_sqrt_information.setIdentity();
-  odom_sqrt_information.topLeftCorner(3, 3) *= 1e7;      // translation xyz
-  odom_sqrt_information.bottomRightCorner(3, 3) *= 1e8;  // rotation rpy
+  odom_sqrt_information(0, 0) *= 1e3;  // translation x
+  odom_sqrt_information(1, 1) *= 1e3;  // translation y
+  odom_sqrt_information(2, 2) *= 1e2;  // translation z
+  odom_sqrt_information(3, 3) *= 1e7;  // roll
+  odom_sqrt_information(4, 4) *= 1e7;  // pitch
+  odom_sqrt_information(5, 5) *= 1e5;  // yaw
   ceres::CostFunction* odom_cost_function = OdometryCostFunction::Create(
       T_S_C_prior.getPosition().cast<double>(),
       T_S_C_prior.getEigenQuaternion().cast<double>(),
