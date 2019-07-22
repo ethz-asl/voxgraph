@@ -24,12 +24,12 @@ void PointcloudProcessor::setTsdfIntegratorConfigFromRosParam(
 
 void PointcloudProcessor::integratePointcloud(
     const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
-    const voxblox::Transformation &T_world_sensor) {
+    const voxblox::Transformation &T_mission_sensor) {
   // Transform the sensor pose into the submap frame
-  const Transformation T_world_submap =
+  const Transformation T_mission_submap =
       submap_collection_ptr_->getActiveSubmapPose();
   const Transformation T_submap_sensor =
-      T_world_submap.inverse() * T_world_sensor;
+      T_mission_submap.inverse() * T_mission_sensor;
 
   // Convert the pointcloud msg into a voxblox::Pointcloud
   voxblox::Pointcloud pointcloud;

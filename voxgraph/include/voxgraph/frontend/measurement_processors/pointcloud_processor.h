@@ -18,7 +18,7 @@ class PointcloudProcessor {
   void setTsdfIntegratorConfigFromRosParam(const ros::NodeHandle &node_handle);
 
   void integratePointcloud(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
-                           const voxblox::Transformation &T_world_sensor);
+                           const voxblox::Transformation &T_mission_sensor);
 
  private:
   bool verbose_;

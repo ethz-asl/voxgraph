@@ -5,12 +5,12 @@
 namespace voxgraph {
 bool ScanToMapRegisterer::refineSensorPose(
     const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
-    const Transformation &T_world__sensor_prior,
-    Transformation *T_world__sensor_refined) const {
-  CHECK_NOTNULL(T_world__sensor_refined);
+    const Transformation &T_mission__sensor_prior,
+    Transformation *T_mission__sensor_refined) const {
+  CHECK_NOTNULL(T_mission__sensor_refined);
 
   // NOTE: The frame convention is:
-  //       - W: World
+  //       - M: Mission
   //       - S: Submap
   //       - C: Sensor
   // TODO(victorr): Update the code below s.t. the odom_information matrix is
@@ -21,10 +21,9 @@ bool ScanToMapRegisterer::refineSensorPose(
       submap_collection_ptr_->getActiveSubmapID();
   VoxgraphSubmap::ConstPtr tracked_submap_ptr =
       submap_collection_ptr_->getSubmapConstPtr(tracked_submap_id);
-  Transformation T_W_S;
-  CHECK(submap_collection_ptr_->getSubmapPose(tracked_submap_id, &T_W_S));
-  const Transformation T_S_C_prior =
-      T_W_S.inverse() * T_world__sensor_prior;
+  Transformation T_M_S;
+  CHECK(submap_collection_ptr_->getSubmapPose(tracked_submap_id, &T_M_S));
+  const Transformation T_S_C_prior = T_M_S.inverse() * T_mission__sensor_prior;
 
   // Create Ceres problem
   ceres::Problem::Options problem_options;
@@ -96,7 +95,7 @@ bool ScanToMapRegisterer::refineSensorPose(
     T_S_C_refined.getPosition() = t_S_C_refined.cast<voxblox::FloatingPoint>();
     T_S_C_refined.getRotation() =
         Transformation::Rotation(q_S_C_refined.cast<voxblox::FloatingPoint>());
-    *T_world__sensor_refined = T_W_S * T_S_C_refined;
+    *T_mission__sensor_refined = T_M_S * T_S_C_refined;
 
     // Print runtime stats
     if (verbose_) {
@@ -109,12 +108,13 @@ bool ScanToMapRegisterer::refineSensorPose(
           solver_summary.total_time_in_seconds * 1000,
           static_cast<unsigned int>(solver_summary.iterations.size()));
       Transformation::Vector6 delta_vec =
-          (T_world__sensor_prior.inverse() * (*T_world__sensor_refined)).log();
+          (T_mission__sensor_prior.inverse() * (*T_mission__sensor_refined))
+              .log();
       std::cout << "--> " << delta_vec.format(ioformat_) << std::endl;
     }
     return true;
   } else {
-    T_world__sensor_refined = nullptr;
+    T_mission__sensor_refined = nullptr;
     return false;
   }
 }

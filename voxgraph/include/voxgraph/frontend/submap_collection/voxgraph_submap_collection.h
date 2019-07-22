@@ -35,7 +35,7 @@ class VoxgraphSubmapCollection
   bool shouldCreateNewSubmap(const ros::Time &current_time);
 
   // Overriden method that guarantees that the submap gets added to the timeline
-  void createNewSubmap(const Transformation &T_world_robot,
+  void createNewSubmap(const Transformation &T_mission_base,
                        const ros::Time &timestamp);
   // Delete the inherited methods to avoid accidental calls
   void createNewSubmap(const Transformation &T_M_S,

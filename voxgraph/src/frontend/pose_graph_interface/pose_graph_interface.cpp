@@ -28,7 +28,7 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
   SubmapNode::Config node_config = node_templates_.submap;
   node_config.submap_id = submap_id;
   CHECK(submap_collection_ptr_->getSubmapPose(
-      submap_id, &node_config.T_world_node_initial));
+      submap_id, &node_config.T_mission_node_initial));
   if (submap_id == 0) {
     ROS_INFO("Setting pose of submap 0 to constant");
     node_config.set_constant = true;
@@ -53,14 +53,14 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
     constraint_config.destination_submap_id = submap_id;
 
     // Set the relative transformation
-    Transformation T_world__previous_submap;
-    Transformation T_world__current_submap;
+    Transformation T_mission__previous_submap;
+    Transformation T_mission__current_submap;
     CHECK(submap_collection_ptr_->getSubmapPose(previous_submap_id,
-                                                &T_world__previous_submap));
+                                                &T_mission__previous_submap));
     CHECK(submap_collection_ptr_->getSubmapPose(submap_id,
-                                                &T_world__current_submap));
+                                                &T_mission__current_submap));
     constraint_config.T_origin_destination =
-        T_world__previous_submap.inverse() * T_world__current_submap;
+        T_mission__previous_submap.inverse() * T_mission__current_submap;
 
     // Add the odometry constraint to the pose graph
     if (verbose_) {
@@ -70,11 +70,11 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
                 << "Submap currently being built in submap collection: "
                 << submap_collection_ptr_->getActiveSubmapID() << "\n"
                 << "T_w_s1:\n"
-                << T_world__previous_submap << "\n"
-                << "yaw_w_s1:" << T_world__previous_submap.log()[5] << "\n"
+                << T_mission__previous_submap << "\n"
+                << "yaw_w_s1:" << T_mission__previous_submap.log()[5] << "\n"
                 << "T_w_s2:\n"
-                << T_world__current_submap << "\n"
-                << "yaw_w_s2:" << T_world__current_submap.log()[5] << "\n"
+                << T_mission__current_submap << "\n"
+                << "yaw_w_s2:" << T_mission__current_submap.log()[5] << "\n"
                 << "T_s1_s2:\n"
                 << constraint_config.T_origin_destination << "\n"
                 << "yaw_s1_s2: "
@@ -94,7 +94,7 @@ void PoseGraphInterface::addHeightMeasurement(const SubmapID &submap_id,
   constraint_config.submap_id = submap_id;
   constraint_config.T_ref_submap.getPosition().z() = height;
 
-  // Add the world reference frame to the pose graph if it isn't already there
+  // Add the mission reference frame to the pose graph if it isn't already there
   addReferenceFrameIfMissing(constraint_config.reference_frame_id);
 
   // Add the height measurement to the pose graph
@@ -116,7 +116,7 @@ void PoseGraphInterface::updateRegistrationConstraints() {
     // Publish debug visuals
     if (submap_pub_.getNumSubscribers() > 0) {
       submap_vis_.publishBox(
-          first_submap.getWorldFrameSurfaceAabb().getCornerCoordinates(),
+          first_submap.getMissionFrameSurfaceAabb().getCornerCoordinates(),
           voxblox::Color::Blue(), "odom",
           "surface_abb" + std::to_string(first_submap_id), submap_pub_);
     }

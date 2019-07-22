@@ -12,7 +12,7 @@ SubmapRegistrationHelper::SubmapRegistrationHelper(
 
 bool SubmapRegistrationHelper::testRegistration(
     const cblox::SubmapID &reference_submap_id,
-    const cblox::SubmapID &reading_submap_id, double *world_pose_reading,
+    const cblox::SubmapID &reading_submap_id, double *mission_pose_reading,
     ceres::Solver::Summary *summary) {
   // Get shared pointers to the reference and reading submaps
   VoxgraphSubmap::ConstPtr reference_submap_ptr =
@@ -29,13 +29,13 @@ bool SubmapRegistrationHelper::testRegistration(
   // Get initial pose of reference submap (not touched by the optimization)
   voxblox::Transformation::Vector6 T_vec_ref =
       reference_submap_ptr->getPose().log();
-  double world_pose_ref[4] = {T_vec_ref[0], T_vec_ref[1], T_vec_ref[2],
-                              T_vec_ref[5]};
+  double mission_pose_ref[4] = {T_vec_ref[0], T_vec_ref[1], T_vec_ref[2],
+                                T_vec_ref[5]};
 
   // Add the parameter blocks to the optimization
-  problem.AddParameterBlock(world_pose_ref, 4);
-  problem.SetParameterBlockConstant(world_pose_ref);
-  problem.AddParameterBlock(world_pose_reading, 4);
+  problem.AddParameterBlock(mission_pose_ref, 4);
+  problem.SetParameterBlockConstant(mission_pose_ref);
+  problem.AddParameterBlock(mission_pose_reading, 4);
 
   // Create the submap registration cost function
   RegistrationCostFunction *registration_cost_function =
@@ -58,8 +58,8 @@ bool SubmapRegistrationHelper::testRegistration(
   }
 
   // Add the cost function to the problem
-  problem.AddResidualBlock(ceres_cost_function, loss_function, world_pose_ref,
-                           world_pose_reading);
+  problem.AddResidualBlock(ceres_cost_function, loss_function, mission_pose_ref,
+                           mission_pose_reading);
 
   // Run the solver
   ceres::Solve(options_.solver, &problem, summary);

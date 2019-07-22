@@ -105,27 +105,35 @@ class VoxgraphMapper {
   voxblox::Transformer transformer_;
 
   // Coordinate frame naming convention
-  // - world: the fixed world frame
-  // - odom: the "odometry's world frame" which is not corrected for drift
-  // - odom_corrected: the drift corrected odom frame
-  // - robot: the body frame of the robot
-  // - sensor: the pointcloud sensor's frame
-  // NOTE: T_world_odom_corrected gets initialized to the identity transform and
-  //       is updated after each pose graph optimization step
-  std::string world_frame_;
+  //   - M: Mission (for a single run of a single robot this corresponds to the
+  //   World frame)
+  //   - L: Fictive frames used to track the loop closure and
+  //        scan-to-map-registration corrections
+  //   - O: Odometry input frame
+  //   - B: Base link (often corresponds to the IMU frame)
+  //   - C: Sensor frame of the pointcloud sensor
+  //   - S: Active submap
+  //  The full transform chain is M -> L -> O -> B -> C, where:
+  //   - T_M_L aggregates the pose corrections from loop closures
+  //   - T_L_O aggregates the incremental pose corrections from ICP
+  //   - T_O_B is provided by the odometry input
+  //   - T_B_C corresponds to the extrinsic calibration
+  std::string mission_frame_;
   std::string odom_frame_;
-  std::string robot_frame_;
-  Transformation T_world_odom_corrected_;
-  Transformation T_robot_sensor_;  // This transform is static
+  std::string base_frame_;
+  Transformation T_M_L_;
+  Transformation T_L_O_;
+  Transformation T_B_C_;  // This transform is static
 
   // Publish the drift corrected TFs to the following frame names
+  std::string refined_frame_corrected_;
   std::string odom_frame_corrected_;
-  std::string robot_frame_corrected_;
+  std::string base_frame_corrected_;
   std::string sensor_frame_corrected_;
 
   // Transform lookup method that sleeps and retries a few times if the TF from
-  // the robot to the odom frame is not immediately available
-  bool lookup_T_odom_robot(ros::Time timestamp, Transformation *T_odom_robot);
+  // the base to the odom frame is not immediately available
+  bool lookup_T_odom_base(ros::Time timestamp, Transformation *T_odom_base);
 
   // Whether to get the odometry input through TF lookups
   bool use_tf_transforms_;

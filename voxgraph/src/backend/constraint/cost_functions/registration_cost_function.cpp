@@ -64,24 +64,24 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
 
   // Get the reference submap pose from the optimization variables
   voxblox::Transformation::Vector6 T_vec_reference;
-  T_vec_reference[0] = parameters[0][0];  // x coordinate in world frame
-  T_vec_reference[1] = parameters[0][1];  // y coordinate in world frame
-  T_vec_reference[2] = parameters[0][2];  // z coordinate in world frame
+  T_vec_reference[0] = parameters[0][0];  // x coordinate in mission frame
+  T_vec_reference[1] = parameters[0][1];  // y coordinate in mission frame
+  T_vec_reference[2] = parameters[0][2];  // z coordinate in mission frame
   T_vec_reference[3] = 0;
   T_vec_reference[4] = 0;
-  T_vec_reference[5] = parameters[0][3];  // yaw angle in world frame
-  const voxblox::Transformation T_world__reference =
+  T_vec_reference[5] = parameters[0][3];  // yaw angle in mission frame
+  const voxblox::Transformation T_mission__reference =
       voxblox::Transformation::exp(T_vec_reference);
 
   // Get the reading submap pose from the optimization variables
   voxblox::Transformation::Vector6 T_vec_reading;
-  T_vec_reading[0] = parameters[1][0];  // x coordinate in world frame
-  T_vec_reading[1] = parameters[1][1];  // y coordinate in world frame
-  T_vec_reading[2] = parameters[1][2];  // z coordinate in world frame
+  T_vec_reading[0] = parameters[1][0];  // x coordinate in mission frame
+  T_vec_reading[1] = parameters[1][1];  // y coordinate in mission frame
+  T_vec_reading[2] = parameters[1][2];  // z coordinate in mission frame
   T_vec_reading[3] = 0;
   T_vec_reading[4] = 0;
-  T_vec_reading[5] = parameters[1][3];  // yaw angle in world frame
-  const voxblox::Transformation T_world__reading =
+  T_vec_reading[5] = parameters[1][3];  // yaw angle in mission frame
+  const voxblox::Transformation T_mission__reading =
       voxblox::Transformation::exp(T_vec_reading);
 
   // Calculate the trigonometric values used when calculating the Jacobians
@@ -98,13 +98,13 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
 
   // Publish the TF corresponding to the current optimized submap pose
   if (config_.visualize_transforms_) {
-    TfHelper::publishTransform(T_world__reading, "world", "optimized_submap",
-                               true);
+    TfHelper::publishTransform(T_mission__reading, "mission",
+                               "optimized_submap", true);
   }
 
   // Set the relative transform from the reading submap to the reference submap
   const voxblox::Transformation T_reading__reference =
-      T_world__reading.inverse() * T_world__reference;
+      T_mission__reading.inverse() * T_mission__reference;
 
   // Iterate over all registration points
   for (unsigned int sample_i = 0; sample_i < num_residuals(); sample_i++) {
@@ -165,10 +165,10 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
 
     // Add residual to visualization pointcloud
     if (config_.visualize_residuals) {
-      // Transform the current point into the world frame
-      voxblox::Point world_t_world__point =
-          T_world__reading * reading_coordinate;
-      cost_function_visuals_.addResidual(world_t_world__point,
+      // Transform the current point into the mission frame
+      voxblox::Point mission_t_mission__point =
+          T_mission__reading * reading_coordinate;
+      cost_function_visuals_.addResidual(mission_t_mission__point,
                                          residuals[residual_idx]);
     }
 
@@ -240,12 +240,12 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
       }
       // Add Jacobian to visualization
       if (config_.visualize_gradients) {
-        // Transform the current point and Jacobian into the world frame
-        const voxblox::Point world_t_world__point =
-            T_world__reading * reading_coordinate;
-        voxblox::Point world_jacobian = pResidual_pParamRead.head<3>();
-        cost_function_visuals_.addJacobian(world_t_world__point,
-                                           world_jacobian);
+        // Transform the current point and Jacobian into the mission frame
+        const voxblox::Point mission_t_mission__point =
+            T_mission__reading * reading_coordinate;
+        voxblox::Point mission_jacobian = pResidual_pParamRead.head<3>();
+        cost_function_visuals_.addJacobian(mission_t_mission__point,
+                                           mission_jacobian);
       }
       // Store the Jacobians for Ceres
       if (jacobians[0] != nullptr) {

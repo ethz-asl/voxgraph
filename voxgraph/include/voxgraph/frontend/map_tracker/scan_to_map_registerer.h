@@ -19,8 +19,8 @@ class ScanToMapRegisterer {
         verbose_(verbose) {}
 
   bool refineSensorPose(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
-                        const Transformation &T_world__sensor_prior,
-                        Transformation *T_world__sensor_refined) const;
+                        const Transformation &T_mission__sensor_prior,
+                        Transformation *T_mission__sensor_refined) const;
 
   void setVerbosity(bool verbose) { verbose_ = verbose; }
 

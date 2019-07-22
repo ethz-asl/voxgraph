@@ -41,7 +41,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   const ros::Time getCreationTime() const;
 
   void addPoseToHistory(const ros::Time &timestamp,
-                        const voxblox::Transformation &T_world_robot);
+                        const voxblox::Transformation &T_mission_base);
   const PoseHistoryMap &getPoseHistory() const { return pose_history_; }
 
   // Indicate that the submap is finished and generate all cached members
@@ -60,12 +60,12 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   bool overlapsWith(const VoxgraphSubmap &other_submap) const;
   const BoundingBox getSubmapFrameSurfaceObb() const;
   const BoundingBox getSubmapFrameSubmapObb() const;
-  const BoundingBox getWorldFrameSurfaceAabb() const;
-  const BoundingBox getWorldFrameSubmapAabb() const;
-  const BoxCornerMatrix getWorldFrameSurfaceObbCorners() const;
-  const BoxCornerMatrix getWorldFrameSubmapObbCorners() const;
-  const BoxCornerMatrix getWorldFrameSurfaceAabbCorners() const;
-  const BoxCornerMatrix getWorldFrameSubmapAabbCorners() const;
+  const BoundingBox getMissionFrameSurfaceAabb() const;
+  const BoundingBox getMissionFrameSubmapAabb() const;
+  const BoxCornerMatrix getMissionFrameSurfaceObbCorners() const;
+  const BoxCornerMatrix getMissionFrameSubmapObbCorners() const;
+  const BoxCornerMatrix getMissionFrameSurfaceAabbCorners() const;
+  const BoxCornerMatrix getMissionFrameSubmapAabbCorners() const;
 
  private:
   typedef Eigen::Matrix<voxblox::FloatingPoint, 4, 8> HomogBoxCornerMatrix;

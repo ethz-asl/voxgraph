@@ -6,7 +6,7 @@
   <node if="0" name="player" pkg="rosbag" type="play" output="screen"
         args="-r 1.0 -s 5 -q --clock /home/victorr/data/arche_week/arche_day_3/2019-07-03-14-24-45.bag"/>
 
-  <node pkg="tf" type="static_transform_publisher" name="odom_to_world" args="0 0 0 0 0 0 1 odom world 100"/> 
+  <node pkg="tf" type="static_transform_publisher" name="odom_to_mission" args="0 0 0 0 0 0 1 odom mission 100"/>
   <node pkg="tf" type="static_transform_publisher" name="os1_stuff" args="0 0 0 0 0 1 0 os1_sensor os1_lidar 100"/>
 
     <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen" args="-alsologtostderr">
@@ -17,17 +17,17 @@
         submap_creation_interval: 10
         pointcloud_topic: "/penguin/os1_cloud_node/points"
         subscriber_queue_length: 10
-        world_frame: "world"
+        mission_frame: "mission"
         odom_frame: "odom"
-        robot_frame: "imu"
+        base_frame: "imu"
         odom_frame_corrected: "odom_corrected"
-        robot_frame_corrected: "imu_corrected"
+        base_frame_corrected: "imu_corrected"
         sensor_frame_corrected: "sensor_corrected"
         use_tf_transforms: true
         use_gt_ptcloud_pose_from_sensor_tf: false
         # Tuned calibration (0.01 rad off - final error without odom constraints [-0.04, -0.03, 0.35])
         # For calibration according to TFs, see STIX launch file
-        T_robot_sensor:
+        T_base_sensor:
         - [-0.9908275, -0.0196803, 0.1336922, -0.024]
         - [ 0.0202159, -0.9997921, 0.0026504, -0.011]
         - [ 0.1336122,  0.0053288, 0.9910194, -0.131]
