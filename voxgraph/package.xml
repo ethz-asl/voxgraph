@@ -17,5 +17,6 @@
   <depend>voxblox</depend>
   <depend>voxblox_ros</depend>
   <depend>cblox</depend>
+  <depend>maplab_msgs</depend>
 
 </package>

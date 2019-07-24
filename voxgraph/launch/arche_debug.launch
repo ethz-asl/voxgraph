@@ -21,7 +21,7 @@
         odom_frame: "odom"
         base_frame: "imu"
         odom_frame_corrected: "odom_corrected"
-        base_frame_corrected: "imu_corrected"
+        base_frame_corrected: "base_corrected"
         sensor_frame_corrected: "sensor_corrected"
         use_tf_transforms: true
         use_gt_ptcloud_pose_from_sensor_tf: false

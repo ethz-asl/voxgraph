@@ -74,8 +74,10 @@ class ScanRegistrationCostFunction {
   // Hardcode the pointcloud size and decimation rate
   // NOTE: These are hardcoded s.t. an efficient fixed size Ceres cost function
   //       can be used (number of residuals must be known at compile time)
-  static constexpr size_t num_points_per_pointcloud__ = 16 * 1450;
-  static constexpr int use_every_nth_pointcloud_point_ = 6;
+  static constexpr size_t num_points_per_pointcloud__ = 64 * 1024;  // penguin
+//  static constexpr size_t num_points_per_pointcloud__ = 16 * 1450;  // anymal
+//  static constexpr int use_every_nth_pointcloud_point_ = 6;
+  static constexpr int use_every_nth_pointcloud_point_ = 10;
   static constexpr size_t num_residuals_per_pointcloud_ =
       num_points_per_pointcloud__ / use_every_nth_pointcloud_point_;
 };
