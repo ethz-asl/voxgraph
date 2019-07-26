@@ -59,4 +59,6 @@
           information_zz: 2500.0
     </rosparam>
   </node>
+
+  <node name="cpu_monitor" pkg="voxgraph" type="quick_n_dirty_cpu_usage_monitor" />
 </launch>

@@ -36,7 +36,7 @@ bool ScanToMapRegisterer::refineSensorPose(
   solver_options.parameter_tolerance = 3e-3;
   solver_options.max_num_iterations = 2;
   solver_options.max_solver_time_in_seconds = 0.08;
-  solver_options.num_threads = 2;
+  solver_options.num_threads = 1;
   //  solver_options.linear_solver_type = ceres::LinearSolverType::DENSE_QR;
   solver_options.linear_solver_type =
       ceres::LinearSolverType::DENSE_NORMAL_CHOLESKY;
@@ -65,15 +65,15 @@ bool ScanToMapRegisterer::refineSensorPose(
   Eigen::Matrix<double, 6, 6> odom_sqrt_information;
   odom_sqrt_information.setIdentity();
   // for penguin
-  odom_sqrt_information.topLeftCorner(3, 3) *= 1e5;      // translation xyz
-  odom_sqrt_information.bottomRightCorner(3, 3) *= 1e7;  // rotation rpy
+  //  odom_sqrt_information.topLeftCorner(3, 3) *= 1e5;      // translation xyz
+  //  odom_sqrt_information.bottomRightCorner(3, 3) *= 1e7;  // rotation rpy
   // for anymal
-  //  odom_sqrt_information(0, 0) *= 1e3;  // translation x
-  //  odom_sqrt_information(1, 1) *= 1e3;  // translation y
-  //  odom_sqrt_information(2, 2) *= 1e2;  // translation z
-  //  odom_sqrt_information(3, 3) *= 1e7;  // roll
-  //  odom_sqrt_information(4, 4) *= 1e7;  // pitch
-  //  odom_sqrt_information(5, 5) *= 1e5;  // yaw
+  odom_sqrt_information(0, 0) *= 1e3;  // translation x
+  odom_sqrt_information(1, 1) *= 1e3;  // translation y
+  odom_sqrt_information(2, 2) *= 1e2;  // translation z
+  odom_sqrt_information(3, 3) *= 1e7;  // roll
+  odom_sqrt_information(4, 4) *= 1e7;  // pitch
+  odom_sqrt_information(5, 5) *= 1e5;  // yaw
   ceres::CostFunction* odom_cost_function = OdometryCostFunction::Create(
       T_S_C_prior.getPosition().cast<double>(),
       T_S_C_prior.getEigenQuaternion().cast<double>(),
