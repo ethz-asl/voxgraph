@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>voxgraph_msgs</name>
+  <version>1.0.0</version>
+  <description>Message definitions for voxgraph ROS interface</description>
+
+  <maintainer email="victorr@ethz.ch">Victor Reijgwart</maintainer>
+
+  <author>Victor Reijgwart</author>
+
+  <license>ASL 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
+
+  <depend>message_generation</depend>
+  <depend>message_runtime</depend>
+
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>voxblox_msgs</depend>
+</package>
