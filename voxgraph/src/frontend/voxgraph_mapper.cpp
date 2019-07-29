@@ -18,9 +18,20 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       nh_private_(nh_private),
       verbose_(false),
       auto_pause_rosbag_(false),
+      rosbag_helper_(nh),
       subscriber_queue_length_(100),
       pointcloud_topic_("pointcloud"),
       imu_biases_topic_("imu_biases"),
+      registration_constraints_enabled_(false),
+      odometry_constraints_enabled_(false),
+      height_constraints_enabled_(false),
+      submap_collection_ptr_(
+          std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
+      pose_graph_interface_(nh_private, submap_collection_ptr_),
+      pointcloud_processor_(submap_collection_ptr_),
+      projected_map_server_(nh_private),
+      submap_server_(nh_private),
+      submap_vis_(submap_config_),
       transformer_(nh, nh_private),
       mission_frame_("mission"),
       odom_frame_("odom"),
@@ -30,15 +41,6 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       base_frame_corrected_("base_frame_corrected"),
       sensor_frame_corrected_("sensor_frame_corrected"),
       use_tf_transforms_(false),
-      submap_collection_ptr_(
-          std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
-      pose_graph_interface_(nh_private, submap_collection_ptr_),
-      pointcloud_processor_(submap_collection_ptr_),
-      submap_vis_(submap_config_),
-      registration_constraints_enabled_(false),
-      odometry_constraints_enabled_(false),
-      height_constraints_enabled_(false),
-      rosbag_helper_(nh),
       scan_to_map_registerer_(submap_collection_ptr_) {
   // Setup interaction with ROS
   getParametersFromRos();
@@ -232,6 +234,8 @@ void VoxgraphMapper::pointcloudCallback(
       // Only auto publish the updated meshes if there are subscribers
       // NOTE: Users can request new meshes at any time through service calls
       //       so there's no point in publishing them just in case
+      // TODO(victorr): Shorten the blocks below to single line statements by
+      //                moving their logic into the SubmapVisuals class
       if (combined_mesh_pub_.getNumSubscribers() > 0) {
         std::thread combined_mesh_thread(&SubmapVisuals::publishCombinedMesh,
                                          &submap_vis_, *submap_collection_ptr_,
@@ -244,6 +248,9 @@ void VoxgraphMapper::pointcloudCallback(
                                           mission_frame_, separated_mesh_pub_);
         separated_mesh_thread.detach();
       }
+      submap_server_.publishSubmap(
+          submap_collection_ptr_->getSubmap(finished_submap_id));
+      projected_map_server_.publishProjectedMap(*submap_collection_ptr_);
 
       // Resume playing  the rosbag
       if (auto_pause_rosbag_) {

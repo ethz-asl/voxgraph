@@ -37,6 +37,8 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/tools/tf_helper.cpp
     src/tools/submap_registration_helper.cpp
     src/tools/evaluation/map_evaluation.cpp
+    src/tools/map_servers/projected_map_server.cpp
+    src/tools/map_servers/submap_server.cpp
     src/tools/odometry_simulator/odometry_simulator.cpp
     src/tools/visualization/cost_function_visuals.cpp
     src/tools/visualization/pose_graph_visuals.cpp

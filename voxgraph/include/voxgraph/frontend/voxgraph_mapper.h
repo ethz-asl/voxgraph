@@ -16,6 +16,8 @@
 #include "voxgraph/frontend/measurement_processors/pointcloud_processor.h"
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+#include "voxgraph/tools/map_servers/projected_map_server.h"
+#include "voxgraph/tools/map_servers/submap_server.h"
 #include "voxgraph/tools/rosbag_helper.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
 
@@ -93,9 +95,6 @@ class VoxgraphMapper {
   bool odometry_constraints_enabled_;
   bool height_constraints_enabled_;
 
-  // Visualization tools
-  SubmapVisuals submap_vis_;
-
   // Instantiate the submap collection
   VoxgraphSubmap::Config submap_config_;
   VoxgraphSubmapCollection::Ptr submap_collection_ptr_;
@@ -105,6 +104,13 @@ class VoxgraphMapper {
 
   // Measurement processors
   PointcloudProcessor pointcloud_processor_;
+
+  // Map servers, used to share the projected map and submaps with ROS nodes
+  ProjectedMapServer projected_map_server_;
+  SubmapServer submap_server_;
+
+  // Visualization tools
+  SubmapVisuals submap_vis_;
 
   // Voxblox transformer used to lookup transforms from the TF tree or rosparams
   voxblox::Transformer transformer_;
