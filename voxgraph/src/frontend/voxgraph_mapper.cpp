@@ -249,8 +249,10 @@ void VoxgraphMapper::pointcloudCallback(
         separated_mesh_thread.detach();
       }
       submap_server_.publishSubmap(
-          submap_collection_ptr_->getSubmap(finished_submap_id));
-      projected_map_server_.publishProjectedMap(*submap_collection_ptr_);
+          submap_collection_ptr_->getSubmap(finished_submap_id),
+          current_timestamp);
+      projected_map_server_.publishProjectedMap(*submap_collection_ptr_,
+                                                current_timestamp);
 
       // Resume playing  the rosbag
       if (auto_pause_rosbag_) {

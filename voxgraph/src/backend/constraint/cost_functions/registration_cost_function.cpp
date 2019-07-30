@@ -107,7 +107,7 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
       T_mission__reading.inverse() * T_mission__reference;
 
   // Iterate over all registration points
-  for (unsigned int sample_i = 0; sample_i < num_residuals(); sample_i++) {
+  for (size_t sample_i = 0; sample_i < num_residuals(); sample_i++) {
     RegistrationPoint registration_point;
     if (config_.sampling_ratio == -1) {
       // We deterministically use each registration point
