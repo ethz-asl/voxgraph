@@ -31,6 +31,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       pointcloud_processor_(submap_collection_ptr_),
       projected_map_server_(nh_private),
       submap_server_(nh_private),
+      loop_closure_edge_server_(nh_private),
       submap_vis_(submap_config_),
       transformer_(nh, nh_private),
       mission_frame_("mission"),
@@ -234,8 +235,6 @@ void VoxgraphMapper::pointcloudCallback(
       // Only auto publish the updated meshes if there are subscribers
       // NOTE: Users can request new meshes at any time through service calls
       //       so there's no point in publishing them just in case
-      // TODO(victorr): Shorten the blocks below to single line statements by
-      //                moving their logic into the SubmapVisuals class
       if (combined_mesh_pub_.getNumSubscribers() > 0) {
         std::thread combined_mesh_thread(&SubmapVisuals::publishCombinedMesh,
                                          &submap_vis_, *submap_collection_ptr_,
@@ -253,6 +252,8 @@ void VoxgraphMapper::pointcloudCallback(
           current_timestamp);
       projected_map_server_.publishProjectedMap(*submap_collection_ptr_,
                                                 current_timestamp);
+      loop_closure_edge_server_.publishLoopClosureEdges(
+          pose_graph_interface_, *submap_collection_ptr_, current_timestamp);
 
       // Resume playing  the rosbag
       if (auto_pause_rosbag_) {

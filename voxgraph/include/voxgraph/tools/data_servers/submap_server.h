@@ -1,5 +1,5 @@
-#ifndef VOXGRAPH_TOOLS_MAP_SERVERS_SUBMAP_SERVER_H_
-#define VOXGRAPH_TOOLS_MAP_SERVERS_SUBMAP_SERVER_H_
+#ifndef VOXGRAPH_TOOLS_DATA_SERVERS_SUBMAP_SERVER_H_
+#define VOXGRAPH_TOOLS_DATA_SERVERS_SUBMAP_SERVER_H_
 
 #include <std_msgs/Header.h>
 #include <voxgraph_msgs/MapHeader.h>
@@ -46,4 +46,4 @@ class SubmapServer {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_TOOLS_MAP_SERVERS_SUBMAP_SERVER_H_
+#endif  // VOXGRAPH_TOOLS_DATA_SERVERS_SUBMAP_SERVER_H_

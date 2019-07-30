@@ -42,9 +42,12 @@ class PoseGraph {
     Transformation::Position second_node_position;
     double residual;
   };
-  std::vector<VisualizationEdge> getVisualizationEdges() const;
+  typedef std::vector<VisualizationEdge> VisualizationEdgeList;
+  VisualizationEdgeList getVisualizationEdges() const;
 
-  const SolverSummaryList &getSolverSummaries() { return solver_summaries_; }
+  const SolverSummaryList &getSolverSummaries() const {
+    return solver_summaries_;
+  }
 
  private:
   ConstraintCollection constraints_collection_;

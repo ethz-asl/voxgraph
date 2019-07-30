@@ -1,18 +1,21 @@
 #ifndef VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_POSE_GRAPH_INTERFACE_H_
 #define VOXGRAPH_FRONTEND_POSE_GRAPH_INTERFACE_POSE_GRAPH_INTERFACE_H_
 
-#include <voxgraph/tools/visualization/submap_visuals.h>
 #include <utility>
+#include <vector>
 #include "voxgraph/backend/pose_graph.h"
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/pose_graph_interface/measurement_templates.h"
 #include "voxgraph/frontend/pose_graph_interface/node_templates.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 #include "voxgraph/tools/visualization/pose_graph_visuals.h"
+#include "voxgraph/tools/visualization/submap_visuals.h"
 
 namespace voxgraph {
 class PoseGraphInterface {
  public:
+  typedef std::vector<SubmapIdPair> OverlappingSubmapList;
+
   explicit PoseGraphInterface(
       ros::NodeHandle node_handle,
       VoxgraphSubmapCollection::Ptr submap_collection_ptr,
@@ -38,7 +41,11 @@ class PoseGraphInterface {
 
   void updateSubmapCollectionPoses();
 
-  const PoseGraph::SolverSummaryList &getSolverSummaries() {
+  const OverlappingSubmapList &getOverlappingSubmapList() const {
+    return overlapping_submap_list_;
+  }
+
+  const PoseGraph::SolverSummaryList &getSolverSummaries() const {
     return pose_graph_.getSolverSummaries();
   }
 
@@ -57,6 +64,10 @@ class PoseGraphInterface {
   // Node and measurement config templates
   NodeTemplates node_templates_;
   MeasurementTemplates measurement_templates_;
+
+  // Keep track of which submaps overlap
+  OverlappingSubmapList overlapping_submap_list_;
+  void updateOverlappingSubmapList();
 
   // Helper to add reference frames to the pose graph
   void addReferenceFrameIfMissing(ReferenceFrameNode::FrameId frame_id);

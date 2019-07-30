@@ -1,4 +1,4 @@
-#include "voxgraph/tools/map_servers/submap_server.h"
+#include "voxgraph/tools/data_servers/submap_server.h"
 #include <minkindr_conversions/kindr_msg.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <voxblox_ros/conversions.h>

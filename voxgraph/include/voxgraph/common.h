@@ -2,11 +2,13 @@
 #define VOXGRAPH_COMMON_H_
 
 #include <cblox/core/submap_collection.h>
+#include <utility>
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 
 namespace voxgraph {
 using Transformation = voxblox::Transformation;
 using SubmapID = cblox::SubmapID;
+using SubmapIdPair = std::pair<SubmapID, SubmapID>;
 }  // namespace voxgraph
 
 #endif  // VOXGRAPH_COMMON_H_

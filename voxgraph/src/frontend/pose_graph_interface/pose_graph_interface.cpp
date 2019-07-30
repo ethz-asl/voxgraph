@@ -101,19 +101,20 @@ void PoseGraphInterface::addHeightMeasurement(const SubmapID &submap_id,
   pose_graph_.addAbsolutePoseConstraint(constraint_config);
 }
 
-void PoseGraphInterface::updateRegistrationConstraints() {
-  // Remove the previous iteration's registration constraints
-  pose_graph_.resetRegistrationConstraints();
+void PoseGraphInterface::updateOverlappingSubmapList() {
+  // Clear the old overlapping submap list
+  overlapping_submap_list_.clear();
 
-  // Add a constraint for each overlapping submap pair
+  // For each submap in the collection, check which submaps it overlaps with
   std::vector<cblox::SubmapID> submap_ids = submap_collection_ptr_->getIDs();
-  for (unsigned int i = 0; i < submap_ids.size(); i++) {
+  for (size_t i = 0; i < submap_ids.size(); i++) {
     // Get a pointer to the first submap
     cblox::SubmapID first_submap_id = submap_ids[i];
     const VoxgraphSubmap &first_submap =
         submap_collection_ptr_->getSubmap(first_submap_id);
 
     // Publish debug visuals
+    // TODO(victorr): Move this to a better place (e.g. visualization class)
     if (submap_pub_.getNumSubscribers() > 0) {
       submap_vis_.publishBox(
           first_submap.getMissionFrameSurfaceAabb().getCornerCoordinates(),
@@ -121,7 +122,11 @@ void PoseGraphInterface::updateRegistrationConstraints() {
           "surface_abb" + std::to_string(first_submap_id), submap_pub_);
     }
 
-    for (unsigned int j = i + 1; j < submap_ids.size(); j++) {
+    // Test the current submaps against all subsequent submaps
+    // NOTE: Testing against the subsequent submaps only is sufficient to test
+    //       all pairs in the submap collection, since the overlap test is
+    //       symmetric (i.e. pair A<->B and B<->A are equivalent)
+    for (size_t j = i + 1; j < submap_ids.size(); j++) {
       // Get the second submap
       cblox::SubmapID second_submap_id = submap_ids[j];
       const VoxgraphSubmap &second_submap =
@@ -129,24 +134,38 @@ void PoseGraphInterface::updateRegistrationConstraints() {
 
       // Check whether the first and second submap overlap
       if (first_submap.overlapsWith(second_submap)) {
-        // Configure the registration constraint
-        RegistrationConstraint::Config constraint_config =
-            measurement_templates_.registration;
-        constraint_config.first_submap_id = first_submap_id;
-        constraint_config.second_submap_id = second_submap_id;
-
-        // Add pointers to both submaps
-        constraint_config.first_submap_ptr =
-            submap_collection_ptr_->getSubmapConstPtr(first_submap_id);
-        constraint_config.second_submap_ptr =
-            submap_collection_ptr_->getSubmapConstPtr(second_submap_id);
-        CHECK_NOTNULL(constraint_config.first_submap_ptr);
-        CHECK_NOTNULL(constraint_config.second_submap_ptr);
-
-        // Add the constraint to the pose graph
-        pose_graph_.addRegistrationConstraint(constraint_config);
+        overlapping_submap_list_.emplace_back(first_submap_id,
+                                              second_submap_id);
       }
     }
+  }
+}
+
+void PoseGraphInterface::updateRegistrationConstraints() {
+  // Remove the previous iteration's registration constraints
+  pose_graph_.resetRegistrationConstraints();
+
+  // Redetect which submaps overlap
+  updateOverlappingSubmapList();
+
+  // Add the updated registration constraints
+  for (const SubmapIdPair &submap_pair : overlapping_submap_list_) {
+    // Configure the registration constraint
+    RegistrationConstraint::Config constraint_config =
+        measurement_templates_.registration;
+    constraint_config.first_submap_id = submap_pair.first;
+    constraint_config.second_submap_id = submap_pair.second;
+
+    // Add pointers to both submaps
+    constraint_config.first_submap_ptr =
+        submap_collection_ptr_->getSubmapConstPtr(submap_pair.first);
+    constraint_config.second_submap_ptr =
+        submap_collection_ptr_->getSubmapConstPtr(submap_pair.second);
+    CHECK_NOTNULL(constraint_config.first_submap_ptr);
+    CHECK_NOTNULL(constraint_config.second_submap_ptr);
+
+    // Add the constraint to the pose graph
+    pose_graph_.addRegistrationConstraint(constraint_config);
   }
 }
 

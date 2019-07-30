@@ -16,8 +16,9 @@
 #include "voxgraph/frontend/measurement_processors/pointcloud_processor.h"
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
-#include "voxgraph/tools/map_servers/projected_map_server.h"
-#include "voxgraph/tools/map_servers/submap_server.h"
+#include "voxgraph/tools/data_servers/loop_closure_edge_server.h"
+#include "voxgraph/tools/data_servers/projected_map_server.h"
+#include "voxgraph/tools/data_servers/submap_server.h"
 #include "voxgraph/tools/rosbag_helper.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
 
@@ -108,6 +109,7 @@ class VoxgraphMapper {
   // Map servers, used to share the projected map and submaps with ROS nodes
   ProjectedMapServer projected_map_server_;
   SubmapServer submap_server_;
+  LoopClosureEdgeServer loop_closure_edge_server_;
 
   // Visualization tools
   SubmapVisuals submap_vis_;
