@@ -10,6 +10,7 @@ class SubmapServer {
  public:
   explicit SubmapServer(ros::NodeHandle nh_private);
 
+  // Publish maps using the publishers that are members of this server instance
   void publishSubmap(const VoxgraphSubmap &submap, const ros::Time &timestamp);
   void publishSubmapTsdf(const VoxgraphSubmap &submap,
                          const ros::Time &timestamp);
@@ -18,14 +19,29 @@ class SubmapServer {
   void publishSubmapSurfacePointcloud(const VoxgraphSubmap &submap,
                                       const ros::Time &timestamp);
 
+  // "Bring your own publisher" methods
+  // NOTE: These methods are provided s.t. they can be called using publishers
+  //       to custom topics and without requiring a SubmapServer instance.
+  //       They are therefore static.
+  static void publishSubmapTsdf(const VoxgraphSubmap &submap,
+                                const ros::Time &timestamp,
+                                const ros::Publisher &submap_tsdf_publisher);
+  static void publishSubmapEsdf(const VoxgraphSubmap &submap,
+                                const ros::Time &timestamp,
+                                const ros::Publisher &submap_esdf_publisher);
+  static void publishSubmapSurfacePointcloud(
+      const VoxgraphSubmap &submap, const ros::Time &timestamp,
+      const ros::Publisher &submap_surface_pointcloud_publisher);
+
  private:
   ros::Publisher submap_tsdf_pub_;
   ros::Publisher submap_esdf_pub_;
   ros::Publisher submap_surface_pointcloud_pub_;
 
-  std_msgs::Header generateHeaderMsg(const VoxgraphSubmap &submap,
-                                     const ros::Time &timestamp);
-  voxgraph_msgs::MapHeader generateSubmapHeaderMsg(
+  // Convenience methods to generate the message and submap headers
+  static std_msgs::Header generateHeaderMsg(const VoxgraphSubmap &submap,
+                                            const ros::Time &timestamp);
+  static voxgraph_msgs::MapHeader generateSubmapHeaderMsg(
       const VoxgraphSubmap &submap);
 };
 }  // namespace voxgraph

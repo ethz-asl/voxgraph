@@ -10,15 +10,25 @@ class ProjectedMapServer {
  public:
   explicit ProjectedMapServer(ros::NodeHandle nh_private);
 
+  // Publish the map using this map server instance's ros publisher member
   void publishProjectedMap(const VoxgraphSubmapCollection &submap_collection,
                            const ros::Time &timestamp);
+
+  // "Bring your own publisher" method
+  // NOTE: This method is provided s.t. it can be called using publishers to
+  //       custom topics and without requiring a ProjectedMapServer instance.
+  //       It is therefore static.
+  static void publishProjectedMap(
+      const VoxgraphSubmapCollection &submap_collection,
+      const ros::Time &timestamp,
+      const ros::Publisher &projected_map_publisher);
 
  private:
   ros::Publisher projected_tsdf_map_pub_;
 
-  std_msgs::Header generateHeaderMsg(const ros::Time &timestamp);
-
-  voxgraph_msgs::MapHeader generateMapHeaderMsg(
+  // Convenience methods to generate the message and submap headers
+  static std_msgs::Header generateHeaderMsg(const ros::Time &timestamp);
+  static voxgraph_msgs::MapHeader generateMapHeaderMsg(
       const VoxgraphSubmapCollection &submap_collection);
 };
 }  // namespace voxgraph
