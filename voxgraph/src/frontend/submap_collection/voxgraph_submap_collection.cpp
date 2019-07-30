@@ -13,7 +13,7 @@ bool VoxgraphSubmapCollection::shouldCreateNewSubmap(
   } else {
     // TODO(victorr): Add options to also consider distance traveled etc
     ros::Time new_submap_creation_deadline =
-        getActiveSubmap().getCreationTime() + submap_creation_interval_;
+        getActiveSubmap().getStartTime() + submap_creation_interval_;
     ROS_INFO_STREAM_COND(verbose_,
                          "Current time: " << current_time << "\n"
                                           << "New creation submap deadline: "

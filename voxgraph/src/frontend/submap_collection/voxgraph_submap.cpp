@@ -83,11 +83,19 @@ void VoxgraphSubmap::setRegistrationFilterConfig(
   config_.registration_filter = registration_filter_config;
 }
 
-const ros::Time VoxgraphSubmap::getCreationTime() const {
+const ros::Time VoxgraphSubmap::getStartTime() const {
   if (pose_history_.empty()) {
     return ros::Time(0);
   } else {
     return (pose_history_.begin())->first;
+  }
+}
+
+const ros::Time VoxgraphSubmap::getEndTime() const {
+  if (pose_history_.empty()) {
+    return ros::Time(0);
+  } else {
+    return (--pose_history_.end())->first;
   }
 }
 

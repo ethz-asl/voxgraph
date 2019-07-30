@@ -45,6 +45,12 @@ class VoxgraphSubmapCollection
   SubmapID getPreviousSubmapId() const {
     return submap_timeline_.getPreviousSubmapId();
   }
+  SubmapID getFirstSubmapId() const {
+    return submap_timeline_.getFirstSubmapId();
+  }
+  SubmapID getLastSubmapId() const {
+    return submap_timeline_.getLastSubmapId();
+  }
 
   PoseStampedVector getPoseHistory() const;
 

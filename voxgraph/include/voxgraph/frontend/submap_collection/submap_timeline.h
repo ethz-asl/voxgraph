@@ -19,6 +19,8 @@ class SubmapTimeline {
                                 cblox::SubmapID *submap_id);
 
   cblox::SubmapID getPreviousSubmapId() const;
+  cblox::SubmapID getFirstSubmapId() const;
+  cblox::SubmapID getLastSubmapId() const;
 
  private:
   // Map from each time interval's start time to the corresponding active submap

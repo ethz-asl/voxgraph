@@ -38,7 +38,8 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   void setRegistrationFilterConfig(
       const Config::RegistrationFilter &registration_filter_config);
 
-  const ros::Time getCreationTime() const;
+  const ros::Time getStartTime() const;
+  const ros::Time getEndTime() const;
 
   void addPoseToHistory(const ros::Time &timestamp,
                         const voxblox::Transformation &T_mission_base);
