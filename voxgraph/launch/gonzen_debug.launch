@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="play_bag" default="true" />
+  <arg name="bag_file" default="/home/victorr/data/gonzen_11-06-2019/long_loop_remote.bag"/>
+
+  <node pkg="tf" type="static_transform_publisher" name="odom_to_mission" args="0 0 0 0 0 0 1 odom mission 100"/>
+
+  <arg name="mav_name" default="penguin"/>
+  <arg name="namespace" default="$(arg mav_name)" />
+
+  <param name="use_sim_time" value="true" />
+
+  <arg name="global_frame_id" default="map" />
+  <arg name="local_frame_id" default="odom" />
+  <arg name="robot_frame_id" default="imu" />
+  <arg name="force_mavros_triggering" default="true" />
+
+  <arg name="voxel_size" default="0.15" />
+  <arg name="tsdf_voxels_per_side" default="16" />
+  <arg name="robot_radius" default="0.5" />
+
+  <node name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -s 0 --clock --quiet $(arg bag_file)" if="$(arg play_bag)">
+    <!-- <remap from="/tf" to="/not_tf"/> -->
+  </node>>
+
+  <group ns="$(arg namespace)" >
+
+    <node name="rovio" pkg="rovio" type="rovio_node" output="screen" clear_params="true">
+      <param name="filter_config" value="$(find darpa_maplab_utils)/params/gonzen_11_06_2019/rovio_filter_blackfly.info" />
+      <param name="camera0_config" value="$(find darpa_maplab_utils)/params/gonzen_11_06_2019/rovio_equidist_cam0.yaml" />
+      <param name="world_frame" value="$(arg local_frame_id)"/>
+
+      <remap from="cam0/image_raw" to="image_raw" />
+      <remap from="imu0" to="mavros/imu/data_raw" />
+    </node>
+
+<!--    <node name="voxblox_node" pkg="voxblox_ros" type="esdf_server" output="screen" args="-alsologtostderr" clear_params="true">-->
+<!--      <rosparam command="load" file="$(find darpa_maplab_utils)/params/gonzen_11_06_2019/voxblox_mapping_config.yaml" />-->
+
+<!--      <remap from="pointcloud" to="os1_node/points"/>-->
+<!--      <remap from="voxblox_node/esdf_map_out" to="esdf_map" />-->
+<!--      <remap from="voxblox_node/tsdf_map_out" to="tsdf_map" />-->
+<!--      <remap from="transform" to="rovio/transform" />-->
+
+<!--      <param name="world_frame" value="$(arg global_frame_id)"/>-->
+<!--      <param name="sensor_frame" value="os1"/>-->
+
+<!--      <param name="mesh_filename" value="/home/penguin/begs/map_sharing/gonzen_11_06_19/shared_voxblox_map.ply" />-->
+<!--      <param name="capability_group" value="Mapping" />-->
+<!--    </node>-->
+
+    <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
+<!--   launch-prefix="gdb -ex run &#45;&#45;args"> -->
+      <rosparam>
+        verbose: False
+        debug: True
+        submap_creation_interval: 10
+        pointcloud_topic: "os1_node/points"
+        subscriber_queue_length: 1000
+        world_frame: "map"
+        odom_frame: "odom"
+        base_frame: "imu"
+        odom_frame_corrected: "odom_corrected"
+        robot_frame_corrected: "robot_corrected"
+        sensor_frame_corrected: "sensor_corrected"
+        use_tf_transforms: True
+        use_gt_ptcloud_pose_from_sensor_tf: False
+        T_base_sensor:
+            - [ 0.9908579, -0.0196458,  0.1334716, -0.00607641]
+            - [ 0.0191474,  0.9998041,  0.0050169, -0.0106566]
+            - [-0.1335440, -0.0024154,  0.9910399,  0.133374]
+            - [ 0.0,        0.0,        0.0,        1.0]
+        tsdf_integrator:
+          tsdf_voxel_size: 0.15
+          truncation_distance: 0.45
+          max_ray_length_m: 16.0
+          use_const_weight: true
+          use_weight_dropoff: true
+          use_sparsity_compensation_factor: true
+          sparsity_compensation_factor: 10.0
+          integration_order_mode: "sorted"
+        measurements:
+          submap_registration:
+            enabled: true
+            sampling_ratio: 0.05
+            registration_method: "explicit_to_implicit"
+            information_matrix:
+              x_x:     1.0
+              y_y:     1.0
+              z_z:     1.0
+              yaw_yaw: 1.0
+          odometry:
+            enabled: True
+            information_matrix:
+              x_x:     1.0
+              y_y:     1.0
+              z_z:     2500.0
+              yaw_yaw: 2500.0
+          height:
+            enabled: false
+            information_zz: 2500.0
+      </rosparam>
+    </node>
+
+    <!-- OUSTER LIDAR Packages -->
+    <node pkg="ouster_ros" type="os1_node" name="os1_node" output="screen">
+      <param name="scan_dur_ns" value="100000000" />
+      <param name="os1_hostname" value="192.168.1.50" />
+      <param name="os1_udp_dest" value="192.168.1.1" />
+      <param name="os1_lidar_port" value="7502" />
+      <param name="os1_imu_port" value="7503" />
+      <param name="replay" value="true" />
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="pose_lidar_broadcaster" args="-0.00607641 -0.0106566 0.133374 -0.00186232 0.0669071 0.00972055 0.99771 imu os1 100" >
+      <param name="capability_group" value="Lidar" />
+    </node>
+
+    <!-- Static Transforms -->
+    <node pkg="tf" type="static_transform_publisher" name="world_tf_broadcaster" args="0 0 0 0 0 0 1 $(arg global_frame_id) odom 100">
+      <param name="capability_group" value="Core" />
+    </node>
+  </group>
+</launch>
