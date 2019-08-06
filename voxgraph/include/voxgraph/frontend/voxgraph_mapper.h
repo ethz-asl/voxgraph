@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 #include "voxgraph/common.h"
+#include "voxgraph/frontend/frame_names.h"
 #include "voxgraph/frontend/map_tracker/scan_to_map_registerer.h"
 #include "voxgraph/frontend/measurement_processors/gps_processor.h"
 #include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
@@ -114,35 +115,17 @@ class VoxgraphMapper {
   // Visualization tools
   SubmapVisuals submap_vis_;
 
+  // Class used to translate between the coordinate frame names used in voxgraph
+  // and the other ROS nodes
+  FrameNames frame_names_;
+
   // Voxblox transformer used to lookup transforms from the TF tree or rosparams
   voxblox::Transformer transformer_;
 
-  // Coordinate frame naming convention
-  //   - M: Mission (for a single run of a single robot this corresponds to the
-  //   World frame)
-  //   - L: Fictive frames used to track the loop closure and
-  //        scan-to-map-registration corrections
-  //   - O: Odometry input frame
-  //   - B: Base link (often corresponds to the IMU frame)
-  //   - C: Sensor frame of the pointcloud sensor
-  //   - S: Active submap
-  //  The full transform chain is M -> L -> O -> B -> C, where:
-  //   - T_M_L aggregates the pose corrections from loop closures
-  //   - T_L_O aggregates the incremental pose corrections from ICP
-  //   - T_O_B is provided by the odometry input
-  //   - T_B_C corresponds to the extrinsic calibration
-  std::string mission_frame_;
-  std::string odom_frame_;
-  std::string base_frame_;
+  // Coordinate frame correction transforms
   Transformation T_M_L_;
   Transformation T_L_O_;
   Transformation T_B_C_;  // This transform is static
-
-  // Publish the drift corrected TFs to the following frame names
-  std::string refined_frame_corrected_;
-  std::string odom_frame_corrected_;
-  std::string base_frame_corrected_;
-  std::string sensor_frame_corrected_;
 
   // Transform lookup method that sleeps and retries a few times if the TF from
   // the base to the odom frame is not immediately available

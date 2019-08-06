@@ -35,13 +35,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       loop_closure_edge_server_(nh_private),
       submap_vis_(submap_config_),
       transformer_(nh, nh_private),
-      mission_frame_("mission"),
-      odom_frame_("odom"),
-      base_frame_("base_link"),
-      refined_frame_corrected_("refined_frame_corrected"),
-      odom_frame_corrected_("odom_frame_corrected"),
-      base_frame_corrected_("base_frame_corrected"),
-      sensor_frame_corrected_("sensor_frame_corrected"),
+      frame_names_(FrameNames::fromRosParams(nh_private)),
       use_tf_transforms_(false),
       scan_to_map_registerer_(submap_collection_ptr_) {
   // Setup interaction with ROS
@@ -62,17 +56,6 @@ void VoxgraphMapper::getParametersFromRos() {
                     subscriber_queue_length_);
   nh_private_.param("pointcloud_topic", pointcloud_topic_, pointcloud_topic_);
   nh_private_.param("imu_biases_topic", imu_biases_topic_, imu_biases_topic_);
-  nh_private_.param("mission_frame", mission_frame_, mission_frame_);
-  nh_private_.param("odom_frame", odom_frame_, odom_frame_);
-  nh_private_.param("base_frame", base_frame_, base_frame_);
-  nh_private_.param("refined_frame_corrected", refined_frame_corrected_,
-                    refined_frame_corrected_);
-  nh_private_.param("odom_frame_corrected", odom_frame_corrected_,
-                    odom_frame_corrected_);
-  nh_private_.param("base_frame_corrected", base_frame_corrected_,
-                    base_frame_corrected_);
-  nh_private_.param("sensor_frame_corrected", sensor_frame_corrected_,
-                    sensor_frame_corrected_);
   nh_private_.param("use_tf_transforms", use_tf_transforms_,
                     use_tf_transforms_);
 
@@ -155,15 +138,15 @@ void VoxgraphMapper::advertiseServices() {
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
     std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
-  submap_vis_.publishSeparatedMesh(*submap_collection_ptr_, mission_frame_,
-                                   separated_mesh_pub_);
+  submap_vis_.publishSeparatedMesh(
+      *submap_collection_ptr_, frame_names_.mission_frame, separated_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
 bool VoxgraphMapper::publishCombinedMeshCallback(
     std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
-  submap_vis_.publishCombinedMesh(*submap_collection_ptr_, mission_frame_,
-                                  combined_mesh_pub_);
+  submap_vis_.publishCombinedMesh(
+      *submap_collection_ptr_, frame_names_.mission_frame, combined_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
@@ -239,13 +222,15 @@ void VoxgraphMapper::pointcloudCallback(
       if (combined_mesh_pub_.getNumSubscribers() > 0) {
         std::thread combined_mesh_thread(&SubmapVisuals::publishCombinedMesh,
                                          &submap_vis_, *submap_collection_ptr_,
-                                         mission_frame_, combined_mesh_pub_);
+                                         frame_names_.mission_frame,
+                                         combined_mesh_pub_);
         combined_mesh_thread.detach();
       }
       if (separated_mesh_pub_.getNumSubscribers() > 0) {
         std::thread separated_mesh_thread(&SubmapVisuals::publishSeparatedMesh,
                                           &submap_vis_, *submap_collection_ptr_,
-                                          mission_frame_, separated_mesh_pub_);
+                                          frame_names_.mission_frame,
+                                          separated_mesh_pub_);
         separated_mesh_thread.detach();
       }
       submap_server_.publishSubmap(
@@ -265,13 +250,14 @@ void VoxgraphMapper::pointcloudCallback(
     // Create the new submap
     submap_collection_ptr_->createNewSubmap(T_mission_base, current_timestamp);
     TfHelper::publishTransform(submap_collection_ptr_->getActiveSubmapPose(),
-                               mission_frame_, "new_submap_origin", true,
-                               current_timestamp);
+                               frame_names_.mission_frame, "new_submap_origin",
+                               true, current_timestamp);
   }
 
   // Lookup the sensor's pose through TFs if appropriate
   if (use_tf_transforms_) {
-    transformer_.lookupTransform(pointcloud_msg->header.frame_id, base_frame_,
+    transformer_.lookupTransform(pointcloud_msg->header.frame_id,
+                                 frame_names_.base_link_frame,
                                  current_timestamp, &T_B_C_);
   }
 
@@ -304,9 +290,10 @@ void VoxgraphMapper::pointcloudCallback(
   if ((forwarded_accel_bias_.array() >= double_min).all() &&
       (forwarded_gyro_bias_.array()  >= double_min).all()) {
     maplab_msgs::OdometryWithImuBiases odometry_with_imu_biases;
-    odometry_with_imu_biases.header.frame_id = refined_frame_corrected_;
+    odometry_with_imu_biases.header.frame_id =
+        frame_names_.refined_frame_corrected;
     odometry_with_imu_biases.header.stamp = current_timestamp;
-    odometry_with_imu_biases.child_frame_id = base_frame_;
+    odometry_with_imu_biases.child_frame_id = frame_names_.base_link_frame;
     odometry_with_imu_biases.odometry_state = 0u;
     const Transformation refined_odometry = T_L_O_ * T_odom_base;
     tf::poseKindrToMsg(refined_odometry.cast<double>(),
@@ -335,19 +322,23 @@ void VoxgraphMapper::pointcloudCallback(
   }
 
   // Publish the frames
-  TfHelper::publishTransform(T_M_L_, mission_frame_, refined_frame_corrected_,
-                             false, current_timestamp);
-  TfHelper::publishTransform(T_L_O_, refined_frame_corrected_,
-                             odom_frame_corrected_, false, current_timestamp);
-  TfHelper::publishTransform(T_odom_base, odom_frame_corrected_,
-                             base_frame_corrected_, false, current_timestamp);
-  TfHelper::publishTransform(T_B_C_, base_frame_corrected_,
-                             sensor_frame_corrected_, true, current_timestamp);
+  TfHelper::publishTransform(T_M_L_, frame_names_.mission_frame,
+                             frame_names_.refined_frame_corrected, false,
+                             current_timestamp);
+  TfHelper::publishTransform(T_L_O_, frame_names_.refined_frame_corrected,
+                             frame_names_.odom_frame_corrected, false,
+                             current_timestamp);
+  TfHelper::publishTransform(T_odom_base, frame_names_.odom_frame_corrected,
+                             frame_names_.base_link_frame_corrected, false,
+                             current_timestamp);
+  TfHelper::publishTransform(T_B_C_, frame_names_.base_link_frame_corrected,
+                             frame_names_.sensor_frame_corrected, true,
+                             current_timestamp);
 
   // Publish the pose history
   if (pose_history_pub_.getNumSubscribers() > 0) {
-    submap_vis_.publishPoseHistory(*submap_collection_ptr_, mission_frame_,
-                                   pose_history_pub_);
+    submap_vis_.publishPoseHistory(
+        *submap_collection_ptr_, frame_names_.mission_frame, pose_history_pub_);
   }
 }
 
@@ -366,7 +357,8 @@ bool VoxgraphMapper::lookup_T_odom_base(ros::Time timestamp,
   double t_max = 0.20;   // Maximum time to wait before giving up
   const ros::Duration timeout(0.005);  // Timeout between each update attempt
   while (t_waited < t_max) {
-    if (transformer_.lookupTransform(base_frame_, odom_frame_, timestamp,
+    if (transformer_.lookupTransform(frame_names_.base_link_frame,
+                                     frame_names_.odom_frame, timestamp,
                                      &T_odom_base_received)) {
       *T_odom_base = T_odom_base_received;
       return true;
@@ -375,7 +367,8 @@ bool VoxgraphMapper::lookup_T_odom_base(ros::Time timestamp,
     t_waited += timeout.toSec();
   }
   ROS_WARN("Waited %.3fs, but still could not get the TF from %s to %s",
-           t_waited, base_frame_.c_str(), odom_frame_.c_str());
+           t_waited, frame_names_.base_link_frame.c_str(),
+           frame_names_.odom_frame.c_str());
   return false;
 }
 }  // namespace voxgraph

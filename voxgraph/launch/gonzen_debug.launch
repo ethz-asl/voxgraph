@@ -3,14 +3,12 @@
   <arg name="play_bag" default="true" />
   <arg name="bag_file" default="/home/berlukas/Documents/datasets/DARPA/penguin/long_loop_remote.bag"/>
 
-  <node pkg="tf" type="static_transform_publisher" name="odom_to_mission" args="0 0 0 0 0 0 1 odom mission 100"/>
-
   <arg name="mav_name" default="penguin"/>
   <arg name="namespace" default="$(arg mav_name)" />
 
   <param name="use_sim_time" value="true" />
 
-  <arg name="global_frame_id" default="map" />
+  <arg name="global_frame_id" default="mission" />
   <arg name="local_frame_id" default="odom" />
   <arg name="robot_frame_id" default="imu" />
   <arg name="force_mavros_triggering" default="true" />
@@ -42,7 +40,7 @@
 <!--      <remap from="voxblox_node/tsdf_map_out" to="tsdf_map" />-->
 <!--      <remap from="transform" to="rovio/transform" />-->
 
-<!--      <param name="world_frame" value="$(arg global_frame_id)"/>-->
+<!--      <param name="mission_frame" value="$(arg global_frame_id)"/>-->
 <!--      <param name="sensor_frame" value="os1"/>-->
 
 <!--      <param name="mesh_filename" value="/home/penguin/begs/map_sharing/gonzen_11_06_19/shared_voxblox_map.ply" />-->
@@ -50,7 +48,7 @@
 <!--    </node>-->
 
     <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
-<!--   launch-prefix="gdb -ex run &#45;&#45;args"> -->
+<!--          launch-prefix="gdb -ex run &#45;&#45;args">-->
       <rosparam>
         verbose: False
         debug: True
@@ -58,11 +56,11 @@
         pointcloud_topic: "os1_node/points"
         imu_biases_topic: "rovio/imu_biases"
         subscriber_queue_length: 1000
-        world_frame: "map"
+        mission_frame: "mission"
         odom_frame: "odom"
-        base_frame: "imu"
+        base_link_frame: "imu"
         odom_frame_corrected: "odom_corrected"
-        robot_frame_corrected: "robot_corrected"
+        base_link_frame_corrected: "robot_corrected"
         sensor_frame_corrected: "sensor_corrected"
         use_tf_transforms: True
         use_gt_ptcloud_pose_from_sensor_tf: False
@@ -115,11 +113,6 @@
 
     <node pkg="tf" type="static_transform_publisher" name="pose_lidar_broadcaster" args="-0.00607641 -0.0106566 0.133374 -0.00186232 0.0669071 0.00972055 0.99771 imu os1 100" >
       <param name="capability_group" value="Lidar" />
-    </node>
-
-    <!-- Static Transforms -->
-    <node pkg="tf" type="static_transform_publisher" name="world_tf_broadcaster" args="0 0 0 0 0 0 1 $(arg global_frame_id) odom 100">
-      <param name="capability_group" value="Core" />
     </node>
   </group>
 </launch>
