@@ -16,7 +16,7 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/frontend/pose_graph_interface/pose_graph_interface.cpp
     src/frontend/pose_graph_interface/node_templates.cpp
     src/frontend/pose_graph_interface/measurement_templates.cpp
-    src/frontend/measurement_processors/pointcloud_processor.cpp
+    src/frontend/measurement_processors/pointcloud_integrator.cpp
     src/frontend/submap_collection/bounding_box.cpp
     src/frontend/submap_collection/submap_timeline.cpp
     src/frontend/submap_collection/voxgraph_submap.cpp

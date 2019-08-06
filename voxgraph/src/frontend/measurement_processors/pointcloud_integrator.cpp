@@ -1,4 +1,4 @@
-#include "voxgraph/frontend/measurement_processors/pointcloud_processor.h"
+#include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
 #include <pcl_conversions/pcl_conversions.h>
 #include <voxblox_ros/conversions.h>
 #include <voxblox_ros/ros_params.h>
@@ -6,7 +6,7 @@
 #include <utility>
 
 namespace voxgraph {
-PointcloudProcessor::PointcloudProcessor(
+PointcloudIntegrator::PointcloudIntegrator(
     cblox::SubmapCollection<VoxgraphSubmap>::Ptr submap_collection_ptr,
     bool verbose)
     : verbose_(verbose),
@@ -16,13 +16,13 @@ PointcloudProcessor::PointcloudProcessor(
   color_map_->setMaxValue(100.0);
 }
 
-void PointcloudProcessor::setTsdfIntegratorConfigFromRosParam(
+void PointcloudIntegrator::setTsdfIntegratorConfigFromRosParam(
     const ros::NodeHandle &node_handle) {
   tsdf_integrator_config_ =
       voxblox::getTsdfIntegratorConfigFromRosParam(node_handle);
 }
 
-void PointcloudProcessor::integratePointcloud(
+void PointcloudIntegrator::integratePointcloud(
     const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
     const voxblox::Transformation &T_mission_sensor) {
   // Transform the sensor pose into the submap frame

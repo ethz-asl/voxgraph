@@ -13,7 +13,7 @@
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/map_tracker/scan_to_map_registerer.h"
 #include "voxgraph/frontend/measurement_processors/gps_processor.h"
-#include "voxgraph/frontend/measurement_processors/pointcloud_processor.h"
+#include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 #include "voxgraph/tools/data_servers/loop_closure_edge_server.h"
@@ -104,7 +104,7 @@ class VoxgraphMapper {
   PoseGraphInterface pose_graph_interface_;
 
   // Measurement processors
-  PointcloudProcessor pointcloud_processor_;
+  PointcloudIntegrator pointcloud_processor_;
 
   // Map servers, used to share the projected map and submaps with ROS nodes
   ProjectedMapServer projected_map_server_;

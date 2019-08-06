@@ -1,5 +1,5 @@
-#ifndef VOXGRAPH_FRONTEND_MEASUREMENT_PROCESSORS_POINTCLOUD_PROCESSOR_H_
-#define VOXGRAPH_FRONTEND_MEASUREMENT_PROCESSORS_POINTCLOUD_PROCESSOR_H_
+#ifndef VOXGRAPH_FRONTEND_MEASUREMENT_PROCESSORS_POINTCLOUD_INTEGRATOR_H_
+#define VOXGRAPH_FRONTEND_MEASUREMENT_PROCESSORS_POINTCLOUD_INTEGRATOR_H_
 
 #include <sensor_msgs/PointCloud2.h>
 #include <voxblox/integrator/tsdf_integrator.h>
@@ -9,9 +9,9 @@
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 
 namespace voxgraph {
-class PointcloudProcessor {
+class PointcloudIntegrator {
  public:
-  explicit PointcloudProcessor(
+  explicit PointcloudIntegrator(
       cblox::SubmapCollection<VoxgraphSubmap>::Ptr submap_collection_ptr,
       bool verbose = false);
 
@@ -32,4 +32,4 @@ class PointcloudProcessor {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_FRONTEND_MEASUREMENT_PROCESSORS_POINTCLOUD_PROCESSOR_H_
+#endif  // VOXGRAPH_FRONTEND_MEASUREMENT_PROCESSORS_POINTCLOUD_INTEGRATOR_H_
