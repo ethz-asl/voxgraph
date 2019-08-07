@@ -187,6 +187,19 @@ void PoseGraphInterface::updateSubmapCollectionPoses() {
   }
 }
 
+bool PoseGraphInterface::getEdgeCovarianceMap(
+    PoseGraph::EdgeCovarianceMap *edge_covariance_map_ptr) const {
+  CHECK_NOTNULL(edge_covariance_map_ptr);
+
+  // Request covariance estimates for all overlapping submap pairs
+  for (const SubmapIdPair &overlapping_submap_pair : overlapping_submap_list_) {
+    edge_covariance_map_ptr->emplace(overlapping_submap_pair,
+                                     PoseGraph::EdgeCovarianceMatrix::Zero());
+  }
+
+  return pose_graph_.getEdgeCovarianceMap(edge_covariance_map_ptr);
+}
+
 void PoseGraphInterface::addReferenceFrameIfMissing(
     ReferenceFrameNode::FrameId frame_id) {
   if (!pose_graph_.hasReferenceFrameNode(frame_id)) {

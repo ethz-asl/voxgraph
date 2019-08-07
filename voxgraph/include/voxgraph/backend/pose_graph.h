@@ -37,6 +37,10 @@ class PoseGraph {
 
   PoseMap getSubmapPoses();
 
+  typedef Eigen::Matrix<double, 4, 4> EdgeCovarianceMatrix;
+  typedef std::map<SubmapIdPair, EdgeCovarianceMatrix> EdgeCovarianceMap;
+  bool getEdgeCovarianceMap(EdgeCovarianceMap *edge_covariance_map) const;
+
   struct VisualizationEdge {
     Transformation::Position first_node_position;
     Transformation::Position second_node_position;

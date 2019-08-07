@@ -98,6 +98,54 @@ PoseGraph::PoseMap PoseGraph::getSubmapPoses() {
   return submap_poses;
 }
 
+bool PoseGraph::getEdgeCovarianceMap(
+    PoseGraph::EdgeCovarianceMap *edge_covariance_map) const {
+  CHECK_NOTNULL(edge_covariance_map);
+
+  // Configure the covariance extraction
+  ceres::Covariance::Options options;
+  ceres::Covariance covariance(options);
+  std::vector<std::pair<const double *, const double *>> covariance_blocks;
+
+  // Request covariance estimates for the submap pairs specified through the
+  // edge_covariance_map
+  for (std::pair<const SubmapIdPair, EdgeCovarianceMatrix>
+           &edge_covariance_pair : *edge_covariance_map) {
+    SubmapNode::Ptr first_submap_node =
+        node_collection_.getSubmapNodePtrById(edge_covariance_pair.first.first);
+    SubmapNode::Ptr second_submap_node = node_collection_.getSubmapNodePtrById(
+        edge_covariance_pair.first.second);
+    covariance_blocks.emplace_back(
+        first_submap_node->getPosePtr()->optimizationVectorData(),
+        second_submap_node->getPosePtr()->optimizationVectorData());
+  }
+
+  // Compute the requested covariances
+  if (!covariance.Compute(covariance_blocks, problem_ptr_.get())) {
+    // The covariance computation failed
+    return false;
+  }
+
+  // Return the estimated covariances by storing them in the edge_covariance_map
+  for (std::pair<const SubmapIdPair, EdgeCovarianceMatrix>
+           &edge_covariance_pair : *edge_covariance_map) {
+    SubmapNode::Ptr first_submap_node =
+        node_collection_.getSubmapNodePtrById(edge_covariance_pair.first.first);
+    SubmapNode::Ptr second_submap_node = node_collection_.getSubmapNodePtrById(
+        edge_covariance_pair.first.second);
+    if (!covariance.GetCovarianceBlock(
+            first_submap_node->getPosePtr()->optimizationVectorData(),
+            second_submap_node->getPosePtr()->optimizationVectorData(),
+            edge_covariance_pair.second.data())) {
+      // The covariance pair for this submap is missing, which shouldn't happen
+      // since it has been requested.
+      return false;
+    }
+  }
+
+  return true;
+}
+
 PoseGraph::VisualizationEdgeList PoseGraph::getVisualizationEdges() const {
   // Check if the problem has been initialized
   CHECK_NOTNULL(problem_ptr_);
