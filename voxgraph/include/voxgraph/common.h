@@ -9,7 +9,7 @@ namespace voxgraph {
 using Transformation = voxblox::Transformation;
 using SubmapID = cblox::SubmapID;
 using SubmapIdPair = std::pair<SubmapID, SubmapID>;
-using TransformationD = kindr::minimal::QuatTransformationTemplate<double>
+using TransformationD = kindr::minimal::QuatTransformationTemplate<double>;
 using BiasVectorType = TransformationD::Vector3;
 }  // namespace voxgraph
 
