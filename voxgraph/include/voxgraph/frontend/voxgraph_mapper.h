@@ -155,8 +155,6 @@ class VoxgraphMapper {
   // akin to voxblox ICP
   ScanToMapRegisterer scan_to_map_registerer_;
 
-  // TODO(victorr): Organize this nicely
-  typedef Eigen::Matrix<double, 3, 1> BiasVectorType;
   BiasVectorType forwarded_accel_bias_ = BiasVectorType::Zero();
   BiasVectorType forwarded_gyro_bias_ = BiasVectorType::Zero();
 };

@@ -355,6 +355,7 @@ void VoxgraphMapper::imuBiasesCallback(
     const sensor_msgs::Imu::ConstPtr &imu_biases) {
   tf::vectorMsgToKindr(imu_biases->linear_acceleration, &forwarded_accel_bias_);
   tf::vectorMsgToKindr(imu_biases->angular_velocity, &forwarded_gyro_bias_);
+  std::cout << "callback: " << imu_biases->angular_velocity.x << std::endl;
 }
 
 bool VoxgraphMapper::lookup_T_odom_base(ros::Time timestamp,
