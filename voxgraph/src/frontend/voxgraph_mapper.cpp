@@ -23,6 +23,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       subscriber_queue_length_(100),
       pointcloud_topic_("pointcloud"),
       imu_biases_topic_("imu_biases"),
+      rovio_odom_topic_("odometry"),
       registration_constraints_enabled_(false),
       odometry_constraints_enabled_(false),
       height_constraints_enabled_(false),
@@ -62,6 +63,7 @@ void VoxgraphMapper::getParametersFromRos() {
                     subscriber_queue_length_);
   nh_private_.param("pointcloud_topic", pointcloud_topic_, pointcloud_topic_);
   nh_private_.param("imu_biases_topic", imu_biases_topic_, imu_biases_topic_);
+  nh_private_.param("rovio_odom_topic", rovio_odom_topic_, rovio_odom_topic_);
   nh_private_.param("mission_frame", mission_frame_, mission_frame_);
   nh_private_.param("odom_frame", odom_frame_, odom_frame_);
   nh_private_.param("base_frame", base_frame_, base_frame_);
@@ -123,11 +125,19 @@ void VoxgraphMapper::getParametersFromRos() {
 }
 
 void VoxgraphMapper::subscribeToTopics() {
+  ROS_INFO_STREAM("Pointcloud callback subscribes to: "
+      << pointcloud_topic_);
   pointcloud_subscriber_ =
       nh_.subscribe(pointcloud_topic_, subscriber_queue_length_,
                     &VoxgraphMapper::pointcloudCallback, this);
+  ROS_INFO_STREAM("IMU bias callback subscribes to: "
+      << imu_biases_topic_);
   imu_biases_subscriber_ = nh_.subscribe(
       imu_biases_topic_, 1, &VoxgraphMapper::imuBiasesCallback, this);
+  ROS_INFO_STREAM("Rovio odom callback subscribes to: " 
+      << rovio_odom_topic_);
+  rovio_odom_subscriber_ = nh_.subscribe(
+      rovio_odom_topic_, 1, &VoxgraphMapper::rovioOdomCallback, this);
 }
 
 void VoxgraphMapper::advertiseTopics() {
@@ -322,11 +332,14 @@ void VoxgraphMapper::pointcloudCallback(
         }
       }
     }
+    /*
     BiasVectorType zero_vector = BiasVectorType::Zero();
     tf::vectorKindrToMsg(zero_vector,
                          &odometry_with_imu_biases.twist.twist.linear);
     tf::vectorKindrToMsg(zero_vector,
                          &odometry_with_imu_biases.twist.twist.angular);
+                         */
+    odometry_with_imu_biases.twist = forwarded_twist_;
     tf::vectorKindrToMsg(forwarded_accel_bias_,
                          &odometry_with_imu_biases.accel_bias);
     tf::vectorKindrToMsg(forwarded_gyro_bias_,
@@ -355,7 +368,11 @@ void VoxgraphMapper::imuBiasesCallback(
     const sensor_msgs::Imu::ConstPtr &imu_biases) {
   tf::vectorMsgToKindr(imu_biases->linear_acceleration, &forwarded_accel_bias_);
   tf::vectorMsgToKindr(imu_biases->angular_velocity, &forwarded_gyro_bias_);
-  std::cout << "callback: " << imu_biases->angular_velocity.x << std::endl;
+}
+
+void VoxgraphMapper::rovioOdomCallback(
+    const nav_msgs::Odometry::ConstPtr &rovio_odom) {
+  forwarded_twist_ = rovio_odom->twist;
 }
 
 bool VoxgraphMapper::lookup_T_odom_base(ros::Time timestamp,

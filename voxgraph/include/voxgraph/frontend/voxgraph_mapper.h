@@ -5,6 +5,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <nav_msgs/Odometry.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
 #include <voxblox_ros/transformer.h>
@@ -32,6 +33,7 @@ class VoxgraphMapper {
   // ROS topic callbacks
   void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
   void imuBiasesCallback(const sensor_msgs::Imu::ConstPtr &imu_biases);
+  void rovioOdomCallback(const nav_msgs::Odometry::ConstPtr &rovio_odom);
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
@@ -78,6 +80,8 @@ class VoxgraphMapper {
   ros::Subscriber pointcloud_subscriber_;
   std::string imu_biases_topic_;
   ros::Subscriber imu_biases_subscriber_;
+  std::string rovio_odom_topic_;
+  ros::Subscriber rovio_odom_subscriber_;
 
   // ROS topic publishers
   ros::Publisher separated_mesh_pub_;
@@ -157,6 +161,7 @@ class VoxgraphMapper {
 
   BiasVectorType forwarded_accel_bias_ = BiasVectorType::Zero();
   BiasVectorType forwarded_gyro_bias_ = BiasVectorType::Zero();
+  geometry_msgs::TwistWithCovariance forwarded_twist_;
 };
 }  // namespace voxgraph
 
