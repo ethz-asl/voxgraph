@@ -7,11 +7,11 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
-#include <voxblox_ros/transformer.h>
 #include <memory>
 #include <string>
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/frame_names.h"
+#include "voxgraph/frontend/map_tracker/map_tracker.h"
 #include "voxgraph/frontend/map_tracker/scan_to_map_registerer.h"
 #include "voxgraph/frontend/measurement_processors/gps_processor.h"
 #include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
@@ -115,28 +115,17 @@ class VoxgraphMapper {
   // Visualization tools
   SubmapVisuals submap_vis_;
 
-  // Class used to translate between the coordinate frame names used in voxgraph
-  // and the other ROS nodes
-  FrameNames frame_names_;
+  // Map tracker handles the odometry input and refines it using scan-to-map ICP
+  MapTracker map_tracker_;
 
-  // Voxblox transformer used to lookup transforms from the TF tree or rosparams
-  voxblox::Transformer transformer_;
-
-  // Coordinate frame correction transforms
-  Transformation T_M_L_;
-  Transformation T_L_O_;
-  Transformation T_B_C_;  // This transform is static
-
-  // Transform lookup method that sleeps and retries a few times if the TF from
-  // the base to the odom frame is not immediately available
-  bool lookup_T_odom_base(ros::Time timestamp, Transformation *T_odom_base);
-
+  // TODO(victorr): BOF Move to MapTracker
   // Whether to get the odometry input through TF lookups
   bool use_tf_transforms_;
 
   // Scan to submap registerer used to refine the odometry estimate,
   // akin to voxblox ICP
   ScanToMapRegisterer scan_to_map_registerer_;
+  // TODO(victorr): EOF Move to MapTracker
 
   BiasVectorType forwarded_accel_bias_ = BiasVectorType::Zero();
   BiasVectorType forwarded_gyro_bias_ = BiasVectorType::Zero();
