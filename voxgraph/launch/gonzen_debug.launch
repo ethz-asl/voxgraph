@@ -19,7 +19,7 @@
   <arg name="tsdf_voxels_per_side" default="16" />
   <arg name="robot_radius" default="0.5" />
 
-  <node name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -s 0 --clock --quiet $(arg bag_file)" if="$(arg play_bag)">
+  <node name="player" pkg="rosbag" type="play" output="screen" args="-r 0.5 -s 0 --clock --quiet $(arg bag_file)" if="$(arg play_bag)">
     <!-- <remap from="/tf" to="/not_tf"/> -->
   </node>>
 
