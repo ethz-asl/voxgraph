@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <limits>
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
@@ -299,8 +300,9 @@ void VoxgraphMapper::pointcloudCallback(
       current_timestamp, T_mission_base);
 
   // Publish the odometry
-  if ((forwarded_accel_bias_.array() != 0).all() &&
-      (forwarded_gyro_bias_.array() != 0).all()) {
+  constexpr double double_min = std::numeric_limits<double>::lowest();
+  if ((forwarded_accel_bias_.array() >= double_min).all() &&
+      (forwarded_gyro_bias_.array()  >= double_min).all()) {
     maplab_msgs::OdometryWithImuBiases odometry_with_imu_biases;
     odometry_with_imu_biases.header.frame_id = refined_frame_corrected_;
     odometry_with_imu_biases.header.stamp = current_timestamp;
