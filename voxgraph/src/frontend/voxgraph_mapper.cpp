@@ -228,7 +228,7 @@ void VoxgraphMapper::pointcloudCallback(
 
       // Update the fictional odometry origin to cancel out drift
       Transformation T_M_S_new = submap_collection_ptr_->getActiveSubmapPose();
-      T_M_L_ = T_M_S_new * T_M_S_old.inverse() * T_M_L_,
+      T_M_L_ = T_M_S_new * T_M_S_old.inverse() * T_M_L_;
       T_mission_base = T_M_S_new * T_M_S_old.inverse() * T_mission_base;
       ROS_INFO_STREAM("Applying pose correction:\n"
                       << T_M_S_new * T_M_S_old.inverse());
