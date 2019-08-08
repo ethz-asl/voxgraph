@@ -87,12 +87,19 @@ void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
                     auto_pause_rosbag_);
 
-  // Load the transform from the base frame to the sensor frame
+  // Load the transform from the base frame to the sensor frame, if available
+  // NOTE: If the transform is not specified through ROS params, voxgraph will
+  //       attempt to get if from TFs
   XmlRpc::XmlRpcValue T_base_sensor_xml;
-  CHECK(nh_private_.getParam("T_base_sensor", T_base_sensor_xml))
-      << "The transform from the base frame to the sensor frame "
-      << "T_base_sensor is required but was not set.";
-  kindr::minimal::xmlRpcToKindr(T_base_sensor_xml, &T_B_C_);
+  get_T_base_sensor_from_tfs_ =
+      !nh_private_.getParam("T_base_sensor", T_base_sensor_xml);
+  if (!get_T_base_sensor_from_tfs_) {
+    kindr::minimal::xmlRpcToKindr(T_base_sensor_xml, &T_B_C_);
+  }
+  ROS_INFO_STREAM(
+      "Using transform from pointcloud sensor to robot base "
+      "link from "
+      << (get_T_base_sensor_from_tfs_ ? "TFs" : "ROS params"));
 
   // Read the measurement params from their sub-namespace
   ros::NodeHandle nh_measurement_params(nh_private_, "measurements");
@@ -187,6 +194,33 @@ void VoxgraphMapper::pointcloudCallback(
   }
   Transformation T_mission_base = T_M_L_ * T_L_O_ * T_odom_base;
 
+  // Get the transformation from the pointcloud sensor to the robot's base link
+  // from TFs, unless it was already provided through ROS params
+  if (get_T_base_sensor_from_tfs_) {
+    Transformation T_B_C_received;
+    double t_waited = 0;   // Total time spent waiting for the updated pose
+    double t_max = 0.020;  // Maximum time to wait before giving up
+    const ros::Duration timeout(0.005);  // Timeout between update attempts
+    while (t_waited < t_max) {
+      if (transformer_.lookupTransform(pointcloud_msg->header.frame_id,
+                                       base_frame_, current_timestamp,
+                                       &T_B_C_received)) {
+        T_B_C_ = T_B_C_received;
+        break;
+      }
+      timeout.sleep();
+      t_waited += timeout.toSec();
+    }
+    if (t_waited >= t_max) {
+      ROS_WARN(
+          "Waited %.3fs, but still could not get the TF from %s to %s. "
+          "Skipping pointcloud.",
+          t_waited, pointcloud_msg->header.frame_id.c_str(),
+          base_frame_.c_str());
+      return;
+    }
+  }
+
   // Check if it's time to create a new submap
   if (submap_collection_ptr_->shouldCreateNewSubmap(current_timestamp)) {
     // Add the finished submap to the pose graph, optimize and correct for drift
@@ -269,27 +303,24 @@ void VoxgraphMapper::pointcloudCallback(
                                current_timestamp);
   }
 
-  // Lookup the sensor's pose through TFs if appropriate
-  if (use_tf_transforms_) {
-    transformer_.lookupTransform(pointcloud_msg->header.frame_id, base_frame_,
-                                 current_timestamp, &T_B_C_);
-  }
-
   // Get the pose of the sensor in mission frame
   Transformation T_mission_sensor = T_mission_base * T_B_C_;
 
   // Refine the camera pose using scan to submap matching
   Transformation T_mission_sensor_refined;
-  bool pose_refinement_successful = scan_to_map_registerer_.refineSensorPose(
-      pointcloud_msg, T_mission_sensor, &T_mission_sensor_refined);
-  if (pose_refinement_successful) {
-    // Update the robot and sensor pose
-    T_mission_sensor = T_mission_sensor_refined;
-    T_mission_base = T_mission_sensor * T_B_C_.inverse();
-    // Update and publish the corrected odometry frame
-    T_L_O_ = T_M_L_.inverse() * T_mission_base * T_odom_base.inverse();
-  } else {
-    ROS_WARN("Pose refinement failed");
+  bool icp_enabled = true;
+  if (icp_enabled) {
+    bool pose_refinement_successful = scan_to_map_registerer_.refineSensorPose(
+        pointcloud_msg, T_mission_sensor, &T_mission_sensor_refined);
+    if (pose_refinement_successful) {
+      // Update the robot and sensor pose
+      T_mission_sensor = T_mission_sensor_refined;
+      T_mission_base = T_mission_sensor * T_B_C_.inverse();
+      // Update and publish the corrected odometry frame
+      T_L_O_ = T_M_L_.inverse() * T_mission_base * T_odom_base.inverse();
+    } else {
+      ROS_WARN("Pose refinement failed");
+    }
   }
 
   // Integrate the pointcloud

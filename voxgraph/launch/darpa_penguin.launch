@@ -31,9 +31,6 @@
         </node>
 
         <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
-<!--              launch-prefix="env CPUPROFILE=/home/victorr/voxgraph_launcher.prof LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libprofiler.so">-->
-            <!--   launch-prefix="">-->
-            <!--   launch-prefix="gdb -ex run &#45;&#45;args">-->
             <rosparam>
                 verbose: false
                 debug: true
@@ -47,11 +44,6 @@
                 robot_frame_corrected: "robot_voxgraph"
                 sensor_frame_corrected: "sensor_voxgraph"
                 use_tf_transforms: True
-                T_base_sensor:
-                    - [ 0.9908579, -0.0196458,  0.1334716, -0.00607641]
-                    - [ 0.0191474,  0.9998041,  0.0050169, -0.0106566]
-                    - [-0.1335440, -0.0024154,  0.9910399,  0.133374]
-                    - [ 0.0,        0.0,        0.0,        1.0]
                 tsdf_integrator:
                     tsdf_voxel_size: 0.20
                     truncation_distance: 0.60

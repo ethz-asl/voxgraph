@@ -30,10 +30,7 @@
       <remap from="imu0" to="mavros/imu/data_raw" />
     </node>
 
-    <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen"
-   launch-prefix="env CPUPROFILE=/home/victorr/voxgraph_launcher.prof LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libprofiler.so">
-<!--   launch-prefix="">-->
-<!--   launch-prefix="gdb -ex run &#45;&#45;args">-->
+    <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
       <rosparam>
         verbose: False
         debug: True
@@ -74,8 +71,8 @@
           odometry:
             enabled: True
             information_matrix:
-              x_x:     1.0
-              y_y:     1.0
+              x_x:     10.0
+              y_y:     10.0
               z_z:     2500.0
               yaw_yaw: 2500.0
           height:
