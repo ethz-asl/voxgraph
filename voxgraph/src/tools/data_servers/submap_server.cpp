@@ -12,7 +12,7 @@ SubmapServer::SubmapServer(ros::NodeHandle nh_private) {
   submap_esdf_pub_ =
       nh_private.advertise<voxgraph_msgs::MapLayer>("submap_esdfs", 3, false);
   submap_surface_pointcloud_pub_ =
-      nh_private.advertise<sensor_msgs::PointCloud2>(
+      nh_private.advertise<voxgraph_msgs::MapSurface>(
           "submap_surface_pointclouds", 3, false);
 }
 
