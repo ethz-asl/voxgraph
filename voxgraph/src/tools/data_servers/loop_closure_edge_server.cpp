@@ -1,5 +1,6 @@
 #include "voxgraph/tools/data_servers/loop_closure_edge_server.h"
-#include <voxgraph/common.h>
+#include <limits>
+#include "voxgraph/common.h"
 
 namespace voxgraph {
 LoopClosureEdgeServer::LoopClosureEdgeServer(ros::NodeHandle nh_private,
@@ -51,8 +52,22 @@ void LoopClosureEdgeServer::publishLoopClosureEdges(
     edge_msg.timestamp_B = second_submap.getStartTime();
 
     // Set the edge's observed transformation
-    Transformation T_A_B =
-        first_submap.getPose().inverse() * second_submap.getPose();
+    Transformation T_W_A, T_W_B;
+    bool pseudo_6dof_transform = true;
+    if (pseudo_6dof_transform) {
+      // Use the robot poses at submap creation time to get 6DoF poses
+      // NOTE: The loop closure edge covariances are estimated for the 4DoF
+      //       submap poses. Using covariances in combination with 6DoF poses
+      //       therefore isn't correct, but might be acceptably close for small
+      //       pitch/roll.
+      T_W_A = first_submap.getPoseHistory().begin()->second;
+      T_W_B = second_submap.getPoseHistory().begin()->second;
+    } else {
+      // Use the submap origin poses
+      T_W_A = first_submap.getPose();
+      T_W_B = second_submap.getPose();
+    }
+    Transformation T_A_B = T_W_A.inverse() * T_W_B;
     tf::poseKindrToMsg(T_A_B.cast<double>(), &edge_msg.T_A_B.pose);
 
     // Set the edge's covariance
@@ -61,7 +76,7 @@ void LoopClosureEdgeServer::publishLoopClosureEdges(
       PoseGraph::EdgeCovarianceMap::const_iterator covariance_iter =
           edge_covariance_map.find(overlapping_submap_pair);
       if (covariance_iter != edge_covariance_map.end()) {
-        edge_msg.T_A_B.covariance.fill(0.0);
+        edge_msg.T_A_B.covariance.fill(std::numeric_limits<double>::max());
         for (int original_row = 0; original_row < 4; ++original_row) {
           for (int original_col = 0; original_col < 4; ++original_col) {
             int msg_row = original_row;

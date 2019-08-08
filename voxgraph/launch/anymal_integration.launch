@@ -21,13 +21,6 @@
       base_frame_corrected: "imu_corrected"
       sensor_frame_corrected: "sensor_corrected"
       use_tf_transforms: true
-      # Tuned calibration (0.01 rad off - final error without odom constraints [-0.04, -0.03, 0.35])
-      # For calibration according to TFs, see STIX launch file
-      T_base_sensor:
-      - [-0.9908275, -0.0196803, 0.1336922, -0.024]
-      - [ 0.0202159, -0.9997921, 0.0026504, -0.011]
-      - [ 0.1336122,  0.0053288, 0.9910194, -0.131]
-      - [ 0.0,        0.0,       0.0,        1.0]
       tsdf_integrator:
         tsdf_voxel_size: 0.20
         truncation_distance: 0.60
