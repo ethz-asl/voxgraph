@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <arg name="play_bag" default="true" />
-  <arg name="bag_file" default="/home/berlukas/Documents/datasets/DARPA/penguin/long_loop_remote.bag"/>
+  <arg name="bag_file" default="/home/victorr/data/gonzen_11-06-2019/long_loop_remote.bag"/>
 
   <node pkg="tf" type="static_transform_publisher" name="odom_to_mission" args="0 0 0 0 0 0 1 odom mission 100"/>
 
@@ -15,10 +15,6 @@
   <arg name="robot_frame_id" default="imu" />
   <arg name="force_mavros_triggering" default="true" />
 
-  <arg name="voxel_size" default="0.15" />
-  <arg name="tsdf_voxels_per_side" default="16" />
-  <arg name="robot_radius" default="0.5" />
-
   <node name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -s 0 --clock --quiet $(arg bag_file)" if="$(arg play_bag)">
     <!-- <remap from="/tf" to="/not_tf"/> -->
   </node>>
@@ -26,37 +22,23 @@
   <group ns="$(arg namespace)" >
 
     <node name="rovio" pkg="rovio" type="rovio_node" output="screen" clear_params="true">
-      <param name="filter_config" value="/home/berlukas/Documents/calibration/penguin/rovio_filter_blackfly.info" />
-      <param name="camera0_config" value="/home/berlukas/Documents/calibration/penguin/rovio_equidist_cam0.yaml" />
+      <param name="filter_config" value="$(find darpa_maplab_utils)/params/gonzen_11_06_2019/rovio_filter_blackfly.info" />
+      <param name="camera0_config" value="$(find darpa_maplab_utils)/params/gonzen_11_06_2019/rovio_equidist_cam0.yaml" />
       <param name="world_frame" value="$(arg local_frame_id)"/>
 
       <remap from="cam0/image_raw" to="image_raw" />
       <remap from="imu0" to="mavros/imu/data_raw" />
     </node>
 
-<!--    <node name="voxblox_node" pkg="voxblox_ros" type="esdf_server" output="screen" args="-alsologtostderr" clear_params="true">-->
-<!--      <rosparam command="load" file="$(find darpa_maplab_utils)/params/gonzen_11_06_2019/voxblox_mapping_config.yaml" />-->
-
-<!--      <remap from="pointcloud" to="os1_node/points"/>-->
-<!--      <remap from="voxblox_node/esdf_map_out" to="esdf_map" />-->
-<!--      <remap from="voxblox_node/tsdf_map_out" to="tsdf_map" />-->
-<!--      <remap from="transform" to="rovio/transform" />-->
-
-<!--      <param name="world_frame" value="$(arg global_frame_id)"/>-->
-<!--      <param name="sensor_frame" value="os1"/>-->
-
-<!--      <param name="mesh_filename" value="/home/penguin/begs/map_sharing/gonzen_11_06_19/shared_voxblox_map.ply" />-->
-<!--      <param name="capability_group" value="Mapping" />-->
-<!--    </node>-->
-
-    <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
-<!--   launch-prefix="gdb -ex run &#45;&#45;args"> -->
+    <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen"
+   launch-prefix="env CPUPROFILE=/home/victorr/voxgraph_launcher.prof LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libprofiler.so">
+<!--   launch-prefix="">-->
+<!--   launch-prefix="gdb -ex run &#45;&#45;args">-->
       <rosparam>
         verbose: False
         debug: True
         submap_creation_interval: 10
         pointcloud_topic: "os1_node/points"
-        imu_biases_topic: "rovio/imu_biases"
         subscriber_queue_length: 1000
         world_frame: "map"
         odom_frame: "odom"
@@ -65,7 +47,6 @@
         robot_frame_corrected: "robot_corrected"
         sensor_frame_corrected: "sensor_corrected"
         use_tf_transforms: True
-        use_gt_ptcloud_pose_from_sensor_tf: False
         T_base_sensor:
             - [ 0.9908579, -0.0196458,  0.1334716, -0.00607641]
             - [ 0.0191474,  0.9998041,  0.0050169, -0.0106566]
