@@ -100,7 +100,7 @@ void SubmapServer::publishSubmapSurfacePointcloud(
   submap_surface_pointcloud_msg.header = generateHeaderMsg(submap, timestamp);
   submap_surface_pointcloud_msg.map_header = generateSubmapHeaderMsg(submap);
 
-  // Fill the message's pointcloud with the vertices of the submap's isosurface
+  // Convert the vertices of the submap's isosurface to a pointcloud
   // TODO(victorr): Implement weighted subsampling for low bandwidth scenarios
   const WeightedSampler<RegistrationPoint> &isosurface_points =
       submap.getRegistrationPoints(
@@ -115,8 +115,14 @@ void SubmapServer::publishSubmapSurfacePointcloud(
     pcl_isosurface_point.intensity = isosurface_points[point_i].weight;
     pcl_surface_pointcloud.push_back(pcl_isosurface_point);
   }
+
+  // Store the pointcloud in the msg's PointCloud2 field and set its header
   pcl::toROSMsg(pcl_surface_pointcloud,
                 submap_surface_pointcloud_msg.pointcloud);
+  submap_surface_pointcloud_msg.pointcloud.header.stamp = submap.getStartTime();
+  submap_surface_pointcloud_msg.pointcloud.header.frame_id = "imu";
+  // TODO(victorr): Document which timestamps and frames are used where
+  // TODO(victorr): Parameterize the frame names
 
   // Publish
   submap_surface_pointcloud_publisher.publish(submap_surface_pointcloud_msg);
