@@ -1,5 +1,6 @@
 #include "voxgraph/tools/data_servers/submap_server.h"
 #include <minkindr_conversions/kindr_msg.h>
+#include <pcl/common/transforms.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <voxblox_ros/conversions.h>
 #include <voxgraph_msgs/MapLayer.h>
@@ -100,19 +101,37 @@ void SubmapServer::publishSubmapSurfacePointcloud(
   submap_surface_pointcloud_msg.header = generateHeaderMsg(submap, timestamp);
   submap_surface_pointcloud_msg.map_header = generateSubmapHeaderMsg(submap);
 
-  // Convert the vertices of the submap's isosurface to a pointcloud
-  // TODO(victorr): Implement weighted subsampling for low bandwidth scenarios
+  // Get the isosurfaces vertices
   const WeightedSampler<RegistrationPoint> &isosurface_points =
       submap.getRegistrationPoints(
           VoxgraphSubmap::RegistrationPointType::kIsosurfacePoints);
+
+  // Allocate a PCL pointcloud used as an intermediate step
+  // when converting to ROS' PointCloud2 type
   pcl::PointCloud<pcl::PointXYZI> pcl_surface_pointcloud;
   pcl_surface_pointcloud.reserve(isosurface_points.size());
+
+  // Get the pose of the robot at the time that the submap was created,
+  // in case we want to transform the pointcloud from the 4DoF submap
+  // origin frame to the 6DoF robot base_link frame
+  // NOTE: The PointCloud2.header.stamp is set to the submap creation timestamp
+  Eigen::Affine3f T_B_S;
+  transformKindrToEigen(submap.getPoseHistory().begin()->second.inverse(),
+                        &T_B_S);
+
+  // Add the isosurface vertices to the PCL pointclouds
+  // TODO(victorr): Implement weighted subsampling for low bandwidth scenarios
   for (size_t point_i = 0; point_i < isosurface_points.size(); point_i++) {
     pcl::PointXYZI pcl_isosurface_point;
     pcl_isosurface_point.x = isosurface_points[point_i].position.x();
     pcl_isosurface_point.y = isosurface_points[point_i].position.y();
     pcl_isosurface_point.z = isosurface_points[point_i].position.z();
     pcl_isosurface_point.intensity = isosurface_points[point_i].weight;
+    if (fake_6dof_transforms_) {
+      // Transform the points from the 4DoF submap frame
+      // to the 6DoF base_link frame
+      pcl_isosurface_point = pcl::transformPoint(pcl_isosurface_point, T_B_S);
+    }
     pcl_surface_pointcloud.push_back(pcl_isosurface_point);
   }
 

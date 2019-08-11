@@ -55,8 +55,7 @@ void LoopClosureEdgeServer::publishLoopClosureEdges(
     Transformation T_M_A = first_submap.getPose();
     Transformation T_M_B = second_submap.getPose();
 
-    bool pseudo_6dof_transform = true;
-    if (pseudo_6dof_transform) {
+    if (fake_6dof_transforms_) {
       // Go from 4DoF submap origin poses T_M_S to 6DoF robot poses T_M_R
       // by using T_M_B = T_M_S * T_S_R, where T_S_R is the 6DoF robot pose at
       // submap creation time

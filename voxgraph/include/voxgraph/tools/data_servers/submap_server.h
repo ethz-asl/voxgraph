@@ -3,6 +3,7 @@
 
 #include <std_msgs/Header.h>
 #include <voxgraph_msgs/MapHeader.h>
+#include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 
 namespace voxgraph {
@@ -38,11 +39,21 @@ class SubmapServer {
   ros::Publisher submap_esdf_pub_;
   ros::Publisher submap_surface_pointcloud_pub_;
 
+  static constexpr bool fake_6dof_transforms_ = true;
+
   // Convenience methods to generate the message and submap headers
   static std_msgs::Header generateHeaderMsg(const VoxgraphSubmap &submap,
                                             const ros::Time &timestamp);
   static voxgraph_msgs::MapHeader generateSubmapHeaderMsg(
       const VoxgraphSubmap &submap);
+
+  // Conversion method from Kindr transforms to Eigen Affine3f transforms
+  static void transformKindrToEigen(const Transformation &kindr,
+                                    Eigen::Affine3f *eigen) {
+    CHECK_NOTNULL(eigen);
+    *eigen =
+        Eigen::Translation3f(kindr.getPosition()) * kindr.getEigenQuaternion();
+  }
 };
 }  // namespace voxgraph
 

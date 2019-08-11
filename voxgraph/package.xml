@@ -11,6 +11,7 @@
   <license>ASL 2.0</license>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
 
   <depend>voxblox</depend>
   <depend>voxblox_ros</depend>

@@ -30,6 +30,7 @@ class LoopClosureEdgeServer {
 
  private:
   bool verbose_;
+  static constexpr bool fake_6dof_transforms_ = true;
 
   ros::Publisher loop_closure_edge_list_pub_;
 
