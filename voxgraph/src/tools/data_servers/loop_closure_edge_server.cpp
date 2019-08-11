@@ -76,7 +76,7 @@ void LoopClosureEdgeServer::publishLoopClosureEdges(
       PoseGraph::EdgeCovarianceMap::const_iterator covariance_iter =
           edge_covariance_map.find(overlapping_submap_pair);
       if (covariance_iter != edge_covariance_map.end()) {
-        edge_msg.T_A_B.covariance.fill(std::numeric_limits<double>::max());
+        edge_msg.T_A_B.covariance.fill(set_unknown_covariance_entries_to_);
         for (int original_row = 0; original_row < 4; ++original_row) {
           for (int original_col = 0; original_col < 4; ++original_col) {
             int msg_row = original_row;
