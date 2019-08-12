@@ -45,6 +45,9 @@ class PoseGraphInterface {
     return overlapping_submap_list_;
   }
 
+  bool getEdgeCovarianceMap(
+      PoseGraph::EdgeCovarianceMap *edge_covariance_map_ptr) const;
+
   const PoseGraph::SolverSummaryList &getSolverSummaries() const {
     return pose_graph_.getSolverSummaries();
   }

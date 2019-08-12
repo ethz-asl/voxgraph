@@ -121,6 +121,7 @@ class VoxgraphMapper {
   // TODO(victorr): BOF Move to MapTracker
   // Whether to get the odometry input through TF lookups
   bool use_tf_transforms_;
+  bool get_T_base_sensor_from_tfs_;
 
   // Scan to submap registerer used to refine the odometry estimate,
   // akin to voxblox ICP

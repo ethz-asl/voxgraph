@@ -8,7 +8,8 @@
 namespace voxgraph {
 class LoopClosureEdgeServer {
  public:
-  explicit LoopClosureEdgeServer(ros::NodeHandle nh_private);
+  explicit LoopClosureEdgeServer(ros::NodeHandle nh_private,
+                                 bool verbose = false);
 
   // Publish the map using this map server instance's ros publisher member
   void publishLoopClosureEdges(
@@ -24,9 +25,14 @@ class LoopClosureEdgeServer {
       const PoseGraphInterface &pose_graph_interface,
       const VoxgraphSubmapCollection &submap_collection,
       const ros::Time &timestamp,
-      const ros::Publisher &loop_closure_edge_list_publisher);
+      const ros::Publisher &loop_closure_edge_list_publisher,
+      bool verbose = false);
 
  private:
+  bool verbose_;
+  static constexpr bool fake_6dof_transforms_ = true;
+  static constexpr double set_unknown_covariance_entries_to_ = 1e4;
+
   ros::Publisher loop_closure_edge_list_pub_;
 
   // Convenience methods to generate the message header

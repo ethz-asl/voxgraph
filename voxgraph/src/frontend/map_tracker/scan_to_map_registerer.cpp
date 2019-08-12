@@ -65,12 +65,12 @@ bool ScanToMapRegisterer::refineSensorPose(
   Eigen::Matrix<double, 6, 6> odom_sqrt_information;
   odom_sqrt_information.setIdentity();
   // for penguin
-  odom_sqrt_information(0, 0) *= 1e5;  // translation x
-  odom_sqrt_information(1, 1) *= 1e5;  // translation y
-  odom_sqrt_information(2, 2) *= 1e5;  // translation z
-  odom_sqrt_information(3, 3) *= 1e8;  // roll
-  odom_sqrt_information(4, 4) *= 1e8;  // pitch
-  odom_sqrt_information(5, 5) *= 1e5;  // yaw
+  odom_sqrt_information(0, 0) *= 1e5;   // translation x
+  odom_sqrt_information(1, 1) *= 1e5;   // translation y
+  odom_sqrt_information(2, 2) *= 1e6;   // translation z
+  odom_sqrt_information(3, 3) *= 1e12;  // roll
+  odom_sqrt_information(4, 4) *= 1e12;  // pitch
+  odom_sqrt_information(5, 5) *= 1e7;   // yaw
   // for anymal
   //  odom_sqrt_information(0, 0) *= 1e3;  // translation x
   //  odom_sqrt_information(1, 1) *= 1e3;  // translation y
