@@ -22,13 +22,24 @@
   <group ns="$(arg namespace)" >
 
     <node name="rovio" pkg="rovio" type="rovio_node" output="screen" clear_params="true">
-      <param name="filter_config" value="$(find darpa_maplab_utils)/params/gonzen_11_06_2019/rovio_filter_blackfly.info" />
-      <param name="camera0_config" value="$(find darpa_maplab_utils)/params/gonzen_11_06_2019/rovio_equidist_cam0.yaml" />
+      <param name="filter_config" value="$(find mav_startup)/parameters/mavs/penguin/blackfly/rovio_filter_blackfly.info" />
+      <param name="camera0_config" value="$(find mav_startup)/parameters/mavs/penguin/blackfly/rovio_equidist_cam0.yaml" />
       <param name="world_frame" value="$(arg local_frame_id)"/>
 
       <remap from="cam0/image_raw" to="image_raw" />
       <remap from="imu0" to="mavros/imu/data_raw" />
     </node>
+
+<!--    <group ns="rovio_old">-->
+<!--      <node name="rovio_old_config" pkg="rovio" type="rovio_node" output="screen" clear_params="true">-->
+<!--        <param name="filter_config" value="$(find darpa_maplab_utils)/params/gonzen_11_06_2019/rovio_filter_blackfly.info" />-->
+<!--        <param name="camera0_config" value="$(find darpa_maplab_utils)/params/gonzen_11_06_2019/rovio_equidist_cam0.yaml" />-->
+<!--        <param name="world_frame" value="$(arg local_frame_id)"/>-->
+
+<!--        <remap from="cam0/image_raw" to="/penguin/image_raw" />-->
+<!--        <remap from="imu0" to="/penguin/mavros/imu/data_raw" />-->
+<!--      </node>-->
+<!--    </group>-->
 
     <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
       <rosparam>
@@ -44,14 +55,9 @@
         robot_frame_corrected: "robot_corrected"
         sensor_frame_corrected: "sensor_corrected"
         use_tf_transforms: True
-        T_base_sensor:
-            - [ 0.9908579, -0.0196458,  0.1334716, -0.00607641]
-            - [ 0.0191474,  0.9998041,  0.0050169, -0.0106566]
-            - [-0.1335440, -0.0024154,  0.9910399,  0.133374]
-            - [ 0.0,        0.0,        0.0,        1.0]
         tsdf_integrator:
-          tsdf_voxel_size: 0.15
-          truncation_distance: 0.45
+          tsdf_voxel_size: 0.20
+          truncation_distance: 0.60
           max_ray_length_m: 16.0
           use_const_weight: true
           use_weight_dropoff: true
@@ -76,7 +82,7 @@
               z_z:     2500.0
               yaw_yaw: 2500.0
           height:
-            enabled: false
+            enabled: true
             information_zz: 2500.0
       </rosparam>
     </node>
