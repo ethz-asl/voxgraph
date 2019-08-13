@@ -23,6 +23,8 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/frontend/submap_collection/voxgraph_submap_collection.cpp
     src/frontend/map_tracker/map_tracker.cpp
     src/frontend/map_tracker/scan_to_map_registerer.cpp
+    src/frontend/map_tracker/transformers/tf_transformer.cpp
+    src/frontend/map_tracker/transformers/odometry_transformer.cpp
     src/backend/pose_graph.cpp
     src/backend/node/node.cpp
     src/backend/node/node_collection.cpp

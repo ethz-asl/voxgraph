@@ -1,9 +1,7 @@
 #ifndef VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 #define VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 
-#include <maplab_msgs/OdometryWithImuBiases.h>
 #include <ros/ros.h>
-#include <sensor_msgs/Imu.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
@@ -32,7 +30,6 @@ class VoxgraphMapper {
 
   // ROS topic callbacks
   void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
-  void imuBiasesCallback(const sensor_msgs::Imu::ConstPtr &imu_biases);
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
@@ -77,20 +74,16 @@ class VoxgraphMapper {
   int subscriber_queue_length_;
   std::string pointcloud_topic_;
   ros::Subscriber pointcloud_subscriber_;
-  std::string imu_biases_topic_;
-  ros::Subscriber imu_biases_subscriber_;
 
   // ROS topic publishers
   ros::Publisher separated_mesh_pub_;
   ros::Publisher combined_mesh_pub_;
   ros::Publisher pose_history_pub_;
-  ros::Publisher odom_with_imu_biases_pub_;
 
   // ROS service servers
   ros::ServiceServer publish_separated_mesh_srv_;
   ros::ServiceServer publish_combined_mesh_srv_;
   ros::ServiceServer save_to_file_srv_;
-  // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
 
   // Constraints to be used
   bool registration_constraints_enabled_;
@@ -116,20 +109,8 @@ class VoxgraphMapper {
   SubmapVisuals submap_vis_;
 
   // Map tracker handles the odometry input and refines it using scan-to-map ICP
+  bool use_icp_refinement_;
   MapTracker map_tracker_;
-
-  // TODO(victorr): BOF Move to MapTracker
-  // Whether to get the odometry input through TF lookups
-  bool use_tf_transforms_;
-  bool get_T_base_sensor_from_tfs_;
-
-  // Scan to submap registerer used to refine the odometry estimate,
-  // akin to voxblox ICP
-  ScanToMapRegisterer scan_to_map_registerer_;
-  // TODO(victorr): EOF Move to MapTracker
-
-  BiasVectorType forwarded_accel_bias_ = BiasVectorType::Zero();
-  BiasVectorType forwarded_gyro_bias_ = BiasVectorType::Zero();
 };
 }  // namespace voxgraph
 

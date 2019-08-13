@@ -1,51 +1,63 @@
 #ifndef VOXGRAPH_FRONTEND_MAP_TRACKER_MAP_TRACKER_H_
 #define VOXGRAPH_FRONTEND_MAP_TRACKER_MAP_TRACKER_H_
 
+#include <maplab_msgs/OdometryWithImuBiases.h>
 #include <nav_msgs/Odometry.h>
+#include <sensor_msgs/Imu.h>
 #include <voxblox_ros/transformer.h>
+#include <string>
 #include <utility>
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/frame_names.h"
 #include "voxgraph/frontend/map_tracker/scan_to_map_registerer.h"
+#include "voxgraph/frontend/map_tracker/transformers/odometry_transformer.h"
+#include "voxgraph/frontend/map_tracker/transformers/tf_transformer.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 
 namespace voxgraph {
 class MapTracker {
  public:
   explicit MapTracker(VoxgraphSubmapCollection::ConstPtr submap_collection_ptr,
-                      FrameNames frame_names,
-                      // TODO(victorr): Find a better solution than passing nhs
-                      ros::NodeHandle nh, ros::NodeHandle nh_private,
-                      bool verbose = false)
-      : scan_to_map_registerer_(std::move(submap_collection_ptr), verbose),
-        frame_names_(std::move(frame_names)),
-        transformer_(nh, nh_private),
-        verbose_(verbose) {
-    //    // Publish the initial transform from the world to the drifting odom
-    //    frame TfHelper::publishTransform(voxblox::Transformation(),
-    //    world_frame_,
-    //                               odom_frame_corrected_, true);
-  }
+                      FrameNames frame_names, bool verbose = false);
 
-  // TODO(victorr): Add odometry callback
+  void subscribeToTopics(ros::NodeHandle nh,
+                         const std::string &odometry_input_topic,
+                         const std::string &imu_biases_topic);
+  void imuBiasesCallback(const sensor_msgs::Imu::ConstPtr &imu_biases);
+  void advertiseTopics(ros::NodeHandle nh_private,
+                       const std::string &odometry_output_topic);
+
+  bool updateToTime(const ros::Time &timestamp,
+                    const std::string &sensor_frame_id);
+
+  // TODO(victorr): Remove this once the robot pose is defined stored relative
+  //                to the current submap instead of the mission frame
+  void updateWithLoopClosure(const Transformation &T_M_B_before,
+                             const Transformation &T_M_B_after);
+
   void registerPointcloud(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
 
-  // TODO(victorr): Fold this old method into the new structure
-  // Transform lookup method that sleeps and retries a few times if the TF from
-  // the base to the odom frame is not immediately available
-  bool lookup_T_odom_base_link(ros::Time timestamp,
-                               Transformation *T_odom_robot);
+  void publishTFs();
+  void publishOdometry();
 
-  // NOTE: See frontend/frame_names.h for frame naming convention details
-  Transformation getT_mission_sensor();
+  // Transform getter methods
+  Transformation get_T_O_B() { return T_O_B_; }
+  Transformation get_T_M_B() { return T_M_L_ * T_L_O_ * T_O_B_; }
+  Transformation get_T_M_C() { return T_M_L_ * T_L_O_ * T_O_B_ * T_B_C_; }
 
-  void publishTFs(const ros::Time &timestamp);
-
-  void setVerbosity(bool verbose) { verbose_ = verbose; }
   const FrameNames &getFrameNames() const { return frame_names_; }
+
+  // Config get/setters
+  void setVerbosity(bool verbose) { verbose_ = verbose; }
+  //  bool &useOdomFromTFs() {
+  //    return use_odom_from_tfs_; }
+  //  bool &useSensorCalibrationFromTFs() {
+  //    return use_sensor_calibration_from_tfs_; }
 
  private:
   bool verbose_;
+
+  ros::Time current_timestamp_;
 
   // Coordinate frame names
   // NOTE: This class is used to translate frame names between voxgraph
@@ -56,16 +68,33 @@ class MapTracker {
   Transformation T_M_L_;
   Transformation T_L_O_;
 
+  // Transform that tracks the current odometry
+  Transformation T_O_B_;
+
   // Transform from the pointcloud sensor frame to the robot's base_link
   Transformation T_B_C_;
 
-  // Voxblox transformer used to lookup transforms from the TF tree or rosparams
-  voxblox::Transformer transformer_;
+  // Transformer class to lookup transforms from the TF tree or an odom topic
+  bool use_odom_from_tfs_ = true;
+  // NOTE: use_odom_tfs_ is automatically set to true if subscribeToTopics()
+  //       is called with a non-empty odometry_input_topic argument
+  bool use_sensor_calibration_from_tfs_ = true;
+  // TODO(victorr): use_sensor_calibration_from_tfs_ is automatically set to
+  //                false if a valid calibration is provided through ROS params
+  TfTransformer tf_transformer_;
+  OdometryTransformer odom_transformer_;
 
-  Transformation T_world_odom_corrected_;
-  Transformation T_robot_sensor_;  // This transform is static
-
+  // Scan to submap registerer used to refine the odometry estimate,
+  // akin to voxblox ICP
   ScanToMapRegisterer scan_to_map_registerer_;
+
+  // Odometry input
+  ros::Subscriber imu_biases_subscriber_;
+  BiasVectorType forwarded_accel_bias_ = BiasVectorType::Zero();
+  BiasVectorType forwarded_gyro_bias_ = BiasVectorType::Zero();
+
+  // Odometry output
+  ros::Publisher odom_with_imu_biases_pub_;
 };
 }  // namespace voxgraph
 

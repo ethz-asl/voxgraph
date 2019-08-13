@@ -22,7 +22,6 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       rosbag_helper_(nh),
       subscriber_queue_length_(100),
       pointcloud_topic_("pointcloud"),
-      imu_biases_topic_("imu_biases"),
       registration_constraints_enabled_(false),
       odometry_constraints_enabled_(false),
       height_constraints_enabled_(false),
@@ -34,11 +33,9 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       submap_server_(nh_private),
       loop_closure_edge_server_(nh_private),
       submap_vis_(submap_config_),
+      use_icp_refinement_(true),
       map_tracker_(submap_collection_ptr_,
-                   FrameNames::fromRosParams(nh_private), nh, nh_private,
-                   verbose_),
-      use_tf_transforms_(false),
-      scan_to_map_registerer_(submap_collection_ptr_) {
+                   FrameNames::fromRosParams(nh_private), verbose_) {
   // Setup interaction with ROS
   getParametersFromRos();
   subscribeToTopics();
@@ -49,16 +46,11 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
 void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("verbose", verbose_, verbose_);
   pose_graph_interface_.setVerbosity(verbose_);
-  //  scan_to_map_registerer_.setVerbosity(verbose_);
-  // TODO(victorr): Revert this
-  scan_to_map_registerer_.setVerbosity(true);
+  map_tracker_.setVerbosity(verbose_);
 
   nh_private_.param("subscriber_queue_length", subscriber_queue_length_,
                     subscriber_queue_length_);
   nh_private_.param("pointcloud_topic", pointcloud_topic_, pointcloud_topic_);
-  nh_private_.param("imu_biases_topic", imu_biases_topic_, imu_biases_topic_);
-  nh_private_.param("use_tf_transforms", use_tf_transforms_,
-                    use_tf_transforms_);
 
   // Get the submap creation interval as a ros::Duration
   double interval_temp;
@@ -71,19 +63,21 @@ void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
                     auto_pause_rosbag_);
 
-  // Load the transform from the base frame to the sensor frame, if available
-  // NOTE: If the transform is not specified through ROS params, voxgraph will
-  //       attempt to get if from TFs
-  XmlRpc::XmlRpcValue T_base_sensor_xml;
-  get_T_base_sensor_from_tfs_ =
-      !nh_private_.getParam("T_base_sensor", T_base_sensor_xml);
-  if (!get_T_base_sensor_from_tfs_) {
-    kindr::minimal::xmlRpcToKindr(T_base_sensor_xml, &T_B_C_);
-  }
-  ROS_INFO_STREAM(
-      "Using transform from pointcloud sensor to robot base "
-      "link from "
-      << (get_T_base_sensor_from_tfs_ ? "TFs" : "ROS params"));
+  //  // Load the transform from the base frame to the sensor frame, if
+  //  available
+  //  // NOTE: If the transform is not specified through ROS params, voxgraph
+  //  will
+  //  //       attempt to get if from TFs
+  //  XmlRpc::XmlRpcValue T_base_sensor_xml;
+  //  get_sensor_calibration_from_tfs_ =
+  //      !nh_private_.getParam("T_base_sensor", T_base_sensor_xml);
+  //  if (!get_sensor_calibration_from_tfs_) {
+  //    kindr::minimal::xmlRpcToKindr(T_base_sensor_xml, &T_B_C_);
+  //  }
+  //  ROS_INFO_STREAM(
+  //      "Using transform from pointcloud sensor to robot base "
+  //      "link from "
+  //      << (get_sensor_calibration_from_tfs_ ? "TFs" : "ROS params"));
 
   // Read the measurement params from their sub-namespace
   ros::NodeHandle nh_measurement_params(nh_private_, "measurements");
@@ -117,8 +111,9 @@ void VoxgraphMapper::subscribeToTopics() {
   pointcloud_subscriber_ =
       nh_.subscribe(pointcloud_topic_, subscriber_queue_length_,
                     &VoxgraphMapper::pointcloudCallback, this);
-  imu_biases_subscriber_ = nh_.subscribe(
-      imu_biases_topic_, 1, &VoxgraphMapper::imuBiasesCallback, this);
+  map_tracker_.subscribeToTopics(
+      nh_, nh_private_.param<std::string>("odometry_input_topic", ""),
+      nh_private_.param<std::string>("imu_biases_topic", ""));
 }
 
 void VoxgraphMapper::advertiseTopics() {
@@ -128,9 +123,9 @@ void VoxgraphMapper::advertiseTopics() {
       "combined_mesh", subscriber_queue_length_, true);
   pose_history_pub_ =
       nh_private_.advertise<nav_msgs::Path>("pose_history", 1, true);
-  odom_with_imu_biases_pub_ =
-      nh_private_.advertise<maplab_msgs::OdometryWithImuBiases>("odom", 1,
-                                                                false);
+  map_tracker_.advertiseTopics(
+      nh_private_,
+      nh_private_.param<std::string>("odometry_output_topic", "odometry"));
 }
 
 void VoxgraphMapper::advertiseServices() {
@@ -171,40 +166,12 @@ void VoxgraphMapper::pointcloudCallback(
     const sensor_msgs::PointCloud2::Ptr &pointcloud_msg) {
   // Lookup the robot pose at the time of the pointcloud message
   ros::Time current_timestamp = pointcloud_msg->header.stamp;
-  Transformation T_odom_base;
-  if (!map_tracker_.lookup_T_odom_base_link(current_timestamp, &T_odom_base)) {
+  if (!map_tracker_.updateToTime(current_timestamp,
+                                 pointcloud_msg->header.frame_id)) {
     // If the pose cannot be found, the pointcloud is skipped
-    ROS_WARN_STREAM("Skipping pointcloud since the robot pose at time "
-                    << current_timestamp << " is unknown.");
+    ROS_WARN_STREAM("Skipping pointcloud since the poses at time "
+                    << current_timestamp << " could not be lookup up.");
     return;
-  }
-  Transformation T_mission_base = T_M_L_ * T_L_O_ * T_odom_base;
-
-  // Get the transformation from the pointcloud sensor to the robot's base link
-  // from TFs, unless it was already provided through ROS params
-  if (get_T_base_sensor_from_tfs_) {
-    Transformation T_B_C_received;
-    double t_waited = 0;   // Total time spent waiting for the updated pose
-    double t_max = 0.020;  // Maximum time to wait before giving up
-    const ros::Duration timeout(0.005);  // Timeout between update attempts
-    while (t_waited < t_max) {
-      if (transformer_.lookupTransform(pointcloud_msg->header.frame_id,
-                                       base_frame_, current_timestamp,
-                                       &T_B_C_received)) {
-        T_B_C_ = T_B_C_received;
-        break;
-      }
-      timeout.sleep();
-      t_waited += timeout.toSec();
-    }
-    if (t_waited >= t_max) {
-      ROS_WARN(
-          "Waited %.3fs, but still could not get the TF from %s to %s. "
-          "Skipping pointcloud.",
-          t_waited, pointcloud_msg->header.frame_id.c_str(),
-          base_frame_.c_str());
-      return;
-    }
   }
 
   // Check if it's time to create a new submap
@@ -228,7 +195,7 @@ void VoxgraphMapper::pointcloudCallback(
       if (height_constraints_enabled_ && submap_collection_ptr_->size() > 1) {
         // This assumes that the height estimate from the odometry source is
         // really good (e.g. when it fuses an altimeter)
-        double current_height = T_odom_base.getPosition().z();
+        double current_height = map_tracker_.get_T_O_B().getPosition().z();
         pose_graph_interface_.addHeightMeasurement(finished_submap_id,
                                                    current_height);
       }
@@ -241,17 +208,16 @@ void VoxgraphMapper::pointcloudCallback(
       pose_graph_interface_.optimize();
 
       // Remember the pose of the current submap (used later to eliminate drift)
-      Transformation T_M_S_old = submap_collection_ptr_->getActiveSubmapPose();
+      Transformation T_M_S_before =
+          submap_collection_ptr_->getActiveSubmapPose();
 
       // Update the submap poses
       pose_graph_interface_.updateSubmapCollectionPoses();
 
       // Update the fictional odometry origin to cancel out drift
-      Transformation T_M_S_new = submap_collection_ptr_->getActiveSubmapPose();
-      T_M_L_ = T_M_S_new * T_M_S_old.inverse() * T_M_L_;
-      T_mission_base = T_M_S_new * T_M_S_old.inverse() * T_mission_base;
-      ROS_INFO_STREAM("Applying pose correction:\n"
-                      << T_M_S_new * T_M_S_old.inverse());
+      Transformation T_M_S_after =
+          submap_collection_ptr_->getActiveSubmapPose();
+      map_tracker_.updateWithLoopClosure(T_M_S_before, T_M_S_after);
 
       // Only auto publish the updated meshes if there are subscribers
       // NOTE: Users can request new meshes at any time through service calls
@@ -285,85 +251,31 @@ void VoxgraphMapper::pointcloudCallback(
     }
 
     // Create the new submap
-    submap_collection_ptr_->createNewSubmap(T_mission_base, current_timestamp);
+    submap_collection_ptr_->createNewSubmap(map_tracker_.get_T_M_B(),
+                                            current_timestamp);
     TfHelper::publishTransform(submap_collection_ptr_->getActiveSubmapPose(),
                                map_tracker_.getFrameNames().mission_frame,
                                "new_submap_origin", true, current_timestamp);
   }
 
-  // Lookup the sensor's pose through TFs if appropriate
-  if (use_tf_transforms_) {
-    transformer_.lookupTransform(pointcloud_msg->header.frame_id,
-                                 map_tracker_.getFrameNames().base_link_frame,
-                                 current_timestamp, &T_B_C_);
-  }
-
-  // Get the pose of the sensor in mission frame
-  Transformation T_mission_sensor = T_mission_base * T_B_C_;
-
   // Refine the camera pose using scan to submap matching
-  Transformation T_mission_sensor_refined;
-  bool icp_enabled = true;
-  if (icp_enabled) {
-    bool pose_refinement_successful = scan_to_map_registerer_.refineSensorPose(
-        pointcloud_msg, T_mission_sensor, &T_mission_sensor_refined);
-    if (pose_refinement_successful) {
-      // Update the robot and sensor pose
-      T_mission_sensor = T_mission_sensor_refined;
-      T_mission_base = T_mission_sensor * T_B_C_.inverse();
-      // Update and publish the corrected odometry frame
-      T_L_O_ = T_M_L_.inverse() * T_mission_base * T_odom_base.inverse();
-    } else {
-      ROS_WARN("Pose refinement failed");
-    }
+  if (use_icp_refinement_) {
+    map_tracker_.registerPointcloud(pointcloud_msg);
   }
 
   // Integrate the pointcloud
-  pointcloud_processor_.integratePointcloud(pointcloud_msg, T_mission_sensor);
+  pointcloud_processor_.integratePointcloud(pointcloud_msg,
+                                            map_tracker_.get_T_M_C());
 
   // Add the current pose to the submap's pose history
   submap_collection_ptr_->getActiveSubmapPtr()->addPoseToHistory(
-      current_timestamp, T_mission_base);
+      current_timestamp, map_tracker_.get_T_M_B());
 
   // Publish the odometry
-  constexpr double double_min = std::numeric_limits<double>::lowest();
-  if ((forwarded_accel_bias_.array() >= double_min).all() &&
-      (forwarded_gyro_bias_.array()  >= double_min).all()) {
-    maplab_msgs::OdometryWithImuBiases odometry_with_imu_biases;
-    odometry_with_imu_biases.header.frame_id =
-        map_tracker_.getFrameNames().refined_frame_corrected;
-    odometry_with_imu_biases.header.stamp = current_timestamp;
-    odometry_with_imu_biases.child_frame_id =
-        map_tracker_.getFrameNames().base_link_frame;
-    odometry_with_imu_biases.odometry_state = 0u;
-    const Transformation refined_odometry = T_L_O_ * T_odom_base;
-    tf::poseKindrToMsg(refined_odometry.cast<double>(),
-                       &odometry_with_imu_biases.pose.pose);
-    for (int row = 0; row < 6; ++row) {
-      for (int col = 0; col < 6; ++col) {
-        if (row == col) {
-          odometry_with_imu_biases.twist.covariance[row * 6 + col] = 1.0;
-          odometry_with_imu_biases.pose.covariance[row * 6 + col] = 1.0;
-        } else {
-          odometry_with_imu_biases.twist.covariance[row * 6 + col] = 0.0;
-          odometry_with_imu_biases.pose.covariance[row * 6 + col] = 0.0;
-        }
-      }
-    }
-    BiasVectorType zero_vector = BiasVectorType::Zero();
-    tf::vectorKindrToMsg(zero_vector,
-                         &odometry_with_imu_biases.twist.twist.linear);
-    tf::vectorKindrToMsg(zero_vector,
-                         &odometry_with_imu_biases.twist.twist.angular);
-    tf::vectorKindrToMsg(forwarded_accel_bias_,
-                         &odometry_with_imu_biases.accel_bias);
-    tf::vectorKindrToMsg(forwarded_gyro_bias_,
-                         &odometry_with_imu_biases.gyro_bias);
-    odom_with_imu_biases_pub_.publish(odometry_with_imu_biases);
-  }
+  map_tracker_.publishOdometry();
 
   // Publish the frames
-  map_tracker_.publishTFs(current_timestamp);
+  map_tracker_.publishTFs();
 
   // Publish the pose history
   if (pose_history_pub_.getNumSubscribers() > 0) {
@@ -371,12 +283,5 @@ void VoxgraphMapper::pointcloudCallback(
                                    map_tracker_.getFrameNames().mission_frame,
                                    pose_history_pub_);
   }
-}
-
-void VoxgraphMapper::imuBiasesCallback(
-    const sensor_msgs::Imu::ConstPtr &imu_biases) {
-  tf::vectorMsgToKindr(imu_biases->linear_acceleration, &forwarded_accel_bias_);
-  tf::vectorMsgToKindr(imu_biases->angular_velocity, &forwarded_gyro_bias_);
-  std::cout << "callback: " << imu_biases->angular_velocity.x << std::endl;
 }
 }  // namespace voxgraph

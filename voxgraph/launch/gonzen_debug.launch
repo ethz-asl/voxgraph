@@ -40,11 +40,15 @@
 <!--    </group>-->
 
     <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
+<!--          launch-prefix="gdb -ex run &#45;&#45;args">-->
       <rosparam>
         verbose: False
         debug: True
         submap_creation_interval: 10
         pointcloud_topic: "os1_node/points"
+        odometry_input_topic: "/penguin/rovio/odometry"
+        imu_biases_topic: "/penguin/rovio/imu_biases"
+        odometry_output_topic: "odometry"
         subscriber_queue_length: 1000
         mission_frame: "mission"
         odom_frame: "odom"
