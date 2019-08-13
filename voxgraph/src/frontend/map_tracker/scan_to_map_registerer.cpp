@@ -33,7 +33,7 @@ bool ScanToMapRegisterer::refineSensorPose(
   ceres::Problem problem(problem_options);
   // TODO(victorr): Evaluate this
   ceres::Solver::Options solver_options;
-  solver_options.parameter_tolerance = 3e-3;
+  solver_options.parameter_tolerance = 6e-3;
   solver_options.max_num_iterations = 2;
   solver_options.max_solver_time_in_seconds = 0.08;
   solver_options.num_threads = 1;

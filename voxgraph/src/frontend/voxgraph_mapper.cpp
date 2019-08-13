@@ -102,6 +102,12 @@ void VoxgraphMapper::getParametersFromRos() {
   pose_graph_interface_.setMeasurementConfigFromRosParams(
       nh_measurement_params);
 
+  // Enable or disable voxgraph ICP
+  nh_private_.param("use_icp_refinement", use_icp_refinement_,
+                    use_icp_refinement_);
+  ROS_INFO_STREAM_COND(verbose_, "ICP refinement: "
+                       << (use_icp_refinement_ ? "enabled" : "disabled"));
+
   // Read TSDF integrator params from their sub-namespace
   ros::NodeHandle nh_tsdf_params(nh_private_, "tsdf_integrator");
   pointcloud_processor_.setTsdfIntegratorConfigFromRosParam(nh_tsdf_params);
@@ -170,7 +176,7 @@ void VoxgraphMapper::pointcloudCallback(
                                  pointcloud_msg->header.frame_id)) {
     // If the pose cannot be found, the pointcloud is skipped
     ROS_WARN_STREAM("Skipping pointcloud since the poses at time "
-                    << current_timestamp << " could not be lookup up.");
+                    << current_timestamp << " could not be looked up.");
     return;
   }
 
