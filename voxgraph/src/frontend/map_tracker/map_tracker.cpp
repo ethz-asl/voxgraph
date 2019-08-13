@@ -41,7 +41,7 @@ void MapTracker::imuBiasesCallback(
 }
 
 bool MapTracker::updateToTime(const ros::Time &timestamp,
-                              const std::string &sensor_frame_id) {
+                              std::string sensor_frame_id) {
   // Keep track of the timestamp that the MapTracker is currently at
   current_timestamp_ = timestamp;
 
@@ -62,6 +62,14 @@ bool MapTracker::updateToTime(const ros::Time &timestamp,
   // Get the transformation from the pointcloud sensor to the robot's
   // base link from TFs, unless it was already provided through ROS params
   if (use_sensor_calibration_from_tfs_) {
+    // TODO(victorr): Implement option to provide a sensor_frame_id instead of
+    //                taking the one from the message
+    // Strip leading slashes if needed to avoid TF errors
+    if (sensor_frame_id[0] == '/') {
+      sensor_frame_id = sensor_frame_id.substr(1, sensor_frame_id.length());
+    }
+
+    // Lookup the transform
     if (!tf_transformer_.lookupTransform(frame_names_.base_link_frame,
                                          sensor_frame_id, timestamp, &T_B_C_)) {
       return false;
@@ -113,47 +121,71 @@ void MapTracker::publishOdometry() {
     constexpr double double_min = std::numeric_limits<double>::lowest();
     if ((forwarded_accel_bias_.array() >= double_min).all() &&
         (forwarded_gyro_bias_.array() >= double_min).all()) {
+      // Create the message and set its header
       maplab_msgs::OdometryWithImuBiases odometry_with_imu_biases;
       odometry_with_imu_biases.header.frame_id =
           frame_names_.refined_frame_corrected;
       odometry_with_imu_biases.header.stamp = current_timestamp_;
       odometry_with_imu_biases.child_frame_id = frame_names_.base_link_frame;
       odometry_with_imu_biases.odometry_state = 0u;
+
+      // Set the odometry pose
       const Transformation refined_odometry = T_L_O_ * T_O_B_;
       tf::poseKindrToMsg(refined_odometry.cast<double>(),
                          &odometry_with_imu_biases.pose.pose);
-      for (int row = 0; row < 6; ++row) {
-        for (int col = 0; col < 6; ++col) {
-          if (row == col) {
-            odometry_with_imu_biases.twist.covariance[row * 6 + col] = 1.0;
-            odometry_with_imu_biases.pose.covariance[row * 6 + col] = 1.0;
-          } else {
-            odometry_with_imu_biases.twist.covariance[row * 6 + col] = 0.0;
-            odometry_with_imu_biases.pose.covariance[row * 6 + col] = 0.0;
-          }
-        }
-      }
 
+      // Forward or hardcode the twist and covariances
       nav_msgs::Odometry closest_received_odom_msg_;
-      if (odom_transformer_.lookupOdometryMsg(current_timestamp_,
-                                              &closest_received_odom_msg_)) {
-        odometry_with_imu_biases.twist = closest_received_odom_msg_.twist;
-      } else {
-        ROS_WARN("Could not find closest odometry msg");
-        BiasVectorType zero_vector = BiasVectorType::Zero();
-        tf::vectorKindrToMsg(zero_vector,
-                             &odometry_with_imu_biases.twist.twist.linear);
-        tf::vectorKindrToMsg(zero_vector,
-                             &odometry_with_imu_biases.twist.twist.angular);
+      if (!use_odom_from_tfs_
+          && odom_transformer_.lookupOdometryMsg(current_timestamp_,
+                                                 &closest_received_odom_msg_)) {
+          // Forward the twist from ROVIO
+          odometry_with_imu_biases.twist = closest_received_odom_msg_.twist;
+
+          // Forward the pose and twist covariances
+          odometry_with_imu_biases.pose.covariance =
+              closest_received_odom_msg_.pose.covariance;
+          odometry_with_imu_biases.twist.covariance =
+              closest_received_odom_msg_.twist.covariance;
+        } else {
+          ROS_WARN("Could not find closest odometry msg. Will set twist to "
+                   "zero and covariances of pose and twist to identity."
+                   "Make sure to set a valid odometry topic in ROS parms.");
+
+          // Set the twist to zero
+          BiasVectorType zero_vector = BiasVectorType::Zero();
+          tf::vectorKindrToMsg(zero_vector,
+                                 &odometry_with_imu_biases.twist.twist.linear);
+          tf::vectorKindrToMsg(zero_vector,
+                                 &odometry_with_imu_biases.twist.twist.angular);
+
+          // Set the pose and twist covariances to identity
+          for (int row = 0; row < 6; ++row) {
+            for (int col = 0; col < 6; ++col) {
+              if (row == col) {
+                odometry_with_imu_biases.twist.covariance[row * 6 + col] = 1.0;
+                odometry_with_imu_biases.pose.covariance[row * 6 + col] = 1.0;
+              } else {
+                odometry_with_imu_biases.twist.covariance[row * 6 + col] = 0.0;
+                odometry_with_imu_biases.pose.covariance[row * 6 + col] = 0.0;
+              }
+            }
+          }
       }
 
+      // Forward the biases from ROVIO
       tf::vectorKindrToMsg(forwarded_accel_bias_,
                            &odometry_with_imu_biases.accel_bias);
       tf::vectorKindrToMsg(forwarded_gyro_bias_,
                            &odometry_with_imu_biases.gyro_bias);
 
+      // Publish the odom message
       odom_with_imu_biases_pub_.publish(odometry_with_imu_biases);
     }
+
+    ROS_WARN("The voxgraph odometry output topic has subscribers, but no IMU "
+             "biases have yet been received. Make sure to set a valid IMU "
+             "biases topics in ROS params such that it can be forwarded");
   }
 }
 }  // namespace voxgraph

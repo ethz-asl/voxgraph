@@ -28,7 +28,7 @@ class MapTracker {
                        const std::string &odometry_output_topic);
 
   bool updateToTime(const ros::Time &timestamp,
-                    const std::string &sensor_frame_id);
+                    std::string sensor_frame_id);
 
   // TODO(victorr): Remove this once the robot pose is defined stored relative
   //                to the current submap instead of the mission frame
