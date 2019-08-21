@@ -140,6 +140,12 @@ void VoxgraphMapper::advertiseServices() {
   save_pose_history_to_file_srv_ = nh_private_.advertiseService(
       "save_pose_history_to_file",
       &VoxgraphMapper::savePoseHistoryToFileCallback, this);
+  save_separated_mesh_srv_ = nh_private_.advertiseService(
+      "save_separated_mesh", &VoxgraphMapper::saveSeparatedMeshCallback,
+      this);
+  save_combined_mesh_srv_ = nh_private_.advertiseService(
+      "save_combined_mesh", &VoxgraphMapper::saveCombinedMeshCallback,
+      this);
 }
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
@@ -170,6 +176,20 @@ bool VoxgraphMapper::savePoseHistoryToFileCallback(
   io::savePoseHistoryToFile(request.file_path,
                             submap_collection_ptr_->getPoseHistory());
   return true;
+}
+
+bool VoxgraphMapper::saveSeparatedMeshCallback(
+    voxblox_msgs::FilePath::Request &request,
+    voxblox_msgs::FilePath::Response &response) {
+  submap_vis_.saveSeparatedMesh(request.file_path, *submap_collection_ptr_);
+  return true;  // Tell ROS it succeeded
+}
+
+bool VoxgraphMapper::saveCombinedMeshCallback(
+    voxblox_msgs::FilePath::Request &request,
+    voxblox_msgs::FilePath::Response &response) {
+  submap_vis_.saveCombinedMesh(request.file_path, *submap_collection_ptr_);
+  return true;  // Tell ROS it succeeded
 }
 
 void VoxgraphMapper::pointcloudCallback(

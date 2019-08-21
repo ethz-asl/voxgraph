@@ -7,6 +7,8 @@
 #include <string>
 #include <utility>
 
+#include <voxblox/io/mesh_ply.h>
+
 namespace voxgraph {
 SubmapVisuals::SubmapVisuals(const VoxgraphSubmap::Config &submap_config) {
   // TODO(victorr): Read this from ROS params
@@ -60,6 +62,7 @@ void SubmapVisuals::publishSeparatedMesh(
   publishMesh(mesh_layer_ptr, world_frame, publisher);
 }
 
+
 void SubmapVisuals::publishCombinedMesh(
     const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
     const std::string &world_frame, const ros::Publisher &publisher) {
@@ -68,6 +71,25 @@ void SubmapVisuals::publishCombinedMesh(
   submap_mesher_->generateCombinedMesh(submap_collection, mesh_layer_ptr.get());
   publishMesh(mesh_layer_ptr, world_frame, publisher,
               voxblox::ColorMode::kNormals);
+}
+
+void SubmapVisuals::saveSeparatedMesh(
+    const std::string &filepath,
+    const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection) {
+  auto mesh_layer_ptr =
+      std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
+  submap_mesher_->generateSeparatedMesh(submap_collection,
+                                        mesh_layer_ptr.get());
+  voxblox::outputMeshLayerAsPly(filepath, *mesh_layer_ptr);
+}
+
+void SubmapVisuals::saveCombinedMesh(
+    const std::string &filepath,
+    const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection) {
+  auto mesh_layer_ptr =
+      std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
+  submap_mesher_->generateCombinedMesh(submap_collection, mesh_layer_ptr.get());
+  voxblox::outputMeshLayerAsPly(filepath, *mesh_layer_ptr);
 }
 
 void SubmapVisuals::publishBox(const BoxCornerMatrix &box_corner_matrix,
