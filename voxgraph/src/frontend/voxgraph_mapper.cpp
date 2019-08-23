@@ -2,14 +2,14 @@
 #include <minkindr_conversions/kindr_xml.h>
 #include <nav_msgs/Path.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <chrono>
 #include <memory>
 #include <string>
 #include <thread>
-#include <chrono>
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
+#include "voxgraph/io.h"
 #include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
-#include "voxgraph/io.h"
 
 namespace voxgraph {
 VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
@@ -141,11 +141,11 @@ void VoxgraphMapper::advertiseServices() {
       "save_pose_history_to_file",
       &VoxgraphMapper::savePoseHistoryToFileCallback, this);
   save_separated_mesh_srv_ = nh_private_.advertiseService(
-      "save_separated_mesh", &VoxgraphMapper::saveSeparatedMeshCallback,
-      this);
+      "save_separated_mesh", &VoxgraphMapper::saveSeparatedMeshCallback, this);
   save_combined_mesh_srv_ = nh_private_.advertiseService(
-      "save_combined_mesh", &VoxgraphMapper::saveCombinedMeshCallback,
-      this);
+      "save_combined_mesh", &VoxgraphMapper::saveCombinedMeshCallback, this);
+  optimize_graph_srv_ = nh_private_.advertiseService(
+      "optimize_pose_graph", &VoxgraphMapper::optimizeGraphCallback, this);
 }
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
@@ -190,6 +190,12 @@ bool VoxgraphMapper::saveCombinedMeshCallback(
     voxblox_msgs::FilePath::Response &response) {
   submap_vis_.saveCombinedMesh(request.file_path, *submap_collection_ptr_);
   return true;  // Tell ROS it succeeded
+}
+
+bool VoxgraphMapper::optimizeGraphCallback(
+    std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
+  optimizePoseGraph();
+  return true;
 }
 
 void VoxgraphMapper::pointcloudCallback(
@@ -328,12 +334,42 @@ void VoxgraphMapper::pointcloudCallback(
   }
 }
 
+void VoxgraphMapper::optimizePoseGraph() {
+  // NOTE(alexmillane): This is only added such that the pose graph  can be
+  // optimized after datasets completion. If someone calls this a general time
+  // instant, it could destroy the map.
+  // REMOVE ME. UNSAFE CODE.
+  // Add the finished submap to the pose graph, including an odometry link
+  SubmapID finished_submap_id = submap_collection_ptr_->getActiveSubmapID();
+  pose_graph_interface_.addSubmap(finished_submap_id,
+                                  odometry_constraints_enabled_);
+  // Constrain the height
+  // NOTE: No constraint is added for the 1st since its pose is fixed
+/*  if (height_constraints_enabled_ && submap_collection_ptr_->size() > 1) {
+    // This assumes that the height estimate from the odometry source is
+    // really good (e.g. when it fuses an altimeter)
+    double current_height = T_odom_robot.getPosition().z();
+    pose_graph_interface_.addHeightMeasurement(finished_submap_id,
+                                               current_height);
+  }
+*/  
+  // Optimize the pose graph
+  ROS_INFO("Optimizing the pose graph");
+  if (registration_constraints_enabled_) {
+    pose_graph_interface_.updateRegistrationConstraints();
+  }
+  pose_graph_interface_.optimize();
+  // Update the submap poses
+  pose_graph_interface_.updateSubmapCollectionPoses();
+  ROS_INFO("Done optimizing pose graph");
+}
+
 bool VoxgraphMapper::lookup_T_odom_robot(ros::Time timestamp,
                                          Transformation *T_odom_robot) {
   CHECK_NOTNULL(T_odom_robot);
   Transformation T_odom_robot_received;
-  double t_waited = 0;   // Total time spent waiting for the updated pose
-  double t_max = 0.20;   // Maximum time to wait before giving up
+  double t_waited = 0;  // Total time spent waiting for the updated pose
+  double t_max = 0.20;  // Maximum time to wait before giving up
   const ros::Duration timeout(0.005);  // Timeout between each update attempt
   while (t_waited < t_max) {
     if (transformer_.lookupTransform(robot_frame_, odom_frame_, timestamp,
@@ -341,7 +377,7 @@ bool VoxgraphMapper::lookup_T_odom_robot(ros::Time timestamp,
       *T_odom_robot = T_odom_robot_received;
       return true;
     }
-    //timeout.sleep();
+    // timeout.sleep();
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
     t_waited += timeout.toSec();
   }
