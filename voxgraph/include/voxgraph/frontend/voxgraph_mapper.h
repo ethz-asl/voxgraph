@@ -16,6 +16,7 @@
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 #include "voxgraph/tools/rosbag_helper.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
+#include "voxgraph/tools/visualization/loop_closure_visuals.h"
 
 namespace voxgraph {
 class VoxgraphMapper {
@@ -95,6 +96,7 @@ class VoxgraphMapper {
   ros::Publisher separated_mesh_pub_;
   ros::Publisher combined_mesh_pub_;
   ros::Publisher pose_history_pub_;
+  ros::Publisher loop_closure_vis_pub_;
 
   // ROS service servers
   ros::ServiceServer publish_separated_mesh_srv_;
@@ -113,6 +115,7 @@ class VoxgraphMapper {
 
   // Visualization tools
   SubmapVisuals submap_vis_;
+  LoopClosureVisuals loop_closure_vis_;
 
   // Instantiate the submap collection
   VoxgraphSubmap::Config submap_config_;

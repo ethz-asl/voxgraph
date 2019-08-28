@@ -57,6 +57,8 @@ void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("subscriber_queue_length", subscriber_queue_length_,
                     subscriber_queue_length_);
   nh_private_.param("pointcloud_topic", pointcloud_topic_, pointcloud_topic_);
+  nh_private_.param("loop_closure_topic", loop_closure_topic_,
+                    loop_closure_topic_);
   nh_private_.param("world_frame", world_frame_, world_frame_);
   nh_private_.param("odom_frame", odom_frame_, odom_frame_);
   nh_private_.param("robot_frame", robot_frame_, robot_frame_);
@@ -132,6 +134,8 @@ void VoxgraphMapper::advertiseTopics() {
       "combined_mesh", subscriber_queue_length_, true);
   pose_history_pub_ =
       nh_private_.advertise<nav_msgs::Path>("pose_history", 1, true);
+  loop_closure_vis_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
+      "loop_closure_vis", subscriber_queue_length_, true);
 }
 
 void VoxgraphMapper::advertiseServices() {
@@ -399,6 +403,13 @@ void VoxgraphMapper::loopClosureCallback(
   Transformation T_AB = T_A_t1 * T_t1_t2 * T_B_t2.inverse();
   pose_graph_interface_.addLoopClosureMeasurement(submap_id_A, submap_id_B,
                                                   T_AB);
+
+  // Visualize the loop closure link
+  const Transformation& T_W_A = submap_A.getPose();
+  const Transformation& T_W_B = submap_B.getPose();
+  const Transformation T_W_t1 = T_W_A * T_A_t1;
+  const Transformation T_W_t2 = T_W_B * T_B_t2;
+  loop_closure_vis_.publishLink(T_W_t1, T_W_t2, world_frame_, loop_closure_vis_pub_);
 }
 
 void VoxgraphMapper::optimizePoseGraph() {
