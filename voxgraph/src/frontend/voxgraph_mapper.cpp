@@ -3,6 +3,7 @@
 #include <minkindr_conversions/kindr_xml.h>
 #include <nav_msgs/Path.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <geometry_msgs/PoseArray.h>
 #include <chrono>
 #include <memory>
 #include <string>
@@ -134,8 +135,10 @@ void VoxgraphMapper::advertiseTopics() {
       "combined_mesh", subscriber_queue_length_, true);
   pose_history_pub_ =
       nh_private_.advertise<nav_msgs::Path>("pose_history", 1, true);
-  loop_closure_vis_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
-      "loop_closure_vis", subscriber_queue_length_, true);
+  loop_closure_links_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
+      "loop_closure_links_vis", subscriber_queue_length_, true);
+  loop_closure_axes_pub_ = nh_private_.advertise<geometry_msgs::PoseArray>(
+      "loop_closure_axes_vis", subscriber_queue_length_, true);
 }
 
 void VoxgraphMapper::advertiseServices() {
@@ -409,7 +412,10 @@ void VoxgraphMapper::loopClosureCallback(
   const Transformation& T_W_B = submap_B.getPose();
   const Transformation T_W_t1 = T_W_A * T_A_t1;
   const Transformation T_W_t2 = T_W_B * T_B_t2;
-  loop_closure_vis_.publishLink(T_W_t1, T_W_t2, world_frame_, loop_closure_vis_pub_);
+  loop_closure_vis_.publishLink(T_W_t1, T_W_t2, world_frame_,
+                                loop_closure_links_pub_);
+  loop_closure_vis_.publishAxes(T_W_t1, T_W_t2, world_frame_,
+                                loop_closure_axes_pub_);
 }
 
 void VoxgraphMapper::optimizePoseGraph() {

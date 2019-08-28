@@ -13,6 +13,10 @@ class LoopClosureVisuals {
   void publishLink(const Transformation& T_W_1, const Transformation& T_W_2,
                    const std::string& frame_id,
                    const ros::Publisher& publisher) const;
+
+  void publishAxes(const Transformation& T_W_1, const Transformation& T_W_2,
+                   const std::string& frame_id,
+                   const ros::Publisher& publisher) const;
 };
 }  // namespace voxgraph
 
