@@ -46,6 +46,11 @@ class VoxgraphSubmapCollection
     return submap_timeline_.getPreviousSubmapId();
   }
 
+  bool lookupActiveSubmapByTime(const ros::Time &timestamp,
+                                SubmapID *submap_id) {
+    return submap_timeline_.lookupActiveSubmapByTime(timestamp, submap_id);
+  }
+
   PoseStampedVector getPoseHistory() const;
 
  private:

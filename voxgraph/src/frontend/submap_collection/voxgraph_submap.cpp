@@ -56,6 +56,26 @@ void VoxgraphSubmap::addPoseToHistory(
   pose_history_.emplace(timestamp, T_submap_robot);
 }
 
+bool VoxgraphSubmap::lookupPoseByTime(
+    const ros::Time &timestamp, voxblox::Transformation *T_submap_robot) const {
+  CHECK_NOTNULL(T_submap_robot);
+
+  // Get an iterator to the end of the time interval in which timestamp falls
+  auto iterator = pose_history_.upper_bound(timestamp);
+
+  // Ensure that the timestamp is not from before this submap was first used
+  if (iterator == pose_history_.begin()) {
+    T_submap_robot = nullptr;
+    return false;
+  }
+
+  // TODO(victorr): Use linear interpolation and return false if not in interval
+  // The interval's starting transform id is stored at its start point
+  iterator--;
+  *T_submap_robot = iterator->second;
+  return true;
+}
+
 void VoxgraphSubmap::finishSubmap() {
   // Generate the cached the ESDF
   generateEsdf();
