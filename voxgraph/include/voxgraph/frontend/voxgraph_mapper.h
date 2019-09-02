@@ -23,6 +23,8 @@ class VoxgraphMapper {
  public:
   // Constructor & Destructor
   VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
+  VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private,
+                 VoxgraphSubmap::Config submap_config);
   ~VoxgraphMapper() = default;
 
   // ROS topic callbacks
@@ -114,13 +116,13 @@ class VoxgraphMapper {
   bool odometry_constraints_enabled_;
   bool height_constraints_enabled_;
 
-  // Visualization tools
-  SubmapVisuals submap_vis_;
-  LoopClosureVisuals loop_closure_vis_;
-
   // Instantiate the submap collection
   VoxgraphSubmap::Config submap_config_;
   VoxgraphSubmapCollection::Ptr submap_collection_ptr_;
+
+  // Visualization tools
+  SubmapVisuals submap_vis_;
+  LoopClosureVisuals loop_closure_vis_;
 
   // Interface to ease interaction with the pose graph
   PoseGraphInterface pose_graph_interface_;

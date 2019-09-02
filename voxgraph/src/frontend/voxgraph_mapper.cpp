@@ -12,10 +12,18 @@
 #include "voxgraph/io.h"
 #include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
+#include "voxgraph/tools/ros_params.h"
 
 namespace voxgraph {
+
 VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
                                const ros::NodeHandle &nh_private)
+    : VoxgraphMapper(nh, nh_private,
+                     getVoxgraphSubmapConfigFromRosParams(nh_private)) {}
+
+VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
+                               const ros::NodeHandle &nh_private,
+                               VoxgraphSubmap::Config submap_config)
     : nh_(nh),
       nh_private_(nh_private),
       verbose_(false),
@@ -30,6 +38,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       odom_frame_("odom"),
       robot_frame_("robot"),
       use_gt_ptcloud_pose_from_sensor_tf_(false),
+      submap_config_(std::move(submap_config)),
       submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
       pose_graph_interface_(nh_private, submap_collection_ptr_),
@@ -48,6 +57,15 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
   // Publish the initial transform from the world to the drifting odom frame
   TfHelper::publishTransform(voxblox::Transformation(), world_frame_,
                              odom_frame_corrected_, true);
+
+  // TEST
+  // Getting the TSDF map config from ros
+  VoxgraphSubmap::Config voxgraph_submap_config =
+      getVoxgraphSubmapConfigFromRosParams(nh_private);
+
+  // PRINT INFO TO SEE IF PARAMS LOADED
+  std::cout << "submap_config_.tsdf_voxel_size: "
+            << submap_config_.tsdf_voxel_size << std::endl;
 }
 
 void VoxgraphMapper::getParametersFromRos() {
@@ -117,6 +135,8 @@ void VoxgraphMapper::getParametersFromRos() {
   // Read TSDF integrator params from their sub-namespace
   ros::NodeHandle nh_tsdf_params(nh_private_, "tsdf_integrator");
   pointcloud_processor_.setTsdfIntegratorConfigFromRosParam(nh_tsdf_params);
+
+
 }
 
 void VoxgraphMapper::subscribeToTopics() {
