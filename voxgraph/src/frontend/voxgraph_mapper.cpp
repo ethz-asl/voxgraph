@@ -302,9 +302,12 @@ void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
   }
 
   // Publish the previous (finished) submap
-  SubmapID previous_submap_id = submap_collection_ptr_->getPreviousSubmapId();
-  submap_server_.publishSubmap(
-      submap_collection_ptr_->getSubmap(previous_submap_id), current_timestamp);
+  if (submap_collection_ptr_->size() > 1) {
+    SubmapID previous_submap_id = submap_collection_ptr_->getPreviousSubmapId();
+    submap_server_.publishSubmap(
+        submap_collection_ptr_->getSubmap(previous_submap_id),
+        current_timestamp);
+  }
 
   // Publish the submap collection
   projected_map_server_.publishProjectedMap(*submap_collection_ptr_,
