@@ -96,6 +96,7 @@ void PoseGraphInterface::addLoopClosureMeasurement(
   constraint_config.destination_submap_id = to_submap;
   constraint_config.T_origin_destination = transform;
   pose_graph_.addRelativePoseConstraint(constraint_config);
+  pose_graph_.needsTwoStageOptimization();
   ROS_INFO_STREAM_COND(verbose_,
                        "Added loop closure as relative pose constraint "
                        "from submap "

@@ -17,7 +17,7 @@ class PoseGraph {
   typedef std::list<ceres::Solver::Summary> SolverSummaryList;
   typedef std::map<const SubmapID, const Transformation> PoseMap;
 
-  PoseGraph() = default;
+  PoseGraph() : need_two_stage_opt_(false) {}
 
   void addSubmapNode(const SubmapNode::Config &config);
   bool hasSubmapNode(const SubmapNode::SubmapId &submap_id);
@@ -32,8 +32,11 @@ class PoseGraph {
     constraints_collection_.resetRegistrationConstraints();
   }
 
-  void initialize();
+  void needsTwoStageOptimization() { need_two_stage_opt_ = true; };
+
+  void initialize(bool non_registration_only = false);
   void optimize();
+  void solve();
 
   PoseMap getSubmapPoses();
 
@@ -54,6 +57,9 @@ class PoseGraph {
   ceres::Problem::Options problem_options_;
   std::shared_ptr<ceres::Problem> problem_ptr_;
   SolverSummaryList solver_summaries_;
+
+  // Flag indicating that the next optimization should be two staged
+  bool need_two_stage_opt_;
 };
 }  // namespace voxgraph
 

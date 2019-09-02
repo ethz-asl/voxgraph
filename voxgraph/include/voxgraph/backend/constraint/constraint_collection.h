@@ -23,6 +23,8 @@ class ConstraintCollection {
 
   void addAllToProblem(const NodeCollection &node_collection,
                        ceres::Problem *problem_ptr);
+  void addNonRegistrationToProblem(const NodeCollection &node_collection,
+                                   ceres::Problem *problem_ptr);
 
  private:
   Constraint::ConstraintId constraint_id_counter_ = 0;

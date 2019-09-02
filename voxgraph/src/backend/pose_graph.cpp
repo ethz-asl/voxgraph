@@ -58,18 +58,36 @@ void PoseGraph::addRegistrationConstraint(
   constraints_collection_.addRegistrationConstraint(config);
 }
 
-void PoseGraph::initialize() {
+void PoseGraph::initialize(bool non_registration_only) {
   // Initialize the problem and add all constraints
   problem_options_.local_parameterization_ownership =
       ceres::Ownership::DO_NOT_TAKE_OWNERSHIP;
   problem_ptr_.reset(new ceres::Problem(problem_options_));
-  constraints_collection_.addAllToProblem(node_collection_, problem_ptr_.get());
+  if (non_registration_only) {
+    constraints_collection_.addNonRegistrationToProblem(node_collection_,
+                                                        problem_ptr_.get());
+  } else {
+    constraints_collection_.addAllToProblem(node_collection_, problem_ptr_.get());
+  }
 }
 
 void PoseGraph::optimize() {
-  // Initialize the problem
+  // The prestage solution optimizes the graph without regiration constraints to
+  // try to get out of local minima
+  if (need_two_stage_opt_) {
+    std::cout << "Performing the pre-stage solve." << std::endl;
+    static constexpr bool nonRegistrationOnlyFlag = true;
+    initialize(nonRegistrationOnlyFlag);
+    solve();
+    need_two_stage_opt_ = false;
+    std::cout << "Now performing the main solve." << std::endl;
+  }
+  // The main optimization
   initialize();
+  solve();
+}
 
+void PoseGraph::solve() {
   // Run the solver
   ceres::Solver::Options ceres_options;
   // TODO(victorr): Set these from parameters
