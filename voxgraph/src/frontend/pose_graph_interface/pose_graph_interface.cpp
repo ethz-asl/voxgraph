@@ -16,14 +16,7 @@ PoseGraphInterface::PoseGraphInterface(
       node_handle.advertise<visualization_msgs::Marker>("submap_info", 1, true);
 }
 
-void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
-  // Indicate that the submap is finished s.t. its cached members are generated
-  {
-    VoxgraphSubmap::Ptr submap_ptr =
-        submap_collection_ptr_->getSubmapPtr(submap_id);
-    CHECK_NOTNULL(submap_ptr)->finishSubmap();
-  }
-
+void PoseGraphInterface::addSubmap(SubmapID submap_id) {
   // Configure the submap node and add it to the pose graph
   SubmapNode::Config node_config = node_templates_.submap;
   node_config.submap_id = submap_id;
@@ -38,52 +31,33 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id, bool add_easy_odometry) {
   pose_graph_.addSubmapNode(node_config);
   ROS_INFO_STREAM_COND(verbose_,
                        "Added node to graph for submap: " << submap_id);
+}
 
-  // TODO(victorr): Move this to the addOdometryMeasurement method
-  // Easy way to add an odometry constraint between the previous and new submap
-  // NOTE: This method assumes that the current submap pose purely comes from
-  //       odometry and has not yet been corrected through other means
-  if (add_easy_odometry && submap_collection_ptr_->size() >= 2) {
-    SubmapID previous_submap_id = submap_collection_ptr_->getPreviousSubmapId();
+void PoseGraphInterface::addOdometryMeasurement(
+    const SubmapID &first_submap_id, const SubmapID &second_submap_id,
+    const Transformation &T_S1_S2) {
+  // Configure the odometry constraint
+  RelativePoseConstraint::Config constraint_config =
+      measurement_templates_.odometry;
+  constraint_config.origin_submap_id = first_submap_id;
+  constraint_config.destination_submap_id = second_submap_id;
+  constraint_config.T_origin_destination = T_S1_S2;
 
-    // Configure the odometry constraint
-    RelativePoseConstraint::Config constraint_config =
-        measurement_templates_.odometry;
-    constraint_config.origin_submap_id = previous_submap_id;
-    constraint_config.destination_submap_id = submap_id;
-
-    // Set the relative transformation
-    Transformation T_mission__previous_submap;
-    Transformation T_mission__current_submap;
-    CHECK(submap_collection_ptr_->getSubmapPose(previous_submap_id,
-                                                &T_mission__previous_submap));
-    CHECK(submap_collection_ptr_->getSubmapPose(submap_id,
-                                                &T_mission__current_submap));
-    constraint_config.T_origin_destination =
-        T_mission__previous_submap.inverse() * T_mission__current_submap;
-
-    // Add the odometry constraint to the pose graph
-    if (verbose_) {
-      std::cout << "Adding odom constraint\n"
-                << "From: " << constraint_config.origin_submap_id << "\n"
-                << "To: " << constraint_config.destination_submap_id << "\n"
-                << "Submap currently being built in submap collection: "
-                << submap_collection_ptr_->getActiveSubmapID() << "\n"
-                << "T_w_s1:\n"
-                << T_mission__previous_submap << "\n"
-                << "yaw_w_s1:" << T_mission__previous_submap.log()[5] << "\n"
-                << "T_w_s2:\n"
-                << T_mission__current_submap << "\n"
-                << "yaw_w_s2:" << T_mission__current_submap.log()[5] << "\n"
-                << "T_s1_s2:\n"
-                << constraint_config.T_origin_destination << "\n"
-                << "yaw_s1_s2: "
-                << constraint_config.T_origin_destination.log()[5] << "\n"
-                << "Information matrix\n"
-                << constraint_config.information_matrix << std::endl;
-    }
-    pose_graph_.addRelativePoseConstraint(constraint_config);
+  // Add the odometry constraint to the pose graph
+  if (verbose_) {
+    std::cout << "Adding odom constraint\n"
+              << "From: " << constraint_config.origin_submap_id << "\n"
+              << "To: " << constraint_config.destination_submap_id << "\n"
+              << "Submap currently being built in submap collection: "
+              << submap_collection_ptr_->getActiveSubmapID() << "\n"
+              << "t_s1_s2:\n"
+              << constraint_config.T_origin_destination.getPosition() << "\n"
+              << "yaw_s1_s2: "
+              << constraint_config.T_origin_destination.log()[5] << "\n"
+              << "Information matrix\n"
+              << constraint_config.information_matrix << std::endl;
   }
+  pose_graph_.addRelativePoseConstraint(constraint_config);
 }
 
 void PoseGraphInterface::addHeightMeasurement(const SubmapID &submap_id,

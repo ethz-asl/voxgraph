@@ -29,11 +29,7 @@ class MapTracker {
 
   bool updateToTime(const ros::Time &timestamp,
                     std::string sensor_frame_id);
-
-  // TODO(victorr): Remove this once the robot pose is defined stored relative
-  //                to the current submap instead of the mission frame
-  void updateWithLoopClosure(const Transformation &T_M_B_before,
-                             const Transformation &T_M_B_after);
+  void switchToNewSubmap();
 
   void registerPointcloud(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
 
@@ -41,22 +37,25 @@ class MapTracker {
   void publishOdometry();
 
   // Transform getter methods
+  // NOTE: For more info on the frame naming conventions,
+  //       see the FrameNames class
+  Transformation get_T_M_B();
   Transformation get_T_O_B() { return T_O_B_; }
-  Transformation get_T_M_B() { return T_M_L_ * T_L_O_ * T_O_B_; }
-  Transformation get_T_M_C() { return T_M_L_ * T_L_O_ * T_O_B_ * T_B_C_; }
+  Transformation get_T_S_B() { return T_S_B_; }
+  Transformation get_T_S_C() { return T_S_B_ * T_B_C_; }
 
   const FrameNames &getFrameNames() const { return frame_names_; }
 
   // Config get/setters
   void setVerbosity(bool verbose) { verbose_ = verbose; }
-  //  bool &useOdomFromTFs() {
-  //    return use_odom_from_tfs_; }
-  //  bool &useSensorCalibrationFromTFs() {
-  //    return use_sensor_calibration_from_tfs_; }
 
  private:
   bool verbose_;
 
+  // Pointer to the submap collection containing the one that is being tracked
+  VoxgraphSubmapCollection::ConstPtr submap_collection_ptr_;
+
+  // Timestamp at which the MapTracker was last updated
   ros::Time current_timestamp_;
 
   // Coordinate frame names
@@ -64,12 +63,20 @@ class MapTracker {
   //       and the other ROS nodes
   FrameNames frame_names_;
 
-  // Transforms used to aggregate the incremental corrections
-  Transformation T_M_L_;
-  Transformation T_L_O_;
+  // Transform used to aggregate the incremental ICP corrections
+  Transformation T_M_O_;
 
-  // Transform that tracks the current odometry
+  // Transform that stores the current raw odometry input
   Transformation T_O_B_;
+
+  // Transform from the odom origin to the pose at which
+  // the current submap was created
+  // NOTE: This transform is used to convert the pose from the odometry input
+  //       into the coordinate frame of the current submap
+  Transformation initial_T_S_O_;
+
+  // Transform that tracks the odometry in submap frame
+  Transformation T_S_B_;
 
   // Transform from the pointcloud sensor frame to the robot's base_link
   Transformation T_B_C_;

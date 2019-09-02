@@ -27,24 +27,7 @@ void VoxgraphSubmapCollection::createNewSubmap(
     const Transformation &T_mission_base, const ros::Time &timestamp) {
   // Define the new submap frame to be at the current robot pose
   // and have its Z-axis aligned with gravity
-  Transformation::Vector6 T_vec = T_mission_base.log();
-  ROS_WARN_STREAM_COND(
-      T_vec[3] > 0.05,
-      "New submap creation called with proposed roll: "
-          << T_vec[3] << "[rad]."
-          << "Note that this angle is ignored since we work in XYZ+Yaw only. "
-             "Please"
-          << " provide submap poses whose Z-axis is roughly gravity aligned.");
-  ROS_WARN_STREAM_COND(
-      T_vec[4] > 0.05,
-      "New submap creation called with proposed pitch: "
-          << T_vec[4] << "[rad]."
-          << "Note that this angle is ignored since we work in XYZ+Yaw only. "
-             "Please"
-          << " provide submap poses whose Z-axis is roughly gravity aligned.");
-  T_vec[3] = 0;  // Set roll to zero
-  T_vec[4] = 0;  // Set pitch to zero
-  Transformation T_mission__new_submap = Transformation::exp(T_vec);
+  Transformation T_mission__new_submap = gravityAlignPose(T_mission_base);
 
   // Create the new submap
   SubmapID new_submap_id =
@@ -75,5 +58,37 @@ VoxgraphSubmapCollection::getPoseHistory() const {
     }
   }
   return poses;
+}
+
+Transformation VoxgraphSubmapCollection::gravityAlignPose(
+    const Transformation &input_pose) {
+  // Use the logarithmic map to get the pose's [x, y, z, r, p, y] components
+  Transformation::Vector6 T_vec = input_pose.log();
+
+  // Print a warning if the original pitch & roll components were non-negligible
+  if (T_vec[3] > 0.05) {
+    ROS_WARN_STREAM_THROTTLE(
+        1, "New submap creation called with proposed roll: "
+               << T_vec[3]
+               << "[rad]. Note that this angle is ignored since we work in"
+                  " XYZ+Yaw only. Please provide submap poses whose Z-axis"
+                  " is roughly gravity aligned.");
+  }
+  if (T_vec[4] > 0.05) {
+    ROS_WARN_STREAM_THROTTLE(
+        1, "New submap creation called with proposed pitch: "
+               << T_vec[4]
+               << "[rad]. Note that this angle is ignored since we work in"
+                  " XYZ+Yaw only. Please provide submap poses whose Z-axis"
+                  " is roughly gravity aligned.");
+  }
+
+  // Set the roll and pitch to zero
+  T_vec[3] = 0;
+  T_vec[4] = 0;
+
+  // Return the gravity aligned pose as a translation + quaternion,
+  // using the exponential map
+  return Transformation::exp(T_vec);
 }
 }  // namespace voxgraph

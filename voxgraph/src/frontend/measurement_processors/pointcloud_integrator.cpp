@@ -6,12 +6,8 @@
 #include <utility>
 
 namespace voxgraph {
-PointcloudIntegrator::PointcloudIntegrator(
-    cblox::SubmapCollection<VoxgraphSubmap>::Ptr submap_collection_ptr,
-    bool verbose)
-    : verbose_(verbose),
-      submap_collection_ptr_(std::move(submap_collection_ptr)),
-      color_map_(new voxblox::RainbowColorMap()) {
+PointcloudIntegrator::PointcloudIntegrator(bool verbose)
+    : verbose_(verbose), color_map_(new voxblox::RainbowColorMap()) {
   // Configure the color map
   color_map_->setMaxValue(100.0);
 }
@@ -24,12 +20,9 @@ void PointcloudIntegrator::setTsdfIntegratorConfigFromRosParam(
 
 void PointcloudIntegrator::integratePointcloud(
     const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
-    const voxblox::Transformation &T_mission_sensor) {
-  // Transform the sensor pose into the submap frame
-  const Transformation T_mission_submap =
-      submap_collection_ptr_->getActiveSubmapPose();
-  const Transformation T_submap_sensor =
-      T_mission_submap.inverse() * T_mission_sensor;
+    const voxblox::Transformation &T_submap_sensor,
+    VoxgraphSubmap *submap_ptr) {
+  CHECK_NOTNULL(submap_ptr);
 
   // Convert the pointcloud msg into a voxblox::Pointcloud
   voxblox::Pointcloud pointcloud;
@@ -71,7 +64,7 @@ void PointcloudIntegrator::integratePointcloud(
   if (!tsdf_integrator_) {
     tsdf_integrator_.reset(new voxblox::FastTsdfIntegrator(
         tsdf_integrator_config_,
-        submap_collection_ptr_->getActiveTsdfMapPtr()->getTsdfLayerPtr()));
+        submap_ptr->getTsdfMapPtr()->getTsdfLayerPtr()));
     ROS_INFO("Initialized TSDF Integrator");
   }
 
@@ -79,10 +72,7 @@ void PointcloudIntegrator::integratePointcloud(
   //                integration into multiple submaps for guaranteed overlap
 
   // Point the integrator to the current submap
-  VoxgraphSubmap::Ptr active_submap_ptr =
-      submap_collection_ptr_->getActiveSubmapPtr();
-  tsdf_integrator_->setLayer(
-      active_submap_ptr->getTsdfMapPtr()->getTsdfLayerPtr());
+  tsdf_integrator_->setLayer(submap_ptr->getTsdfMapPtr()->getTsdfLayerPtr());
 
   // Integrate the pointcloud (and report timings if requested)
   ROS_INFO_COND(verbose_, "Integrating a pointcloud with %lu points.",
@@ -93,9 +83,7 @@ void PointcloudIntegrator::integratePointcloud(
   ROS_INFO_COND(
       verbose_,
       "Finished integrating in %f seconds, submap %u now has %lu blocks.",
-      (end - start).toSec(), submap_collection_ptr_->getActiveSubmapID(),
-      submap_collection_ptr_->getActiveTsdfMap()
-          .getTsdfLayer()
-          .getNumberOfAllocatedBlocks());
+      (end - start).toSec(), submap_ptr->getID(),
+      submap_ptr->getTsdfMap().getTsdfLayer().getNumberOfAllocatedBlocks());
 }
 }  // namespace voxgraph

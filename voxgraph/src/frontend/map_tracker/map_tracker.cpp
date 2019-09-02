@@ -7,11 +7,12 @@
 namespace voxgraph {
 MapTracker::MapTracker(VoxgraphSubmapCollection::ConstPtr submap_collection_ptr,
                        FrameNames frame_names, bool verbose)
-    : scan_to_map_registerer_(std::move(submap_collection_ptr), true),
+    : verbose_(verbose),
+      submap_collection_ptr_(submap_collection_ptr),
       frame_names_(std::move(frame_names)),
+      scan_to_map_registerer_(submap_collection_ptr, true),
       tf_transformer_(),
-      odom_transformer_(),
-      verbose_(verbose) {}
+      odom_transformer_() {}
 
 void MapTracker::subscribeToTopics(ros::NodeHandle nh,
                                    const std::string &odometry_input_topic,
@@ -59,6 +60,9 @@ bool MapTracker::updateToTime(const ros::Time &timestamp,
     }
   }
 
+  // Express the odometry pose in the frame of the current submap
+  T_S_B_ = initial_T_S_O_ * T_O_B_;
+
   // Get the transformation from the pointcloud sensor to the robot's
   // base link from TFs, unless it was already provided through ROS params
   if (use_sensor_calibration_from_tfs_) {
@@ -76,36 +80,40 @@ bool MapTracker::updateToTime(const ros::Time &timestamp,
     }
   }
 
-  // Signal that all transforms were succesfully updated
+  // Signal that all transforms were successfully updated
   return true;
 }
 
-void MapTracker::updateWithLoopClosure(const Transformation &T_M_B_before,
-                                       const Transformation &T_M_B_after) {
-  T_M_L_ = T_M_B_after * T_M_B_before.inverse() * T_M_L_;
-  ROS_INFO_STREAM("Applying pose correction:\n"
-                  << T_M_B_after * T_M_B_before.inverse());
+void MapTracker::switchToNewSubmap() {
+  // Get the pose of the new submap in odom frame
+  Transformation T_O_S = VoxgraphSubmapCollection::gravityAlignPose(T_O_B_);
+
+  // Store the transform used to convert the odometry input into submap frame
+  initial_T_S_O_ = T_O_S.inverse();
+
+  // Update the current robot pose
+  // NOTE: This initial pose can differ from Identity, since the submap pose
+  //       has zero pitch and roll whereas the robot pose is in 6DoF
+  T_S_B_ = initial_T_S_O_ * T_O_B_;
 }
 
 void MapTracker::registerPointcloud(
     const sensor_msgs::PointCloud2::Ptr &pointcloud_msg) {
-  Transformation T_M_C_refined;
-  bool pose_refinement_successful = scan_to_map_registerer_.refineSensorPose(
-      pointcloud_msg, get_T_M_C(), &T_M_C_refined);
-  if (pose_refinement_successful) {
-    // Update the corrected odometry frame
-    T_L_O_ =
-        T_M_L_.inverse() * T_M_C_refined * T_B_C_.inverse() * T_O_B_.inverse();
-  } else {
-    ROS_WARN("Pose refinement failed");
-  }
+  ROS_WARN("ICP pose refinement is currently not supported.");
+  //  Transformation T_M_C_refined;
+  //  bool pose_refinement_successful =
+  //  scan_to_map_registerer_.refineSensorPose(
+  //      pointcloud_msg, get_T_M_C(), &T_M_C_refined);
+  //  if (pose_refinement_successful) {
+  //    // Update the corrected odometry frame
+  //    T_M_O_ = T_M_C_refined * T_B_C_.inverse() * T_O_B_.inverse();
+  //  } else {
+  //    ROS_WARN("Pose refinement failed");
+  //  }
 }
 
 void MapTracker::publishTFs() {
-  TfHelper::publishTransform(T_M_L_, frame_names_.mission_frame,
-                             frame_names_.refined_frame_corrected, false,
-                             current_timestamp_);
-  TfHelper::publishTransform(T_L_O_, frame_names_.refined_frame_corrected,
+  TfHelper::publishTransform(T_M_O_, frame_names_.mission_frame,
                              frame_names_.odom_frame_corrected, false,
                              current_timestamp_);
   TfHelper::publishTransform(T_O_B_, frame_names_.odom_frame_corrected,
@@ -114,6 +122,24 @@ void MapTracker::publishTFs() {
   TfHelper::publishTransform(T_B_C_, frame_names_.base_link_frame_corrected,
                              frame_names_.sensor_frame_corrected, true,
                              current_timestamp_);
+  TfHelper::publishTransform(T_S_B_, frame_names_.active_submap_frame,
+                             frame_names_.base_link_frame_corrected, false,
+                             current_timestamp_);
+  TfHelper::publishTransform(
+      initial_T_S_O_, frame_names_.active_submap_frame + "_initial",
+      frame_names_.odom_frame_corrected, false, current_timestamp_);
+  TfHelper::publishTransform(
+      submap_collection_ptr_->getActiveSubmapPose(), frame_names_.mission_frame,
+      frame_names_.active_submap_frame, false, current_timestamp_);
+}
+
+Transformation MapTracker::get_T_M_B() {
+  if (submap_collection_ptr_->empty()) {
+    // If no submap has been created yet, return the odometry pose
+    return T_O_B_;
+  } else {
+    return submap_collection_ptr_->getActiveSubmapPose() * T_S_B_;
+  }
 }
 
 void MapTracker::publishOdometry() {
@@ -123,14 +149,13 @@ void MapTracker::publishOdometry() {
         (forwarded_gyro_bias_.array() >= double_min).all()) {
       // Create the message and set its header
       maplab_msgs::OdometryWithImuBiases odometry_with_imu_biases;
-      odometry_with_imu_biases.header.frame_id =
-          frame_names_.refined_frame_corrected;
+      odometry_with_imu_biases.header.frame_id = frame_names_.mission_frame;
       odometry_with_imu_biases.header.stamp = current_timestamp_;
       odometry_with_imu_biases.child_frame_id = frame_names_.base_link_frame;
       odometry_with_imu_biases.odometry_state = 0u;
 
       // Set the odometry pose
-      const Transformation refined_odometry = T_L_O_ * T_O_B_;
+      const Transformation refined_odometry = T_M_O_ * T_O_B_;
       tf::poseKindrToMsg(refined_odometry.cast<double>(),
                          &odometry_with_imu_biases.pose.pose);
 

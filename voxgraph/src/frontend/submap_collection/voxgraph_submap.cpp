@@ -51,8 +51,7 @@ void VoxgraphSubmap::transformSubmap(const voxblox::Transformation &T_new_old) {
 }
 
 void VoxgraphSubmap::addPoseToHistory(
-    const ros::Time &timestamp, const voxblox::Transformation &T_mission_base) {
-  voxblox::Transformation T_submap_base = getPose().inverse() * T_mission_base;
+    const ros::Time &timestamp, const voxblox::Transformation &T_submap_base) {
   pose_history_.emplace(timestamp, T_submap_base);
 }
 

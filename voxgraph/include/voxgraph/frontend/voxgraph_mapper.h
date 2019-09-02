@@ -70,6 +70,11 @@ class VoxgraphMapper {
   void advertiseServices();
   void getParametersFromRos();
 
+  // New submap creation, pose graph optimization and map publishing
+  void switchToNewSubmap(const ros::Time &current_timestamp);
+  void optimizePoseGraph();
+  void publishMaps(const ros::Time &current_timestamp);
+
   // ROS topic subscribers
   int subscriber_queue_length_;
   std::string pointcloud_topic_;
@@ -98,7 +103,7 @@ class VoxgraphMapper {
   PoseGraphInterface pose_graph_interface_;
 
   // Measurement processors
-  PointcloudIntegrator pointcloud_processor_;
+  PointcloudIntegrator pointcloud_integrator_;
 
   // Map servers, used to share the projected map and submaps with ROS nodes
   ProjectedMapServer projected_map_server_;

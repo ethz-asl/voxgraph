@@ -42,7 +42,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   const ros::Time getEndTime() const;
 
   void addPoseToHistory(const ros::Time &timestamp,
-                        const voxblox::Transformation &T_mission_base);
+                        const voxblox::Transformation &T_submap_base);
   const PoseHistoryMap &getPoseHistory() const { return pose_history_; }
 
   // Indicate that the submap is finished and generate all cached members

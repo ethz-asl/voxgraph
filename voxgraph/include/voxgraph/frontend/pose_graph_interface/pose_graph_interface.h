@@ -26,13 +26,18 @@ class PoseGraphInterface {
     measurement_templates_.setFromRosParams(node_handle);
   }
 
-  void addSubmap(SubmapID submap_id, bool add_easy_odometry = false);
+  void addSubmap(SubmapID submap_id);
 
   // Method to recalculate which submaps overlap and update their
   // registration constraints accordingly
   void updateRegistrationConstraints();
 
-  void addOdometryMeasurement() {}
+  // NOTE: The pose graph optimization works in 4D. Therefore the
+  //       pitch and roll components of T_S1_S2 are simply ignored
+  //       by the RelativePoseCostFunction.
+  void addOdometryMeasurement(const SubmapID &first_submap_id,
+                              const SubmapID &second_submap_id,
+                              const Transformation &T_S1_S2);
   void addLoopClosureMeasurement() {}
   void addGpsMeasurement() {}
   void addHeightMeasurement(const SubmapID &submap_id, const double &height);
