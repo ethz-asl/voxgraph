@@ -56,6 +56,17 @@ void PoseGraph::addRegistrationConstraint(
 
   // Add to the constraint set
   constraints_collection_.addRegistrationConstraint(config);
+
+  // TODO(victorr): Remove or permanently add the experimental code below
+  if (config.registration.registration_point_type ==
+      VoxgraphSubmap::RegistrationPointType::kIsosurfacePoints) {
+    RegistrationConstraint::Config mirrored_config = config;
+    mirrored_config.first_submap_id = config.second_submap_id;
+    mirrored_config.first_submap_ptr = config.second_submap_ptr;
+    mirrored_config.second_submap_id = config.first_submap_id;
+    mirrored_config.second_submap_ptr = config.first_submap_ptr;
+    constraints_collection_.addRegistrationConstraint(mirrored_config);
+  }
 }
 
 void PoseGraph::initialize() {
