@@ -5,6 +5,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
+#include <future>
 #include <memory>
 #include <string>
 #include "voxgraph/common.h"
@@ -72,8 +73,11 @@ class VoxgraphMapper {
 
   // New submap creation, pose graph optimization and map publishing
   void switchToNewSubmap(const ros::Time &current_timestamp);
-  void optimizePoseGraph();
+  int optimizePoseGraph();
   void publishMaps(const ros::Time &current_timestamp);
+
+  // Asynchronous handle for the pose graph optimization thread
+  std::future<int> optimization_async_handle_;
 
   // ROS topic subscribers
   int subscriber_queue_length_;

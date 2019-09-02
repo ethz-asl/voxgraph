@@ -189,12 +189,21 @@ void VoxgraphMapper::pointcloudCallback(
     // Automatically pause the rosbag if requested
     if (auto_pause_rosbag_) rosbag_helper_.pauseRosbag();
 
-    // Add the finished submap to the pose graph, optimize and publish visuals
+    // Add the finished submap to the pose graph
     switchToNewSubmap(current_timestamp);
-    optimizePoseGraph();
+
+    // Optimize the pose graph in a separate thread
+    if (optimization_async_handle_.valid()) {
+      // Wait for the previous optimization to finish before starting a new one
+      optimization_async_handle_.wait();
+    }
+    optimization_async_handle_ = std::async(
+        std::launch::async, &VoxgraphMapper::optimizePoseGraph, this);
+
+    // Publish the map in its different representations
     publishMaps(current_timestamp);
 
-    // Resume playback of the rosbag
+    // Resume playing the rosbag
     if (auto_pause_rosbag_) rosbag_helper_.playRosbag();
   }
 
@@ -273,13 +282,16 @@ void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
   map_tracker_.switchToNewSubmap();
 }
 
-void VoxgraphMapper::optimizePoseGraph() {
+int VoxgraphMapper::optimizePoseGraph() {
   // Optimize the pose graph
   ROS_INFO("Optimizing the pose graph");
   pose_graph_interface_.optimize();
 
   // Update the submap poses
   pose_graph_interface_.updateSubmapCollectionPoses();
+
+  // Report successful completion
+  return 1;
 }
 
 void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
