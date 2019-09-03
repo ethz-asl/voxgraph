@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
           "pose_graph_optimized_edges", 100, true);
 
   // Show the original submap meshes in Rviz
-  submap_vis.publishSeparatedMesh(*submap_collection_ptr, "world",
+  submap_vis.publishSeparatedMesh(*submap_collection_ptr, "mission",
                                   separated_mesh_original_pub);
 
   // Add all submaps as nodes
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
     SubmapNode::Config node_config;
     node_config.submap_id = submap_id;
     CHECK(submap_collection_ptr->getSubmapPose(
-        submap_id, &node_config.T_world_node_initial));
+        submap_id, &node_config.T_mission_node_initial));
     if (submap_id == 0) {
       ROS_INFO("Setting pose of submap 0 to constant");
       node_config.set_constant = true;
@@ -174,20 +174,20 @@ int main(int argc, char** argv) {
         submap_collection_ptr->getSubmap(first_submap_id);
 
     // Publish the submap's bounding boxes
-    submap_vis.publishBox(first_submap.getWorldFrameSurfaceObbCorners(),
-                          voxblox::Color::Blue(), "world",
+    submap_vis.publishBox(first_submap.getMissionFrameSurfaceObbCorners(),
+                          voxblox::Color::Blue(), "mission",
                           "surface_obb" + std::to_string(first_submap_id),
                           bounding_boxes_pub);
-    submap_vis.publishBox(first_submap.getWorldFrameSurfaceAabbCorners(),
-                          voxblox::Color::Red(), "world",
+    submap_vis.publishBox(first_submap.getMissionFrameSurfaceAabbCorners(),
+                          voxblox::Color::Red(), "mission",
                           "surface_aabb" + std::to_string(first_submap_id),
                           bounding_boxes_pub);
-    submap_vis.publishBox(first_submap.getWorldFrameSubmapObbCorners(),
-                          voxblox::Color::Blue(), "world",
+    submap_vis.publishBox(first_submap.getMissionFrameSubmapObbCorners(),
+                          voxblox::Color::Blue(), "mission",
                           "submap_obb" + std::to_string(first_submap_id),
                           bounding_boxes_pub);
-    submap_vis.publishBox(first_submap.getWorldFrameSubmapAabbCorners(),
-                          voxblox::Color::Red(), "world",
+    submap_vis.publishBox(first_submap.getMissionFrameSubmapAabbCorners(),
+                          voxblox::Color::Red(), "mission",
                           "submap_aabb" + std::to_string(first_submap_id),
                           bounding_boxes_pub);
 
@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
   // Publish the unoptimized pose graph
   voxgraph::PoseGraphVisuals pose_graph_vis;
   pose_graph.initialize();
-  pose_graph_vis.publishPoseGraph(pose_graph, "world", "edges",
+  pose_graph_vis.publishPoseGraph(pose_graph, "mission", "edges",
                                   pose_graph_edge_original_pub);
 
   // Optimize the graph
@@ -237,11 +237,11 @@ int main(int argc, char** argv) {
   }
 
   // Show the optimized submap meshes in Rviz
-  submap_vis.publishSeparatedMesh(*submap_collection_ptr, "world",
+  submap_vis.publishSeparatedMesh(*submap_collection_ptr, "mission",
                                   separated_mesh_optimized_pub);
 
   // Publish the optimized pose graph
-  pose_graph_vis.publishPoseGraph(pose_graph, "world", "edges",
+  pose_graph_vis.publishPoseGraph(pose_graph, "mission", "edges",
                                   pose_graph_edge_optimized_pub);
 
   // Keep the ROS node alive in order to interact with its topics in Rviz

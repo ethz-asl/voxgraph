@@ -1,7 +1,3 @@
-//
-// Created by victor on 19.06.19.
-//
-
 #ifndef VOXGRAPH_BACKEND_NODE_POSE_POSE_H_
 #define VOXGRAPH_BACKEND_NODE_POSE_POSE_H_
 
