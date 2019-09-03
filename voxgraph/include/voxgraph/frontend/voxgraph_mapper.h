@@ -97,8 +97,8 @@ class VoxgraphMapper {
   std::future<int> optimization_async_handle_;
 
   // ROS topic subscribers
-  int subscriber_queue_length_;
   std::string pointcloud_topic_;
+  int subscriber_queue_length_;
   ros::Subscriber pointcloud_subscriber_;
   std::string loop_closure_topic_;
   int loop_closure_subscriber_queue_length_;
@@ -145,9 +145,6 @@ class VoxgraphMapper {
   ProjectedMapServer projected_map_server_;
   SubmapServer submap_server_;
   LoopClosureEdgeServer loop_closure_edge_server_;
-
-  // Visualization tools
-  SubmapVisuals submap_vis_;
 
   // Map tracker handles the odometry input and refines it using scan-to-map ICP
   bool use_icp_refinement_;

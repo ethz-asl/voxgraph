@@ -2,9 +2,7 @@
 #define VOXGRAPH_TOOLS_VISUALIZATION_LOOP_CLOSURE_VISUALS_H_
 
 #include <string>
-
 #include <visualization_msgs/Marker.h>
-
 #include "voxgraph/backend/pose_graph.h"
 
 namespace voxgraph {
@@ -40,9 +38,6 @@ class LoopClosureVisuals {
                    const Transformation& T_1_2_est,
                    const std::string& frame_id,
                    const ros::Publisher& publisher) const;
-
-  // Helper
-  //void getLinkMarker() const;
 };
 }  // namespace voxgraph
 

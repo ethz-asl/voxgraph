@@ -1,10 +1,10 @@
-
+#include "voxgraph/frontend/voxgraph_mapper.h"
+#include <geometry_msgs/PoseArray.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <minkindr_conversions/kindr_xml.h>
 #include <nav_msgs/Path.h>
 #include <sensor_msgs/Imu.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <geometry_msgs/PoseArray.h>
 #include <chrono>
 #include <limits>
 #include <memory>
@@ -12,9 +12,9 @@
 #include <thread>
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/tools/io.h"
+#include "voxgraph/tools/ros_params.h"
 #include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
-#include "voxgraph/tools/ros_params.h"
 
 namespace voxgraph {
 
@@ -31,26 +31,21 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       verbose_(false),
       auto_pause_rosbag_(false),
       rosbag_helper_(nh),
-      subscriber_queue_length_(100),
-      loop_closure_subscriber_queue_length_(1000),
       pointcloud_topic_("pointcloud"),
-      transformer_(nh, nh_private),
-      world_frame_("world"),
-      odom_frame_("odom"),
-      robot_frame_("robot"),
-      use_gt_ptcloud_pose_from_sensor_tf_(false),
+      subscriber_queue_length_(100),
+      loop_closure_topic_("loop_closure_input"),
+      loop_closure_subscriber_queue_length_(1000),
       registration_constraints_enabled_(false),
       odometry_constraints_enabled_(false),
       height_constraints_enabled_(false),
-      loop_closure_topic_("loop_closure_input"),
-      submap_config_(std::move(submap_config)),
+      submap_config_(submap_config),
       submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
+      submap_vis_(submap_config_),
       pose_graph_interface_(nh_private, submap_collection_ptr_),
       projected_map_server_(nh_private),
       submap_server_(nh_private),
       loop_closure_edge_server_(nh_private),
-      submap_vis_(submap_config_),
       use_icp_refinement_(true),
       map_tracker_(submap_collection_ptr_,
                    FrameNames::fromRosParams(nh_private), verbose_) {
@@ -59,10 +54,6 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
   subscribeToTopics();
   advertiseTopics();
   advertiseServices();
-
-  // Publish the initial transform from the world to the drifting odom frame
-  TfHelper::publishTransform(voxblox::Transformation(), world_frame_,
-                             odom_frame_corrected_, true);
 }
 
 void VoxgraphMapper::getParametersFromRos() {
@@ -73,18 +64,6 @@ void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("subscriber_queue_length", subscriber_queue_length_,
                     subscriber_queue_length_);
   nh_private_.param("pointcloud_topic", pointcloud_topic_, pointcloud_topic_);
-  nh_private_.param("world_frame", world_frame_, world_frame_);
-  nh_private_.param("odom_frame", odom_frame_, odom_frame_);
-  nh_private_.param("robot_frame", robot_frame_, robot_frame_);
-  nh_private_.param("odom_frame_corrected", odom_frame_corrected_,
-                    odom_frame_corrected_);
-  nh_private_.param("robot_frame_corrected", robot_frame_corrected_,
-                    robot_frame_corrected_);
-  nh_private_.param("sensor_frame_corrected", sensor_frame_corrected_,
-                    sensor_frame_corrected_);
-  nh_private_.param("use_gt_ptcloud_pose_from_sensor_tf",
-                    use_gt_ptcloud_pose_from_sensor_tf_,
-                    use_gt_ptcloud_pose_from_sensor_tf_);
   nh_private_.param("loop_closure_topic", loop_closure_topic_,
                     loop_closure_topic_);
 
@@ -151,7 +130,6 @@ void VoxgraphMapper::getParametersFromRos() {
 
   // Read TSDF integrator params from their sub-namespace
   ros::NodeHandle nh_tsdf_params(nh_private_, "tsdf_integrator");
-  pointcloud_processor_.setTsdfIntegratorConfigFromRosParam(nh_tsdf_params);
   pointcloud_integrator_.setTsdfIntegratorConfigFromRosParam(nh_tsdf_params);
 }
 
@@ -319,15 +297,6 @@ void VoxgraphMapper::pointcloudCallback(
   }
 }
 
-void VoxgraphMapper::optimizePoseGraph() {
-  // NOTE(alexmillane): This is only added such that the pose graph  can be
-  // optimized after datasets completion. If someone calls this a general time
-  // instant, it could destroy the map.
-  // REMOVE ME. UNSAFE CODE.
-  // Add the finished submap to the pose graph, including an odometry link
-  SubmapID finished_submap_id = submap_collection_ptr_->getActiveSubmapID();
-  pose_graph_interface_.addSubmap(finished_submap_id,
-                                  odometry_constraints_enabled_);
 void VoxgraphMapper::loopClosureCallback(
     const voxgraph_msgs::LoopClosure &loop_closure_msg) {
   // TODO(victorr): Introduce flag to switch between default or msg info. matrix
@@ -389,25 +358,18 @@ void VoxgraphMapper::loopClosureCallback(
                                                   T_AB);
 
   // Visualize the loop closure link
-  const Transformation& T_W_A = submap_A.getPose();
-  const Transformation& T_W_B = submap_B.getPose();
-  const Transformation T_W_t1 = T_W_A * T_A_t1;
-  const Transformation T_W_t2 = T_W_B * T_B_t2;
-  loop_closure_vis_.publishLoopClosure(T_W_t1, T_W_t2, T_t1_t2, world_frame_,
-                                       loop_closure_links_pub_);
-  loop_closure_vis_.publishAxes(T_W_t1, T_W_t2, T_t1_t2, world_frame_,
+  const Transformation &T_M_A = submap_A.getPose();
+  const Transformation &T_M_B = submap_B.getPose();
+  const Transformation T_M_t1 = T_M_A * T_A_t1;
+  const Transformation T_M_t2 = T_M_B * T_B_t2;
+  loop_closure_vis_.publishLoopClosure(
+      T_M_t1, T_M_t2, T_t1_t2, map_tracker_.getFrameNames().mission_frame,
+      loop_closure_links_pub_);
+  loop_closure_vis_.publishAxes(T_M_t1, T_M_t2, T_t1_t2,
+                                map_tracker_.getFrameNames().mission_frame,
                                 loop_closure_axes_pub_);
 }
 
-void VoxgraphMapper::optimizePoseGraph() {
-  // NOTE(alexmillane): This is only added such that the pose graph  can be
-  // optimized after datasets completion. If someone calls this a general time
-  // instant, it could destroy the map.
-  // REMOVE ME. UNSAFE CODE.
-  // Add the finished submap to the pose graph, including an odometry link
-  SubmapID finished_submap_id = submap_collection_ptr_->getActiveSubmapID();
-  pose_graph_interface_.addSubmap(finished_submap_id,
-                                  odometry_constraints_enabled_);
 void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
   // Indicate that the previous submap is finished
   // s.t. its cached members are generated

@@ -2,13 +2,10 @@
 #define VOXGRAPH_TOOLS_ROS_PARAMS_H_
 
 #include <ros/node_handle.h>
-
 #include <voxblox_ros/ros_params.h>
-
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 
 namespace voxgraph {
-
 inline VoxgraphSubmap::Config getVoxgraphSubmapConfigFromRosParams(
     const ros::NodeHandle& nh_private) {
   // Getting the tsdf map params from ROS.
@@ -27,11 +24,10 @@ inline VoxgraphSubmap::Config getVoxgraphSubmapConfigFromRosParams(
   config.esdf_voxel_size = esdf_map_config.esdf_voxel_size;
   config.esdf_voxels_per_side = esdf_map_config.esdf_voxels_per_side;
 
-  //TODO(alexmillane): RegistrationFilter params are not grabbed yet here.
+  // TODO(alexmillane): RegistrationFilter params are not grabbed yet here
 
   return config;
 }
-
 }  // namespace voxgraph
 
 #endif  // VOXGRAPH_TOOLS_ROS_PARAMS_H_
