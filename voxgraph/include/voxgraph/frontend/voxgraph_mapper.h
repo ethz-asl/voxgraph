@@ -63,8 +63,6 @@ class VoxgraphMapper {
     return pose_graph_interface_.getSolverSummaries();
   }
 
-  void optimizePoseGraph();
-
  private:
   // Node handles
   ros::NodeHandle nh_;

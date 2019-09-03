@@ -1,13 +1,12 @@
 #include "voxgraph/tools/visualization/submap_visuals.h"
 #include <cblox/mesh/submap_mesher.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <voxblox/io/mesh_ply.h>
 #include <voxblox_ros/mesh_vis.h>
 #include <voxblox_ros/ptcloud_vis.h>
 #include <memory>
 #include <string>
 #include <utility>
-
-#include <voxblox/io/mesh_ply.h>
 
 namespace voxgraph {
 SubmapVisuals::SubmapVisuals(const VoxgraphSubmap::Config &submap_config) {
@@ -61,7 +60,6 @@ void SubmapVisuals::publishSeparatedMesh(
                                         mesh_layer_ptr.get());
   publishMesh(mesh_layer_ptr, mission_frame, publisher);
 }
-
 
 void SubmapVisuals::publishCombinedMesh(
     const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
