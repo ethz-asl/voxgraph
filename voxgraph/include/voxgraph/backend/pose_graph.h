@@ -37,14 +37,21 @@ class PoseGraph {
 
   PoseMap getSubmapPoses();
 
+  typedef Eigen::Matrix<double, 4, 4> EdgeCovarianceMatrix;
+  typedef std::map<SubmapIdPair, EdgeCovarianceMatrix> EdgeCovarianceMap;
+  bool getEdgeCovarianceMap(EdgeCovarianceMap *edge_covariance_map) const;
+
   struct VisualizationEdge {
     Transformation::Position first_node_position;
     Transformation::Position second_node_position;
     double residual;
   };
-  std::vector<VisualizationEdge> getVisualizationEdges() const;
+  typedef std::vector<VisualizationEdge> VisualizationEdgeList;
+  VisualizationEdgeList getVisualizationEdges() const;
 
-  const SolverSummaryList &getSolverSummaries() { return solver_summaries_; }
+  const SolverSummaryList &getSolverSummaries() const {
+    return solver_summaries_;
+  }
 
  private:
   ConstraintCollection constraints_collection_;

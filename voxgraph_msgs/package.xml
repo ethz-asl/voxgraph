@@ -2,7 +2,7 @@
 <package format="2">
   <name>voxgraph_msgs</name>
   <version>1.0.0</version>
-  <description>Message definitions to interface Voxgraph with ROS</description>
+  <description>Message definitions for voxgraph ROS interface</description>
 
   <maintainer email="victorr@ethz.ch">Victor Reijgwart</maintainer>
 
@@ -15,6 +15,9 @@
 
   <depend>message_generation</depend>
   <depend>message_runtime</depend>
+
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>voxblox_msgs</depend>
 </package>

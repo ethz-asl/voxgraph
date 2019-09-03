@@ -3,14 +3,14 @@ debug: true
 submap_creation_interval: 10
 pointcloud_topic: "/velodyne_points"
 subscriber_queue_length: 1000
-world_frame: "world"
+mission_frame: "mission"
 odom_frame: "odom"
-robot_frame: "robot"
+base_frame: "base"
 odom_frame_corrected: "odom_corrected"
-robot_frame_corrected: "robot_corrected"
+base_frame_corrected: "base_corrected"
 sensor_frame_corrected: "velodyne_corrected"
 use_gt_ptcloud_pose_from_sensor_tf: false
-T_robot_sensor:
+T_base_sensor:
   - [0.877583,  0.0, 0.479426,  7.43428e-05]
   - [0.0,       1.0, 0.0,       0.0]
   - [-0.479426, 0.0, 0.877583, -0.0669151]

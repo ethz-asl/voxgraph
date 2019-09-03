@@ -1,13 +1,12 @@
 #include "voxgraph/tools/visualization/submap_visuals.h"
 #include <cblox/mesh/submap_mesher.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <voxblox/io/mesh_ply.h>
 #include <voxblox_ros/mesh_vis.h>
 #include <voxblox_ros/ptcloud_vis.h>
 #include <memory>
 #include <string>
 #include <utility>
-
-#include <voxblox/io/mesh_ply.h>
 
 namespace voxgraph {
 SubmapVisuals::SubmapVisuals(const VoxgraphSubmap::Config &submap_config) {
@@ -54,22 +53,21 @@ void SubmapVisuals::publishMesh(
 
 void SubmapVisuals::publishSeparatedMesh(
     const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-    const std::string &world_frame, const ros::Publisher &publisher) {
+    const std::string &mission_frame, const ros::Publisher &publisher) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
   submap_mesher_->generateSeparatedMesh(submap_collection,
                                         mesh_layer_ptr.get());
-  publishMesh(mesh_layer_ptr, world_frame, publisher);
+  publishMesh(mesh_layer_ptr, mission_frame, publisher);
 }
-
 
 void SubmapVisuals::publishCombinedMesh(
     const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-    const std::string &world_frame, const ros::Publisher &publisher) {
+    const std::string &mission_frame, const ros::Publisher &publisher) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
   submap_mesher_->generateCombinedMesh(submap_collection, mesh_layer_ptr.get());
-  publishMesh(mesh_layer_ptr, world_frame, publisher,
+  publishMesh(mesh_layer_ptr, mission_frame, publisher,
               voxblox::ColorMode::kNormals);
 }
 
@@ -135,11 +133,11 @@ void SubmapVisuals::publishBox(const BoxCornerMatrix &box_corner_matrix,
 
 void SubmapVisuals::publishPoseHistory(
     const VoxgraphSubmapCollection &submap_collection,
-    const std::string &world_frame, const ros::Publisher &publisher) const {
+    const std::string &mission_frame, const ros::Publisher &publisher) const {
   // Create the pose history message
   nav_msgs::Path pose_history_msg;
   pose_history_msg.header.stamp = ros::Time::now();
-  pose_history_msg.header.frame_id = world_frame;
+  pose_history_msg.header.frame_id = mission_frame;
   pose_history_msg.poses = submap_collection.getPoseHistory();
 
   // Publish the message

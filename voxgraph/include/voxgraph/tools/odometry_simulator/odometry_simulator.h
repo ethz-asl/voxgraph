@@ -38,9 +38,9 @@ class OdometrySimulator {
   ros::Subscriber odometry_subscriber_;
   int subscriber_queue_length_;
   std::string subscribe_to_odom_topic_;
-  std::string published_world_frame_;
-  std::string published_simulated_robot_frame_;
-  std::string published_original_robot_frame_;
+  std::string published_mission_frame_;
+  std::string published_simulated_base_frame_;
+  std::string published_original_base_frame_;
 
   // Noise distributions
   struct NoiseDistributions {
