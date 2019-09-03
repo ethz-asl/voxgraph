@@ -11,11 +11,15 @@
   <license>ASL 2.0</license>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
 
-  <depend>roscpp</depend>
-  <depend>ceres_catkin</depend>
   <depend>voxblox</depend>
   <depend>voxblox_ros</depend>
   <depend>cblox</depend>
+  <depend>ceres_catkin</depend>
 
+  <depend>voxblox_msgs</depend>
+  <depend>voxgraph_msgs</depend>
+  <depend>maplab_msgs</depend>
 </package>
+

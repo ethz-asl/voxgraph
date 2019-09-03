@@ -2,15 +2,16 @@
 
 namespace voxgraph {
 NodeTemplates::NodeTemplates()
-    : world_frame(world_frame_), gps_frame(gps_frame_), submap(submap_) {
-  // Initialize the world frame config
+    : mission_frame(mission_frame_), gps_frame(gps_frame_), submap(submap_) {
+  // Initialize the mission frame config
   // NOTE: The frame is fixed to (X, Y, Z, Yaw) = (0, 0, 0, 0)
-  world_frame_.reference_frame_id = kWorldFrame;
-  world_frame_.set_constant = true;
-  world_frame_.T_world_node_initial.setIdentity();
+  mission_frame_.reference_frame_id = kMissionFrame;
+  mission_frame_.set_constant = true;
+  mission_frame_.T_mission_node_initial.setIdentity();
 
   // Initialize the GPS frame config
-  // NOTE: We let the frame float freely w.r.t. the optimization's world frame.
+  // NOTE: We let the frame float freely w.r.t. the optimization's mission
+  // frame.
   //       This way the submap positions will not jump when the first GPS
   //       measurement is received even if the robot started mapping before
   //       getting an absolute position fix. The absolute pose of a submap can
@@ -23,8 +24,8 @@ NodeTemplates::NodeTemplates()
 ReferenceFrameNode::Config NodeTemplates::getReferenceFrameConfigById(
     ReferenceFrameNode::FrameId frame_id) {
   switch (frame_id) {
-    case kWorldFrame:
-      return world_frame;
+    case kMissionFrame:
+      return mission_frame;
     case kGpsFrame:
       return gps_frame;
     default:

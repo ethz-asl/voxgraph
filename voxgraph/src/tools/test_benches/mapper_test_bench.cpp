@@ -82,19 +82,17 @@ int main(int argc, char** argv) {
   ROS_INFO_STREAM(
       "- number of sampling ratios: " << vectorToString(sampling_ratios));
   // TF frame names
-  std::string world_frame;
-  nh_private.param<std::string>("world_frame", world_frame, "world");
-  ROS_INFO_STREAM("- world frame: " << world_frame);
-  std::string uncorrected_robot_pose_frame;
-  nh_private.param<std::string>("uncorrected_robot_pose_frame",
-                                uncorrected_robot_pose_frame, "robot");
-  ROS_INFO_STREAM(
-      "- uncorrected robot pose frame: " << uncorrected_robot_pose_frame);
-  std::string corrected_robot_pose_frame;
-  nh_private.param<std::string>("corrected_robot_pose_frame",
-                                corrected_robot_pose_frame, "robot_corrected");
-  ROS_INFO_STREAM(
-      "- corrected robot pose frame: " << corrected_robot_pose_frame);
+  std::string mission_frame;
+  nh_private.param<std::string>("mission_frame", mission_frame, "mission");
+  ROS_INFO_STREAM("- mission frame: " << mission_frame);
+  std::string uncorrected_base_frame;
+  nh_private.param<std::string>("uncorrected_base_frame",
+                                uncorrected_base_frame, "robot");
+  ROS_INFO_STREAM("- uncorrected robot pose frame: " << uncorrected_base_frame);
+  std::string corrected_base_frame;
+  nh_private.param<std::string>("corrected_base_frame", corrected_base_frame,
+                                "robot_corrected");
+  ROS_INFO_STREAM("- corrected robot pose frame: " << corrected_base_frame);
   // Pointcloud topic
   std::string pointcloud_topic;
   nh_private.param<std::string>("pointcloud_topic", pointcloud_topic,
@@ -250,8 +248,8 @@ int main(int argc, char** argv) {
       voxblox::Transformer transformer(nh, nh_private);
       topics_of_interest.emplace_back(ground_truth_pose_topic);
       std::queue<std::shared_ptr<PoseStamped>> ground_truth_pose_queue;
-      // Transform from ground truth to world frame
-      TransformationDouble T_world_D;
+      // Transform from ground truth to mission frame
+      TransformationDouble T_mission_D;
       ros::Time ground_truth_start_time;
       unsigned int ground_truth_counter = 0;
       boost::filesystem::path live_position_file_path = log_folder_path;
@@ -336,15 +334,15 @@ int main(int argc, char** argv) {
           if (ground_truth_pose_msg) {
             // Check if this is the first received ground truth msg
             if (ground_truth_pose_queue.empty()) {
-              // Initialize transform from ground truth to world frame
-              TransformationDouble T_D_world;
-              tf::poseMsgToKindr(ground_truth_pose_msg->pose, &T_D_world);
-              T_world_D = T_D_world.inverse();
+              // Initialize transform from ground truth to mission frame
+              TransformationDouble T_D_mission;
+              tf::poseMsgToKindr(ground_truth_pose_msg->pose, &T_D_mission);
+              T_mission_D = T_D_mission.inverse();
               // Set its roll and pitch to zero
               TransformationDouble::Vector3 Q_vec =
-                  T_world_D.getRotation().log();
+                  T_mission_D.getRotation().log();
               Q_vec[0] = Q_vec[1] = 0;
-              T_world_D.getRotation() =
+              T_mission_D.getRotation() =
                   TransformationDouble::Rotation::exp(Q_vec);
               // Get the start time
               ground_truth_start_time = ground_truth_pose_msg->header.stamp;
@@ -361,18 +359,18 @@ int main(int argc, char** argv) {
               TransformationDouble T_D_ground_truth_pose;
               tf::poseMsgToKindr(ground_truth_pose_queue.front()->pose,
                                  &T_D_ground_truth_pose);
-              const TransformationDouble T_world_gt_pose =
-                  T_world_D * T_D_ground_truth_pose;
+              const TransformationDouble T_mission_gt_pose =
+                  T_mission_D * T_D_ground_truth_pose;
 
               // Try to lookup the corresponding corrected and uncorrected pose
-              Transformation T_world_robot_corrected;
-              Transformation T_world_robot_uncorrected;
+              Transformation T_mission_base_corrected;
+              Transformation T_mission_base_uncorrected;
               bool corrected_pose_found = transformer.lookupTransform(
-                  corrected_robot_pose_frame, world_frame, query_time,
-                  &T_world_robot_corrected);
+                  corrected_base_frame, mission_frame, query_time,
+                  &T_mission_base_corrected);
               bool uncorrected_pose_found = transformer.lookupTransform(
-                  uncorrected_robot_pose_frame, world_frame, query_time,
-                  &T_world_robot_uncorrected);
+                  uncorrected_base_frame, mission_frame, query_time,
+                  &T_mission_base_uncorrected);
 
               if (corrected_pose_found && uncorrected_pose_found) {
                 // Pop the ground truth pose msg, now that we found its
@@ -382,10 +380,10 @@ int main(int argc, char** argv) {
                 // Log poses to file
                 live_position_log_file
                     << (query_time - ground_truth_start_time).toSec() << ","
-                    << T_world_gt_pose.getPosition().format(ioformat) << ","
-                    << T_world_robot_uncorrected.getPosition().format(ioformat)
+                    << T_mission_gt_pose.getPosition().format(ioformat) << ","
+                    << T_mission_base_uncorrected.getPosition().format(ioformat)
                     << ","
-                    << T_world_robot_corrected.getPosition().format(ioformat)
+                    << T_mission_base_corrected.getPosition().format(ioformat)
                     << std::endl;
               } else if (ground_truth_pose_queue.size() >
                          max_ground_truth_queue_size) {
@@ -394,9 +392,9 @@ int main(int argc, char** argv) {
                 // poses. This is necessary since we might otherwise exceed the
                 // TF buffer length for the remaining poses (i.e. lose them all)
                 ROS_WARN_STREAM("Could not find transforms from "
-                                << uncorrected_robot_pose_frame << " and/or "
-                                << corrected_robot_pose_frame << " to "
-                                << world_frame << " at time " << query_time);
+                                << uncorrected_base_frame << " and/or "
+                                << corrected_base_frame << " to "
+                                << mission_frame << " at time " << query_time);
                 ground_truth_pose_queue.pop();
               }
             }

@@ -1,7 +1,3 @@
-//
-// Created by victor on 19.06.19.
-//
-
 #include "voxgraph/backend/node/pose/pose_4d.h"
 
 namespace voxgraph {

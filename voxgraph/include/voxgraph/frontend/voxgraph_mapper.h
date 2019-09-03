@@ -5,14 +5,20 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
-#include <voxblox_ros/transformer.h>
+#include <future>
 #include <memory>
 #include <string>
 #include "voxgraph/common.h"
+#include "voxgraph/frontend/frame_names.h"
+#include "voxgraph/frontend/map_tracker/map_tracker.h"
+#include "voxgraph/frontend/map_tracker/scan_to_map_registerer.h"
 #include "voxgraph/frontend/measurement_processors/gps_processor.h"
-#include "voxgraph/frontend/measurement_processors/pointcloud_processor.h"
+#include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+#include "voxgraph/tools/data_servers/loop_closure_edge_server.h"
+#include "voxgraph/tools/data_servers/projected_map_server.h"
+#include "voxgraph/tools/data_servers/submap_server.h"
 #include "voxgraph/tools/rosbag_helper.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
 
@@ -52,7 +58,6 @@ class VoxgraphMapper {
 
   // Verbosity and debug mode
   bool verbose_;
-  bool debug_;
 
   // Flag and helper to automatically pause rosbags during graph optimization
   // NOTE: This is useful when playing bags faster than real-time or when
@@ -65,6 +70,14 @@ class VoxgraphMapper {
   void advertiseTopics();
   void advertiseServices();
   void getParametersFromRos();
+
+  // New submap creation, pose graph optimization and map publishing
+  void switchToNewSubmap(const ros::Time &current_timestamp);
+  int optimizePoseGraph();
+  void publishMaps(const ros::Time &current_timestamp);
+
+  // Asynchronous handle for the pose graph optimization thread
+  std::future<int> optimization_async_handle_;
 
   // ROS topic subscribers
   int subscriber_queue_length_;
@@ -80,15 +93,11 @@ class VoxgraphMapper {
   ros::ServiceServer publish_separated_mesh_srv_;
   ros::ServiceServer publish_combined_mesh_srv_;
   ros::ServiceServer save_to_file_srv_;
-  // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
 
   // Constraints to be used
   bool registration_constraints_enabled_;
   bool odometry_constraints_enabled_;
   bool height_constraints_enabled_;
-
-  // Visualization tools
-  SubmapVisuals submap_vis_;
 
   // Instantiate the submap collection
   VoxgraphSubmap::Config submap_config_;
@@ -98,37 +107,19 @@ class VoxgraphMapper {
   PoseGraphInterface pose_graph_interface_;
 
   // Measurement processors
-  PointcloudProcessor pointcloud_processor_;
+  PointcloudIntegrator pointcloud_integrator_;
 
-  // Voxblox transformer used to lookup transforms from the TF tree or rosparams
-  voxblox::Transformer transformer_;
+  // Map servers, used to share the projected map and submaps with ROS nodes
+  ProjectedMapServer projected_map_server_;
+  SubmapServer submap_server_;
+  LoopClosureEdgeServer loop_closure_edge_server_;
 
-  // Coordinate frame naming convention
-  // - world: the fixed world frame
-  // - odom: the "odometry's world frame" which is not corrected for drift
-  // - odom_corrected: the drift corrected odom frame
-  // - robot: the body frame of the robot
-  // - sensor: the pointcloud sensor's frame
-  // NOTE: T_world_odom_corrected gets initialized to the identity transform and
-  //       is updated after each pose graph optimization step
-  std::string world_frame_;
-  std::string odom_frame_;
-  std::string robot_frame_;
-  Transformation T_world_odom_corrected_;
-  Transformation T_robot_sensor_;  // This transform is static
+  // Visualization tools
+  SubmapVisuals submap_vis_;
 
-  // Publish the drift corrected TFs to the following frame names
-  std::string odom_frame_corrected_;
-  std::string robot_frame_corrected_;
-  std::string sensor_frame_corrected_;
-
-  // Transform lookup method that sleeps and retries a few times if the TF from
-  // the robot to the odom frame is not immediately available
-  bool lookup_T_odom_robot(ros::Time timestamp, Transformation *T_odom_robot);
-
-  // Whether to use ground truth T_world__sensor,
-  // instead of its estimated pose (for validation purposes)
-  bool use_gt_ptcloud_pose_from_sensor_tf_;
+  // Map tracker handles the odometry input and refines it using scan-to-map ICP
+  bool use_icp_refinement_;
+  MapTracker map_tracker_;
 };
 }  // namespace voxgraph
 

@@ -27,8 +27,18 @@ bool SubmapTimeline::lookupActiveSubmapByTime(const ros::Time &timestamp,
   return true;
 }
 
-cblox::SubmapID SubmapTimeline::getPreviousSubmapId() {
+cblox::SubmapID SubmapTimeline::getPreviousSubmapId() const {
   CHECK_GE(submap_timeline_.size(), 2);
   return (--(--submap_timeline_.end()))->second;
+}
+
+cblox::SubmapID SubmapTimeline::getFirstSubmapId() const {
+  CHECK(!submap_timeline_.empty());
+  return submap_timeline_.begin()->second;
+}
+
+cblox::SubmapID SubmapTimeline::getLastSubmapId() const {
+  CHECK(!submap_timeline_.empty());
+  return (--submap_timeline_.end())->second;
 }
 }  // namespace voxgraph

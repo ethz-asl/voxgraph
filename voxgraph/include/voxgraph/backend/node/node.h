@@ -14,13 +14,13 @@ class Node {
 
   struct Config {
     bool set_constant;
-    voxblox::Transformation T_world_node_initial;
+    voxblox::Transformation T_mission_node_initial;
   };
 
   Node(const Node::NodeId &node_id, const Config &config)
       : node_id_(node_id),
         config_(config),
-        optimized_pose_(config.T_world_node_initial) {}
+        optimized_pose_(config.T_mission_node_initial) {}
   virtual ~Node() = default;
 
   const Pose &getPose() const { return optimized_pose_; }

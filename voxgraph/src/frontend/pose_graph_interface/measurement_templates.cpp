@@ -24,7 +24,7 @@ MeasurementTemplates::MeasurementTemplates(bool verbose)
 
   // Initialize the default height measurement config
   height_.information_matrix.setZero();
-  height_.reference_frame_id = NodeTemplates::kWorldFrame;
+  height_.reference_frame_id = NodeTemplates::kMissionFrame;
   height_.allow_semi_definite_information_matrix = true;
 
   // Initialize the default registration config

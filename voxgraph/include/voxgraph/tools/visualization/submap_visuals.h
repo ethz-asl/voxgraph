@@ -30,11 +30,11 @@ class SubmapVisuals {
 
   void publishSeparatedMesh(
       const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-      const std::string &world_frame, const ros::Publisher &publisher);
+      const std::string &mission_frame, const ros::Publisher &publisher);
 
   void publishCombinedMesh(
       const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-      const std::string &world_frame, const ros::Publisher &publisher);
+      const std::string &mission_frame, const ros::Publisher &publisher);
 
   void publishBox(const BoxCornerMatrix &box_corner_matrix,
                   const voxblox::Color &box_color, const std::string &frame_id,
@@ -42,7 +42,7 @@ class SubmapVisuals {
                   const ros::Publisher &publisher) const;
 
   void publishPoseHistory(const VoxgraphSubmapCollection &submap_collection,
-                          const std::string &world_frame,
+                          const std::string &mission_frame,
                           const ros::Publisher &publisher) const;
 
  private:

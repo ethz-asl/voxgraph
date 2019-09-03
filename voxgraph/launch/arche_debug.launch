@@ -1,0 +1,69 @@
+<launch>
+  <param name="use_sim_time" value="true"/>
+
+  <node if="1" name="player" pkg="rosbag" type="play" output="screen"
+        args="-r 1.0 -s 5 -q --clock /home/victorr/data/arche_week/arche_day_2/flight1_2ms.bag"/>
+  <node if="0" name="player" pkg="rosbag" type="play" output="screen"
+        args="-r 1.0 -s 5 -q --clock /home/victorr/data/arche_week/arche_day_3/2019-07-03-14-24-45.bag"/>
+
+  <node pkg="tf" type="static_transform_publisher" name="odom_to_mission" args="0 0 0 0 0 0 1 odom mission 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="os1_stuff" args="0 0 0 0 0 1 0 os1_sensor os1_lidar 100"/>
+
+  <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen" args="-alsologtostderr">
+<!--          launch-prefix="gdb -ex run &#45;&#45;args">-->
+    <rosparam>
+      verbose: false
+      debug: true
+      submap_creation_interval: 10
+      auto_pause_rosbag: false
+      pointcloud_topic: "lidar_undistortion/pointcloud_corrected"
+      subscriber_queue_length: 10
+      use_icp_refinement: false
+      mission_frame: "mission"
+      odom_frame: "odom"
+      base_link_frame: "imu"
+      odom_frame_corrected: "odom_corrected"
+      base_frame_corrected: "base_corrected"
+      sensor_frame_corrected: "sensor_corrected"
+      # For calibration according to TFs, see STIX launch file
+      # T_base_sensor:
+      # - [-0.9908275, -0.0196803, 0.1336922, -0.024]
+      # - [ 0.0202159, -0.9997921, 0.0026504, -0.011]
+      # - [ 0.1336122,  0.0053288, 0.9910194, -0.131]
+      # - [ 0.0,        0.0,       0.0,        1.0]
+      tsdf_integrator:
+        tsdf_voxel_size: 0.20
+        truncation_distance: 0.60
+        max_ray_length_m: 16.0
+        use_const_weight: true
+        use_weight_dropoff: true
+        use_sparsity_compensation_factor: true
+        sparsity_compensation_factor: 20.0
+        # integration_order_mode: "sorted"
+      measurements:
+        submap_registration:
+          enabled: true
+          sampling_ratio: 0.05
+          registration_method: "explicit_to_implicit"
+          information_matrix:
+            x_x:     1.0
+            y_y:     1.0
+            z_z:     1.0
+            yaw_yaw: 1.0
+        odometry:
+          enabled: true
+          information_matrix:
+            x_x:     1.0
+            y_y:     1.0
+            z_z:     2500.0
+            yaw_yaw: 2500.0
+        height:
+          enabled: false
+          information_zz: 2500.0
+    </rosparam>
+  </node>
+
+  <include file="$(find lidar_undistortion)/launch/os1_undistortion.launch"/>
+
+  <node name="cpu_monitor" pkg="voxgraph" type="quick_n_dirty_cpu_usage_monitor" />
+</launch>

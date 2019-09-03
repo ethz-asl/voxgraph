@@ -56,6 +56,17 @@ void PoseGraph::addRegistrationConstraint(
 
   // Add to the constraint set
   constraints_collection_.addRegistrationConstraint(config);
+
+  // TODO(victorr): Remove or permanently add the experimental code below
+  if (config.registration.registration_point_type ==
+      VoxgraphSubmap::RegistrationPointType::kIsosurfacePoints) {
+    RegistrationConstraint::Config mirrored_config = config;
+    mirrored_config.first_submap_id = config.second_submap_id;
+    mirrored_config.first_submap_ptr = config.second_submap_ptr;
+    mirrored_config.second_submap_id = config.first_submap_id;
+    mirrored_config.second_submap_ptr = config.first_submap_ptr;
+    constraints_collection_.addRegistrationConstraint(mirrored_config);
+  }
 }
 
 void PoseGraph::initialize() {
@@ -74,10 +85,10 @@ void PoseGraph::optimize() {
   ceres::Solver::Options ceres_options;
   // TODO(victorr): Set these from parameters
   // TODO(victorr): Look into manual parameter block ordering
-  ceres_options.parameter_tolerance = 3e-4;
+  ceres_options.parameter_tolerance = 3e-3;
   //  ceres_options.max_num_iterations = 4;
-  //  ceres_options.max_solver_time_in_seconds = 12;
-  ceres_options.num_threads = std::thread::hardware_concurrency();
+  ceres_options.max_solver_time_in_seconds = 4;
+  ceres_options.num_threads = 4;
   ceres_options.linear_solver_type = ceres::LinearSolverType::SPARSE_SCHUR;
   // NOTE: For small problems DENSE_SCHUR is much faster
 
@@ -98,8 +109,55 @@ PoseGraph::PoseMap PoseGraph::getSubmapPoses() {
   return submap_poses;
 }
 
-std::vector<PoseGraph::VisualizationEdge> PoseGraph::getVisualizationEdges()
-    const {
+bool PoseGraph::getEdgeCovarianceMap(
+    PoseGraph::EdgeCovarianceMap *edge_covariance_map) const {
+  CHECK_NOTNULL(edge_covariance_map);
+
+  // Configure the covariance extraction
+  ceres::Covariance::Options options;
+  ceres::Covariance covariance(options);
+  std::vector<std::pair<const double *, const double *>> covariance_blocks;
+
+  // Request covariance estimates for the submap pairs specified through the
+  // edge_covariance_map
+  for (std::pair<const SubmapIdPair, EdgeCovarianceMatrix>
+           &edge_covariance_pair : *edge_covariance_map) {
+    SubmapNode::Ptr first_submap_node =
+        node_collection_.getSubmapNodePtrById(edge_covariance_pair.first.first);
+    SubmapNode::Ptr second_submap_node = node_collection_.getSubmapNodePtrById(
+        edge_covariance_pair.first.second);
+    covariance_blocks.emplace_back(
+        first_submap_node->getPosePtr()->optimizationVectorData(),
+        second_submap_node->getPosePtr()->optimizationVectorData());
+  }
+
+  // Compute the requested covariances
+  if (!covariance.Compute(covariance_blocks, problem_ptr_.get())) {
+    // The covariance computation failed
+    return false;
+  }
+
+  // Return the estimated covariances by storing them in the edge_covariance_map
+  for (std::pair<const SubmapIdPair, EdgeCovarianceMatrix>
+           &edge_covariance_pair : *edge_covariance_map) {
+    SubmapNode::Ptr first_submap_node =
+        node_collection_.getSubmapNodePtrById(edge_covariance_pair.first.first);
+    SubmapNode::Ptr second_submap_node = node_collection_.getSubmapNodePtrById(
+        edge_covariance_pair.first.second);
+    if (!covariance.GetCovarianceBlock(
+            first_submap_node->getPosePtr()->optimizationVectorData(),
+            second_submap_node->getPosePtr()->optimizationVectorData(),
+            edge_covariance_pair.second.data())) {
+      // The covariance pair for this submap is missing, which shouldn't happen
+      // since it has been requested.
+      return false;
+    }
+  }
+
+  return true;
+}
+
+PoseGraph::VisualizationEdgeList PoseGraph::getVisualizationEdges() const {
   // Check if the problem has been initialized
   CHECK_NOTNULL(problem_ptr_);
 
@@ -111,7 +169,7 @@ std::vector<PoseGraph::VisualizationEdge> PoseGraph::getVisualizationEdges()
                          nullptr, nullptr);
 
   // Iterate over all residual blocks and setup the corresponding edges
-  std::vector<VisualizationEdge> edges;
+  VisualizationEdgeList edges;
   size_t residual_idx = 0;
   for (const ceres::ResidualBlockId &residual_block_id : residual_block_ids) {
     VisualizationEdge edge;

@@ -191,17 +191,17 @@ int main(int argc, char **argv) {
   Transformation transform_getter;
   CHECK(submap_collection_ptr->getSubmapPose(reference_submap_id,
                                              &transform_getter));
-  const Transformation T_world__reference = transform_getter;
+  const Transformation T_mission__reference = transform_getter;
   CHECK(submap_collection_ptr->getSubmapPose(reading_submap_id,
                                              &transform_getter));
-  const Transformation T_world__reading_original = transform_getter;
+  const Transformation T_mission__reading_original = transform_getter;
   const Eigen::Vector3f &ground_truth_position =
-      T_world__reading_original.getPosition();
+      T_mission__reading_original.getPosition();
 
   // Publish TFs for the reference and reading submap
-  TfHelper::publishTransform(T_world__reference, "world", "reference_submap",
-                             true);
-  TfHelper::publishTransform(T_world__reading_original, "world",
+  TfHelper::publishTransform(T_mission__reference, "mission",
+                             "reference_submap", true);
+  TfHelper::publishTransform(T_mission__reading_original, "mission",
                              "reading_submap", true);
 
   // Publish the meshes used to visualize the submaps
@@ -220,9 +220,9 @@ int main(int argc, char **argv) {
                            reference_mesh_pub);
     // Publish temporary TFs for the moving meshes, such that Rviz
     // doesn't discard them due to missing frame position information
-    TfHelper::publishTransform(T_world__reading_original, "world",
+    TfHelper::publishTransform(T_mission__reading_original, "mission",
                                "perturbed_submap", true);
-    TfHelper::publishTransform(T_world__reading_original, "world",
+    TfHelper::publishTransform(T_mission__reading_original, "mission",
                                "optimized_submap", true);
     // Publish the reading submap mesh used to indicate its perturbed pose
     submap_vis.publishMesh(*submap_collection_ptr, reading_submap_id,
@@ -302,18 +302,18 @@ int main(int argc, char **argv) {
               // TODO(victorr): Implement disturbance over pitch & roll
               Transformation::Vector3 rot_vec(0, 0, yaw);
               voxblox::Rotation rotation(rot_vec);
-              Transformation T_world__reading_perturbed;
-              T_world__reading_perturbed.getRotation() =
-                  T_world__reading_original.getRotation() * rotation;
+              Transformation T_mission__reading_perturbed;
+              T_mission__reading_perturbed.getRotation() =
+                  T_mission__reading_original.getRotation() * rotation;
               Transformation::Vector3 translation(x, y, z);
-              T_world__reading_perturbed.getPosition() =
-                  T_world__reading_original.getPosition() + translation;
-              submap_collection_ptr->setSubmapPose(reading_submap_id,
-                                                   T_world__reading_perturbed);
+              T_mission__reading_perturbed.getPosition() =
+                  T_mission__reading_original.getPosition() + translation;
+              submap_collection_ptr->setSubmapPose(
+                  reading_submap_id, T_mission__reading_perturbed);
 
               // Announce progress
               const Eigen::Vector3f &perturbed_position =
-                  T_world__reading_perturbed.getPosition();
+                  T_mission__reading_perturbed.getPosition();
               printf(
                   "-- % 2i disturbance:        "
                   "x % 4.6f    y % 4.6f    z % 4.6f    "
@@ -324,34 +324,34 @@ int main(int argc, char **argv) {
                   pitch, roll);
 
               // Publish the TF of perturbed mesh
-              TfHelper::publishTransform(T_world__reading_perturbed, "world",
-                                         "perturbed_submap", true);
+              TfHelper::publishTransform(T_mission__reading_perturbed,
+                                         "mission", "perturbed_submap", true);
 
               // Set initial conditions
               ceres::Solver::Summary summary;
               Transformation::Vector6 T_vec_read =
-                  T_world__reading_perturbed.log();
-              double world_pose_reading[4] = {T_vec_read[0], T_vec_read[1],
-                                              T_vec_read[2], T_vec_read[5]};
+                  T_mission__reading_perturbed.log();
+              double mission_pose_reading[4] = {T_vec_read[0], T_vec_read[1],
+                                                T_vec_read[2], T_vec_read[5]};
 
               // Optimize submap registration
               bool registration_successful = submap_registerer.testRegistration(
-                  reference_submap_id, reading_submap_id, world_pose_reading,
+                  reference_submap_id, reading_submap_id, mission_pose_reading,
                   &summary);
               if (registration_successful) {
                 // Update reading submap pose with the optimization result
-                T_vec_read[0] = world_pose_reading[0];
-                T_vec_read[1] = world_pose_reading[1];
-                T_vec_read[2] = world_pose_reading[2];
-                T_vec_read[5] = world_pose_reading[3];
-                const Transformation T_world__reading_optimized =
+                T_vec_read[0] = mission_pose_reading[0];
+                T_vec_read[1] = mission_pose_reading[1];
+                T_vec_read[2] = mission_pose_reading[2];
+                T_vec_read[5] = mission_pose_reading[3];
+                const Transformation T_mission__reading_optimized =
                     Transformation::exp(T_vec_read);
                 submap_collection_ptr->setSubmapPose(
-                    reading_submap_id, T_world__reading_optimized);
+                    reading_submap_id, T_mission__reading_optimized);
 
                 // Announce results
                 const Eigen::Vector3f &optimized_position =
-                    T_world__reading_optimized.getPosition();
+                    T_mission__reading_optimized.getPosition();
                 printf(
                     "-- % 2i remaining error:    "
                     "x % 4.6f    y % 4.6f    z % 4.6f    "
@@ -361,8 +361,8 @@ int main(int argc, char **argv) {
                     optimized_position.x() - ground_truth_position.x(),
                     optimized_position.y() - ground_truth_position.y(),
                     optimized_position.z() - ground_truth_position.z(),
-                    T_world__reading_optimized.log()[5] -
-                        T_world__reading_original.log()[5],
+                    T_mission__reading_optimized.log()[5] -
+                        T_mission__reading_original.log()[5],
                     0.0, 0.0, summary.total_time_in_seconds);
 
                 // Append stats to log file

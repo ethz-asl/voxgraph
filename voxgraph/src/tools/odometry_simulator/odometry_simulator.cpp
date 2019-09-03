@@ -11,23 +11,23 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle &nh,
       debug_(false),
       subscriber_queue_length_(100),
       subscribe_to_odom_topic_("odometry"),
-      published_world_frame_("world"),
-      published_simulated_robot_frame_("robot"),
-      published_original_robot_frame_("robot_ground_truth") {
+      published_mission_frame_("mission"),
+      published_simulated_base_frame_("base"),
+      published_original_base_frame_("base_ground_truth") {
   // Read odometry simulator params from ROS
   nh_private_.param("debug", debug_, debug_);
   nh_private_.param("subscriber_queue_length_", subscriber_queue_length_,
                     subscriber_queue_length_);
   nh_private_.param("subscribe_to_odom_topic", subscribe_to_odom_topic_,
                     subscribe_to_odom_topic_);
-  nh_private_.param("published_world_frame", published_world_frame_,
-                    published_world_frame_);
-  nh_private_.param("published_simulated_robot_frame",
-                    published_simulated_robot_frame_,
-                    published_simulated_robot_frame_);
-  nh_private_.param("published_original_robot_frame",
-                    published_original_robot_frame_,
-                    published_original_robot_frame_);
+  nh_private_.param("published_mission_frame", published_mission_frame_,
+                    published_mission_frame_);
+  nh_private_.param("published_simulated_base_frame",
+                    published_simulated_base_frame_,
+                    published_simulated_base_frame_);
+  nh_private_.param("published_original_base_frame",
+                    published_original_base_frame_,
+                    published_original_base_frame_);
 
   ros::NodeHandle nh_velocity_noise_(nh_private_, "odometry_noise/velocity");
   nh_velocity_noise_.param<double>("x/mean", noise_.x_vel.mean(), 0);
@@ -77,10 +77,10 @@ void OdometrySimulator::odometryCallback(
       (odometry_msg->header.stamp - internal_pose_.header.stamp).toSec();
 
   // Load quantities of interest
-  // Body position in world frame
+  // Body position in mission frame
   Vector3 W_translation_WB;
   tf::pointMsgToKindr(internal_pose_.pose.position, &W_translation_WB);
-  // Body orientation in the world frame
+  // Body orientation in the mission frame
   Rotation Rotation_WB;
   tf::quaternionMsgToKindr(internal_pose_.pose.orientation, &Rotation_WB);
   // Linear velocity in body frame
@@ -96,7 +96,7 @@ void OdometrySimulator::odometryCallback(
   B_linear_velocity.x() += noise_.x_vel();
   B_linear_velocity.y() += noise_.y_vel();
   B_linear_velocity.z() += noise_.z_vel();
-  // Transform linear velocity into world frame
+  // Transform linear velocity into mission frame
   Vector3 W_linear_velocity =
       Rotation_WB.getRotationMatrix() * B_linear_velocity;
   // Integrate translation
@@ -107,11 +107,11 @@ void OdometrySimulator::odometryCallback(
   // Update the orientation
   // NOTE: It is assumed that a good gravity estimate is available
   //       to eliminate pitch and roll drift
-  // Transform angular velocity into world frame
+  // Transform angular velocity into mission frame
   Vector3 W_angular_velocity =
       Rotation_WB.getRotationMatrix() * B_angular_velocity;
   // Simulate noise on yaw rate
-  // NOTE: This is done in world frame to avoid affecting pitch and roll
+  // NOTE: This is done in mission frame to avoid affecting pitch and roll
   W_angular_velocity.z() += noise_.yaw_rate();
   // Integrate angular velocity
   Vector3 rotation_vector = W_angular_velocity * Dt;
@@ -139,10 +139,10 @@ void OdometrySimulator::publishSimulatedPoseTf() {
 
   // Update the TF message header
   published_pose_.header = internal_pose_.header;
-  published_pose_.header.frame_id = published_world_frame_;
-  published_pose_.child_frame_id = published_simulated_robot_frame_;
+  published_pose_.header.frame_id = published_mission_frame_;
+  published_pose_.child_frame_id = published_simulated_base_frame_;
 
-  // Get the rotation from the world to body frame
+  // Get the rotation from the mission to body frame
   Rotation Rotation_WB;
   tf::quaternionMsgToKindr(internal_pose_.pose.orientation, &Rotation_WB);
 
@@ -176,8 +176,8 @@ void OdometrySimulator::publishOriginalPoseTf(
   // Create the transform msg
   geometry_msgs::TransformStamped true_pose;
   true_pose.header = odometry_msg->header;
-  true_pose.header.frame_id = published_world_frame_;
-  true_pose.child_frame_id = published_original_robot_frame_;
+  true_pose.header.frame_id = published_mission_frame_;
+  true_pose.child_frame_id = published_original_base_frame_;
 
   // Copy the true pose from the odometry message to the TF msg
   true_pose.transform.translation.x = odometry_msg->pose.pose.position.x;

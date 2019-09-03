@@ -51,9 +51,8 @@ void VoxgraphSubmap::transformSubmap(const voxblox::Transformation &T_new_old) {
 }
 
 void VoxgraphSubmap::addPoseToHistory(
-    const ros::Time &timestamp, const voxblox::Transformation &T_world_robot) {
-  voxblox::Transformation T_submap_robot = getPose().inverse() * T_world_robot;
-  pose_history_.emplace(timestamp, T_submap_robot);
+    const ros::Time &timestamp, const voxblox::Transformation &T_submap_base) {
+  pose_history_.emplace(timestamp, T_submap_base);
 }
 
 void VoxgraphSubmap::finishSubmap() {
@@ -83,11 +82,19 @@ void VoxgraphSubmap::setRegistrationFilterConfig(
   config_.registration_filter = registration_filter_config;
 }
 
-const ros::Time VoxgraphSubmap::getCreationTime() const {
+const ros::Time VoxgraphSubmap::getStartTime() const {
   if (pose_history_.empty()) {
     return ros::Time(0);
   } else {
     return (pose_history_.begin())->first;
+  }
+}
+
+const ros::Time VoxgraphSubmap::getEndTime() const {
+  if (pose_history_.empty()) {
+    return ros::Time(0);
+  } else {
+    return (--pose_history_.end())->first;
   }
 }
 
@@ -201,8 +208,8 @@ void VoxgraphSubmap::findIsosurfaceVertices() {
 
 bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap &other_submap) const {
   // TODO(victorr): Implement improved overlap test
-  const BoundingBox aabb = getWorldFrameSurfaceAabb();
-  const BoundingBox other_aabb = other_submap.getWorldFrameSurfaceAabb();
+  const BoundingBox aabb = getMissionFrameSurfaceAabb();
+  const BoundingBox other_aabb = other_submap.getMissionFrameSurfaceAabb();
   // If there's a separation along any of the 3 axes, the AABBs don't intersect
   if (aabb.max[0] < other_aabb.min[0] || aabb.min[0] > other_aabb.max[0])
     return false;
@@ -286,47 +293,49 @@ const BoundingBox VoxgraphSubmap::getSubmapFrameSubmapObb() const {
   return map_obb_;
 }
 
-const BoxCornerMatrix VoxgraphSubmap::getWorldFrameSurfaceObbCorners() const {
+const BoxCornerMatrix VoxgraphSubmap::getMissionFrameSurfaceObbCorners() const {
   // Create a matrix whose columns are the box corners' homogeneous coordinates
   HomogBoxCornerMatrix box_corner_matrix = HomogBoxCornerMatrix::Constant(1);
   box_corner_matrix.topLeftCorner(3, 8) =
       getSubmapFrameSurfaceObb().getCornerCoordinates();
-  // Transform the box corner coordinates to world frame
+  // Transform the box corner coordinates to mission frame
   box_corner_matrix = getPose().getTransformationMatrix() * box_corner_matrix;
   return box_corner_matrix.topLeftCorner(3, 8);
 }
 
-const BoxCornerMatrix VoxgraphSubmap::getWorldFrameSubmapObbCorners() const {
+const BoxCornerMatrix VoxgraphSubmap::getMissionFrameSubmapObbCorners() const {
   // Create a matrix whose columns are the box corners' homogeneous coordinates
   HomogBoxCornerMatrix box_corner_matrix = HomogBoxCornerMatrix::Constant(1);
   box_corner_matrix.topLeftCorner(3, 8) =
       getSubmapFrameSubmapObb().getCornerCoordinates();
-  // Transform the box corner coordinates to world frame
+  // Transform the box corner coordinates to mission frame
   box_corner_matrix = getPose().getTransformationMatrix() * box_corner_matrix;
   return box_corner_matrix.topLeftCorner(3, 8);
 }
 
-const BoundingBox VoxgraphSubmap::getWorldFrameSurfaceAabb() const {
-  // Return the Axis Aligned Bounding Box around the isosurface in world frame
+const BoundingBox VoxgraphSubmap::getMissionFrameSurfaceAabb() const {
+  // Return the Axis Aligned Bounding Box around the isosurface in mission frame
   return BoundingBox::getAabbFromObbAndPose(getSubmapFrameSurfaceObb(),
                                             getPose());
 }
 
-const BoundingBox VoxgraphSubmap::getWorldFrameSubmapAabb() const {
-  // Return the Axis Aligned Bounding Box around the full submap in world frame
+const BoundingBox VoxgraphSubmap::getMissionFrameSubmapAabb() const {
+  // Return the Axis Aligned Bounding Box around the full submap in mission
+  // frame
   return BoundingBox::getAabbFromObbAndPose(getSubmapFrameSubmapObb(),
                                             getPose());
 }
 
-const BoxCornerMatrix VoxgraphSubmap::getWorldFrameSurfaceAabbCorners() const {
+const BoxCornerMatrix VoxgraphSubmap::getMissionFrameSurfaceAabbCorners()
+    const {
   // Return a matrix whose columns are the corner points
   // of the submap's surface AABB
-  return getWorldFrameSurfaceAabb().getCornerCoordinates();
+  return getMissionFrameSurfaceAabb().getCornerCoordinates();
 }
 
-const BoxCornerMatrix VoxgraphSubmap::getWorldFrameSubmapAabbCorners() const {
+const BoxCornerMatrix VoxgraphSubmap::getMissionFrameSubmapAabbCorners() const {
   // Return a matrix whose columns are the corner points
   // of the full submap's AABB
-  return getWorldFrameSubmapAabb().getCornerCoordinates();
+  return getMissionFrameSubmapAabb().getCornerCoordinates();
 }
 }  // namespace voxgraph
