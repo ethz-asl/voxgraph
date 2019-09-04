@@ -79,6 +79,10 @@ class PoseGraphInterface {
   OverlappingSubmapList overlapping_submap_list_;
   void updateOverlappingSubmapList();
 
+  // Keep track of whether new loop closures have been added
+  // since the pose graph was last optimized
+  bool new_loop_closures_added_since_last_optimization_;
+
   // Helper to add reference frames to the pose graph
   void addReferenceFrameIfMissing(ReferenceFrameNode::FrameId frame_id);
 };
