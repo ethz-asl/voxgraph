@@ -46,7 +46,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       projected_map_server_(nh_private),
       submap_server_(nh_private),
       loop_closure_edge_server_(nh_private),
-      use_icp_refinement_(true),
+      use_icp_refinement_(false),
       map_tracker_(submap_collection_ptr_,
                    FrameNames::fromRosParams(nh_private), verbose_) {
   // Setup interaction with ROS
