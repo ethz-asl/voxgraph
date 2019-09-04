@@ -43,9 +43,3 @@ measurements:
   height:
     enabled: false
     information_zz: 1000.0
-  loop_closure:
-    information_matrix:
-      x_x:     10000.0
-      y_y:     10000.0
-      z_z:     10000.0
-      yaw_yaw: 10000.0
