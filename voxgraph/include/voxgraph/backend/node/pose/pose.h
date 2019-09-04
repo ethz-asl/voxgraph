@@ -6,6 +6,8 @@
 namespace voxgraph {
 class Pose {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   typedef double ValueType;
 
   explicit Pose(const Transformation& initial_pose) {

@@ -1,6 +1,7 @@
 #include "voxgraph/tools/visualization/submap_visuals.h"
 #include <cblox/mesh/submap_mesher.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <voxblox/io/mesh_ply.h>
 #include <voxblox_ros/mesh_vis.h>
 #include <voxblox_ros/ptcloud_vis.h>
 #include <memory>
@@ -68,6 +69,25 @@ void SubmapVisuals::publishCombinedMesh(
   submap_mesher_->generateCombinedMesh(submap_collection, mesh_layer_ptr.get());
   publishMesh(mesh_layer_ptr, mission_frame, publisher,
               voxblox::ColorMode::kNormals);
+}
+
+void SubmapVisuals::saveSeparatedMesh(
+    const std::string &filepath,
+    const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection) {
+  auto mesh_layer_ptr =
+      std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
+  submap_mesher_->generateSeparatedMesh(submap_collection,
+                                        mesh_layer_ptr.get());
+  voxblox::outputMeshLayerAsPly(filepath, *mesh_layer_ptr);
+}
+
+void SubmapVisuals::saveCombinedMesh(
+    const std::string &filepath,
+    const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection) {
+  auto mesh_layer_ptr =
+      std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
+  submap_mesher_->generateCombinedMesh(submap_collection, mesh_layer_ptr.get());
+  voxblox::outputMeshLayerAsPly(filepath, *mesh_layer_ptr);
 }
 
 void SubmapVisuals::publishBox(const BoxCornerMatrix &box_corner_matrix,

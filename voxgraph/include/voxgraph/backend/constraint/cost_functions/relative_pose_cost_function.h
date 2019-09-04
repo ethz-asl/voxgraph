@@ -7,6 +7,8 @@
 namespace voxgraph {
 class RelativePoseCostFunction {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   RelativePoseCostFunction(
       const voxblox::Transformation& observed_relative_pose,
       const Constraint::InformationMatrix& sqrt_information_matrix,

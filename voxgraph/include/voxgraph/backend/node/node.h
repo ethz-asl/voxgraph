@@ -13,6 +13,7 @@ class Node {
   typedef unsigned int NodeId;
 
   struct Config {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     bool set_constant;
     voxblox::Transformation T_mission_node_initial;
   };

@@ -4,11 +4,13 @@
 #include <nav_msgs/Path.h>
 #include <sensor_msgs/Imu.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <chrono>
+#include <limits>
 #include <memory>
 #include <string>
 #include <thread>
-#include <limits>
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
+#include "voxgraph/tools/io.h"
 #include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
 
@@ -147,6 +149,15 @@ void VoxgraphMapper::advertiseServices() {
       this);
   save_to_file_srv_ = nh_private_.advertiseService(
       "save_to_file", &VoxgraphMapper::saveToFileCallback, this);
+  save_pose_history_to_file_srv_ = nh_private_.advertiseService(
+      "save_pose_history_to_file",
+      &VoxgraphMapper::savePoseHistoryToFileCallback, this);
+  save_separated_mesh_srv_ = nh_private_.advertiseService(
+      "save_separated_mesh", &VoxgraphMapper::saveSeparatedMeshCallback, this);
+  save_combined_mesh_srv_ = nh_private_.advertiseService(
+      "save_combined_mesh", &VoxgraphMapper::saveCombinedMeshCallback, this);
+  optimize_graph_srv_ = nh_private_.advertiseService(
+      "optimize_pose_graph", &VoxgraphMapper::optimizeGraphCallback, this);
 }
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
@@ -169,6 +180,35 @@ bool VoxgraphMapper::saveToFileCallback(
     voxblox_msgs::FilePath::Request &request,
     voxblox_msgs::FilePath::Response &response) {
   submap_collection_ptr_->saveToFile(request.file_path);
+  return true;
+}
+
+bool VoxgraphMapper::savePoseHistoryToFileCallback(
+    voxblox_msgs::FilePath::Request &request,
+    voxblox_msgs::FilePath::Response &response) {
+  ROS_INFO_STREAM("Writing pose history to bag at: " << request.file_path);
+  io::savePoseHistoryToFile(request.file_path,
+                            submap_collection_ptr_->getPoseHistory());
+  return true;
+}
+
+bool VoxgraphMapper::saveSeparatedMeshCallback(
+    voxblox_msgs::FilePath::Request &request,
+    voxblox_msgs::FilePath::Response &response) {
+  submap_vis_.saveSeparatedMesh(request.file_path, *submap_collection_ptr_);
+  return true;  // Tell ROS it succeeded
+}
+
+bool VoxgraphMapper::saveCombinedMeshCallback(
+    voxblox_msgs::FilePath::Request &request,
+    voxblox_msgs::FilePath::Response &response) {
+  submap_vis_.saveCombinedMesh(request.file_path, *submap_collection_ptr_);
+  return true;  // Tell ROS it succeeded
+}
+
+bool VoxgraphMapper::optimizeGraphCallback(
+    std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
+  optimizePoseGraph();
   return true;
 }
 

@@ -9,6 +9,7 @@ class AbsolutePoseConstraint : public Constraint {
  public:
   typedef std::shared_ptr<AbsolutePoseConstraint> Ptr;
   struct Config : Constraint::Config {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     ReferenceFrameNode::FrameId reference_frame_id;
     cblox::SubmapID submap_id;
     voxblox::Transformation T_ref_submap;

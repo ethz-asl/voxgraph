@@ -17,6 +17,7 @@
   <depend>voxblox_ros</depend>
   <depend>cblox</depend>
   <depend>ceres_catkin</depend>
+  <depend>eigen_catkin</depend>
 
   <depend>voxblox_msgs</depend>
   <depend>voxgraph_msgs</depend>
