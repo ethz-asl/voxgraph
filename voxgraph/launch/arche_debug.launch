@@ -64,6 +64,4 @@
   </node>
 
   <include file="$(find lidar_undistortion)/launch/os1_undistortion.launch"/>
-
-  <node name="cpu_monitor" pkg="voxgraph" type="quick_n_dirty_cpu_usage_monitor" />
 </launch>
