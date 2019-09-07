@@ -213,4 +213,9 @@ void MapTracker::publishOdometry() {
              "biases topics in ROS params such that it can be forwarded");
   }
 }
+
+void MapTracker::set_T_B_C(const Transformation &T_B_C) {
+  T_B_C_ = T_B_C;
+  use_sensor_calibration_from_tfs_ = false;
+}
 }  // namespace voxgraph

@@ -78,21 +78,22 @@ void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
                     auto_pause_rosbag_);
 
-  //  // Load the transform from the base frame to the sensor frame, if
-  //  available
-  //  // NOTE: If the transform is not specified through ROS params, voxgraph
-  //  will
-  //  //       attempt to get if from TFs
-  //  XmlRpc::XmlRpcValue T_base_sensor_xml;
-  //  get_sensor_calibration_from_tfs_ =
-  //      !nh_private_.getParam("T_base_sensor", T_base_sensor_xml);
-  //  if (!get_sensor_calibration_from_tfs_) {
-  //    kindr::minimal::xmlRpcToKindr(T_base_sensor_xml, &T_B_C_);
-  //  }
-  //  ROS_INFO_STREAM(
-  //      "Using transform from pointcloud sensor to robot base "
-  //      "link from "
-  //      << (get_sensor_calibration_from_tfs_ ? "TFs" : "ROS params"));
+  // Load the transform from the base frame to the sensor frame, if
+  // available
+  // NOTE: If the transform is not specified through ROS params, voxgraph
+  //       will attempt to get if from TFs
+  XmlRpc::XmlRpcValue T_base_sensor_xml;
+  bool get_sensor_calibration_from_tfs =
+      !nh_private_.getParam("T_base_link_sensor", T_base_sensor_xml);
+  if (!get_sensor_calibration_from_tfs) {
+    Transformation T_B_C;
+    kindr::minimal::xmlRpcToKindr(T_base_sensor_xml, &T_B_C);
+    map_tracker_.set_T_B_C(T_B_C);
+  }
+  ROS_INFO_STREAM(
+      "Using transform from pointcloud sensor to robot base "
+      "link from "
+      << (get_sensor_calibration_from_tfs ? "TFs" : "ROS params"));
 
   // Read the measurement params from their sub-namespace
   ros::NodeHandle nh_measurement_params(nh_private_, "measurements");
