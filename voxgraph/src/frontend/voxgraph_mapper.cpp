@@ -182,6 +182,9 @@ void VoxgraphMapper::advertiseServices() {
       "save_separated_mesh", &VoxgraphMapper::saveSeparatedMeshCallback, this);
   save_combined_mesh_srv_ = nh_private_.advertiseService(
       "save_combined_mesh", &VoxgraphMapper::saveCombinedMeshCallback, this);
+  save_optimization_times_srv_ = nh_private_.advertiseService(
+      "save_optimization_times", &VoxgraphMapper::saveOptimizationTimesCallback,
+      this);
 }
 
 void VoxgraphMapper::pointcloudCallback(
@@ -395,6 +398,22 @@ bool VoxgraphMapper::saveCombinedMeshCallback(
   submap_vis_.saveCombinedMesh(request.file_path, *submap_collection_ptr_);
   return true;  // Tell ROS it succeeded
 }
+
+bool VoxgraphMapper::saveOptimizationTimesCallback(
+    voxblox_msgs::FilePath::Request &request,
+    voxblox_msgs::FilePath::Response &response) {
+  ROS_INFO_STREAM(
+      "Writing optimization times to csv at: " << request.file_path);
+  const PoseGraph::SolverSummaryList& solver_summary_list =
+      pose_graph_interface_.getSolverSummaries();
+  std::vector<double> total_times;
+  for (const ceres::Solver::Summary& summary : solver_summary_list) {
+    total_times.push_back(summary.total_time_in_seconds);
+  }
+  io::saveVectorToFile(request.file_path, total_times);
+  return true;  // Tell ROS it succeeded
+}
+
 
 void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
   // Indicate that the previous submap is finished
