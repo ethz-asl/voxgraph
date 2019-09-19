@@ -26,7 +26,7 @@ class SubmapVisuals {
   void publishMesh(
       const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
       const cblox::SubmapID &submap_id, const voxblox::Color &submap_color,
-      const std::string &submap_frame, const ros::Publisher &publisher) const;
+      const std::string &submap_frame, const ros::Publisher &publisher);
 
   void publishSeparatedMesh(
       const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,

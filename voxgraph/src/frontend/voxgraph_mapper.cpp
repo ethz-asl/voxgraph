@@ -74,6 +74,16 @@ void VoxgraphMapper::getParametersFromRos() {
         ros::Duration(interval_temp));
   }
 
+  // Get the mesh visualization interval
+  double update_mesh_every_n_sec = 0.0;
+  nh_private_.param("update_mesh_every_n_sec", update_mesh_every_n_sec,
+      update_mesh_every_n_sec);
+  if (update_mesh_every_n_sec > 0.0) {
+    update_mesh_timer_ =
+        nh_private_.createTimer(ros::Duration(update_mesh_every_n_sec),
+            &VoxgraphMapper::publishActiveMeshCallback, this);
+  }
+
   // Read whether or not to auto pause the rosbag during graph optimization
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
                     auto_pause_rosbag_);
@@ -148,6 +158,8 @@ void VoxgraphMapper::subscribeToTopics() {
 void VoxgraphMapper::advertiseTopics() {
   separated_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
       "separated_mesh", subscriber_queue_length_, true);
+  active_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
+      "active_mesh", subscriber_queue_length_, true);
   combined_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
       "combined_mesh", subscriber_queue_length_, true);
   pose_history_pub_ =
@@ -320,6 +332,21 @@ void VoxgraphMapper::loopClosureCallback(
                                 loop_closure_axes_pub_);
 }
 
+void VoxgraphMapper::publishActiveMeshCallback(const ros::TimerEvent& /*event*/) {
+  if (!submap_collection_ptr_->exists(submap_collection_ptr_->getActiveSubmapID())) {
+    return;
+  }
+  // publish submap transform
+  map_tracker_.publishTFs();
+
+  // publish active mesh
+  if (active_mesh_pub_.getNumSubscribers() > 0) {
+    submap_vis_.publishMesh(*submap_collection_ptr_,
+        submap_collection_ptr_->getActiveSubmapID(), voxblox::Color::Gray(),
+        map_tracker_.getFrameNames().active_submap_frame, active_mesh_pub_);
+  }
+}
+
 bool VoxgraphMapper::publishSeparatedMeshCallback(
     std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
   submap_vis_.publishSeparatedMesh(*submap_collection_ptr_,
@@ -472,6 +499,19 @@ void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
         *submap_collection_ptr_, map_tracker_.getFrameNames().mission_frame,
         separated_mesh_pub_);
     separated_mesh_thread.detach();
+  }
+
+  // publish active mesh
+  if (active_mesh_pub_.getNumSubscribers() > 0) {
+    std::thread active_mesh_thread(
+        static_cast<void (voxgraph::SubmapVisuals::*)(
+            const cblox::SubmapCollection<VoxgraphSubmap>&,
+            const cblox::SubmapID&, const voxblox::Color&, const std::string&,
+            const ros::Publisher&)>(&SubmapVisuals::publishMesh),
+        &submap_vis_, *submap_collection_ptr_,
+        submap_collection_ptr_->getActiveSubmapID(), voxblox::Color::Gray(),
+        map_tracker_.getFrameNames().active_submap_frame, active_mesh_pub_);
+    active_mesh_thread.detach();
   }
 
   // Publish the previous (finished) submap
