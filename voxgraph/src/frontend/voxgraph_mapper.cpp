@@ -194,6 +194,11 @@ void VoxgraphMapper::advertiseServices() {
       "save_separated_mesh", &VoxgraphMapper::saveSeparatedMeshCallback, this);
   save_combined_mesh_srv_ = nh_private_.advertiseService(
       "save_combined_mesh", &VoxgraphMapper::saveCombinedMeshCallback, this);
+
+  // Service for submaps
+  publish_active_submap_srv_ = nh_private_.advertiseService(
+      "publish_active_submap",
+      &VoxgraphMapper::publishActiveSubmapCallback, this);
 }
 
 void VoxgraphMapper::pointcloudCallback(
@@ -383,6 +388,11 @@ bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request &request,
   // Optimize the pose graph
   optimizePoseGraph();
 
+  // Publishing the finished submap
+  // todo: fix double publishing
+  submap_server_.publishActiveSubmap(submap_collection_ptr_, ros::Time::now());
+  publishMaps(ros::Time::now());
+
   ROS_INFO("The map is now finished and ready to be saved");
   return true;
 }
@@ -480,6 +490,7 @@ int VoxgraphMapper::optimizePoseGraph() {
 
   // Publish updated poses
   submap_server_.publishSubmapPoses(submap_collection_ptr_, ros::Time::now());
+
   // Report successful completion
   return 1;
 }
@@ -531,8 +542,23 @@ void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
   // Publish the submap poses
   submap_server_.publishSubmapPoses(submap_collection_ptr_,
       current_timestamp);
+
   // Publish the loop closure edges
   loop_closure_edge_server_.publishLoopClosureEdges(
       pose_graph_interface_, *submap_collection_ptr_, current_timestamp);
+}
+
+bool VoxgraphMapper::publishActiveSubmapCallback(
+    cblox_msgs::SubmapSrv::Request &request,
+    cblox_msgs::SubmapSrv::Response &response) {
+  ROS_INFO("[VoxgraphMapper] Request for Active Submap Received, Processing.");
+  if (!submap_collection_ptr_->empty()) {
+    cblox_msgs::MapLayer msg = submap_server_.serializeActiveSubmap(
+        submap_collection_ptr_, ros::Time::now());
+    response.submap_msg = msg;
+    return true;
+  } else {
+    return false;
+  }
 }
 }  // namespace voxgraph
