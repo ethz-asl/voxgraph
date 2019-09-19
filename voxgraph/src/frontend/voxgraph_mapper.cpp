@@ -478,6 +478,8 @@ int VoxgraphMapper::optimizePoseGraph() {
   // Update the submap poses
   pose_graph_interface_.updateSubmapCollectionPoses();
 
+  // Publish updated poses
+  submap_server_.publishSubmapPoses(submap_collection_ptr_, ros::Time::now());
   // Report successful completion
   return 1;
 }
@@ -526,6 +528,9 @@ void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
   projected_map_server_.publishProjectedMap(*submap_collection_ptr_,
                                             current_timestamp);
 
+  // Publish the submap poses
+  submap_server_.publishSubmapPoses(submap_collection_ptr_,
+      current_timestamp);
   // Publish the loop closure edges
   loop_closure_edge_server_.publishLoopClosureEdges(
       pose_graph_interface_, *submap_collection_ptr_, current_timestamp);
