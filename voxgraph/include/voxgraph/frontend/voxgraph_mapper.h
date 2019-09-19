@@ -7,6 +7,7 @@
 #include <voxblox_msgs/FilePath.h>
 #include <future>
 #include <voxgraph_msgs/LoopClosure.h>
+#include <cblox_msgs/SubmapSrv.h>
 #include <memory>
 #include <string>
 #include "voxgraph/common.h"
@@ -37,6 +38,9 @@ class VoxgraphMapper {
   void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
   void loopClosureCallback(const voxgraph_msgs::LoopClosure &loop_closure_msg);
 
+  // ROS timer callbacks
+  void publishActiveMeshCallback(const ros::TimerEvent& /*event*/);
+
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
       std_srvs::Empty::Request &request,     // NOLINT
@@ -60,6 +64,9 @@ class VoxgraphMapper {
   bool saveCombinedMeshCallback(
       voxblox_msgs::FilePath::Request &request,     // NOLINT
       voxblox_msgs::FilePath::Response &response);  // NOLINT
+  bool publishActiveSubmapCallback(
+      cblox_msgs::SubmapSrv::Request &request,
+      cblox_msgs::SubmapSrv::Response &response);
 
   const VoxgraphSubmapCollection &getSubmapCollection() {
     return *submap_collection_ptr_;
@@ -106,8 +113,12 @@ class VoxgraphMapper {
   ros::Subscriber loop_closure_subscriber_;
   // TODO(victorr): Add support for absolute pose measurements
 
+  // Timers.
+  ros::Timer update_mesh_timer_;
+
   // ROS topic publishers
   ros::Publisher separated_mesh_pub_;
+  ros::Publisher active_mesh_pub_;
   ros::Publisher combined_mesh_pub_;
   ros::Publisher pose_history_pub_;
   ros::Publisher loop_closure_links_pub_;
@@ -123,6 +134,7 @@ class VoxgraphMapper {
   ros::ServiceServer save_separated_mesh_srv_;
   ros::ServiceServer save_combined_mesh_srv_;
   // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
+  ros::ServiceServer publish_active_submap_srv_;
 
   // Constraints to be used
   bool registration_constraints_enabled_;
