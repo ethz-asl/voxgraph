@@ -7,9 +7,9 @@
 
 namespace voxgraph {
 PointcloudIntegrator::PointcloudIntegrator(bool verbose)
-    : verbose_(verbose), color_map_(new voxblox::RainbowColorMap()) {
+    : verbose_(verbose), color_map_(new voxblox::GrayscaleColorMap()) {
   // Configure the color map
-  color_map_->setMaxValue(100.0);
+  color_map_->setMaxValue(10000.0);
 }
 
 void PointcloudIntegrator::setTsdfIntegratorConfigFromRosParam(

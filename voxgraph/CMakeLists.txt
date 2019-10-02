@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(voxgraph)
 
-add_definitions(-std=c++11 -Wall)
+add_definitions(-std=c++11 -Werror)
 
 find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
@@ -63,6 +63,7 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/tools/visualization/cost_function_visuals.cpp
     src/tools/visualization/pose_graph_visuals.cpp
     src/tools/visualization/submap_visuals.cpp
+    src/tools/visualization/loop_closure_visuals.cpp
 )
 
 ############

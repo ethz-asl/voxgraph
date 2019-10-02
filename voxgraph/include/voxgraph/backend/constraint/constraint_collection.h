@@ -21,8 +21,9 @@ class ConstraintCollection {
 
   void resetRegistrationConstraints() { registration_constraints_.clear(); }
 
-  void addAllToProblem(const NodeCollection &node_collection,
-                       ceres::Problem *problem_ptr);
+  void addConstraintsToProblem(const NodeCollection &node_collection,
+                               ceres::Problem *problem_ptr,
+                               bool exclude_registration_constraints = false);
 
  private:
   Constraint::ConstraintId constraint_id_counter_ = 0;

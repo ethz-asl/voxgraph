@@ -6,9 +6,10 @@ namespace voxgraph {
 PoseGraphInterface::PoseGraphInterface(
     ros::NodeHandle node_handle,
     VoxgraphSubmapCollection::Ptr submap_collection_ptr, bool verbose)
-    : submap_collection_ptr_(std::move(submap_collection_ptr)),
+    : verbose_(verbose),
+      submap_collection_ptr_(std::move(submap_collection_ptr)),
       submap_vis_(submap_collection_ptr_->getConfig()),
-      verbose_(verbose) {
+      new_loop_closures_added_since_last_optimization_(false) {
   // Advertise the pose graph visuals publisher
   pose_graph_pub_ = node_handle.advertise<visualization_msgs::Marker>(
       "pose_graph", 100, true);
@@ -43,7 +44,7 @@ void PoseGraphInterface::addOdometryMeasurement(
   constraint_config.destination_submap_id = second_submap_id;
   constraint_config.T_origin_destination = T_S1_S2;
 
-  // Add the odometry constraint to the pose graph
+  // Add the constraint to the pose graph
   if (verbose_) {
     std::cout << "Adding odom constraint\n"
               << "From: " << constraint_config.origin_submap_id << "\n"
@@ -58,6 +59,32 @@ void PoseGraphInterface::addOdometryMeasurement(
               << constraint_config.information_matrix << std::endl;
   }
   pose_graph_.addRelativePoseConstraint(constraint_config);
+}
+
+void PoseGraphInterface::addLoopClosureMeasurement(
+    const SubmapID &from_submap, const SubmapID &to_submap,
+    const Transformation &transform) {
+  // Configure the loop closure constraint
+  RelativePoseConstraint::Config constraint_config =
+      measurement_templates_.loop_closure;
+  constraint_config.origin_submap_id = from_submap;
+  constraint_config.destination_submap_id = to_submap;
+  constraint_config.T_origin_destination = transform;
+
+  // Add the constraint to the pose graph
+  ROS_INFO_STREAM_COND(verbose_,
+                       "Adding loop closure as relative pose constraint "
+                       "from submap "
+                           << constraint_config.origin_submap_id << " to "
+                           << constraint_config.destination_submap_id
+                           << " with transform\n"
+                           << constraint_config.T_origin_destination
+                           << "\nand information matrix\n"
+                           << constraint_config.information_matrix);
+  pose_graph_.addRelativePoseConstraint(constraint_config);
+
+  // Indicate that a new loop closure constraint has been added
+  new_loop_closures_added_since_last_optimization_ = true;
 }
 
 void PoseGraphInterface::addHeightMeasurement(const SubmapID &submap_id,
@@ -144,7 +171,19 @@ void PoseGraphInterface::updateRegistrationConstraints() {
 }
 
 void PoseGraphInterface::optimize() {
-  // Optimize the graph
+  // If new loop closures were added since the last optimization run,
+  // preoptimize the graph without considering the registration constraints
+  // NOTE: This is done to reduce the effect of registration constraints
+  //       that strongly stick to local minima
+  if (new_loop_closures_added_since_last_optimization_) {
+    // Optimize the graph excluding the registration constraints
+    pose_graph_.optimize(true);
+
+    // Indicate that the new loop closures have been taken care off
+    new_loop_closures_added_since_last_optimization_ = false;
+  }
+
+  // Optimize the pose graph with all constraints enabled
   pose_graph_.optimize();
 
   // Publish debug visuals

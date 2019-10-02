@@ -44,6 +44,8 @@ class MapTracker {
   Transformation get_T_S_B() { return T_S_B_; }
   Transformation get_T_S_C() { return T_S_B_ * T_B_C_; }
 
+  void set_T_B_C(const Transformation &T_B_C);
+
   const FrameNames &getFrameNames() const { return frame_names_; }
 
   // Config get/setters
@@ -86,8 +88,8 @@ class MapTracker {
   // NOTE: use_odom_tfs_ is automatically set to true if subscribeToTopics()
   //       is called with a non-empty odometry_input_topic argument
   bool use_sensor_calibration_from_tfs_ = true;
-  // TODO(victorr): use_sensor_calibration_from_tfs_ is automatically set to
-  //                false if a valid calibration is provided through ROS params
+  // NOTE: use_sensor_calibration_from_tfs_ is automatically set to
+  //       false if a calibration is provided through method set_T_B_C()
   TfTransformer tf_transformer_;
   OdometryTransformer odom_transformer_;
 

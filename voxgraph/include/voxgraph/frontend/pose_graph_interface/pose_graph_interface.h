@@ -38,7 +38,9 @@ class PoseGraphInterface {
   void addOdometryMeasurement(const SubmapID &first_submap_id,
                               const SubmapID &second_submap_id,
                               const Transformation &T_S1_S2);
-  void addLoopClosureMeasurement() {}
+  void addLoopClosureMeasurement(const SubmapID &from_submap,
+                                 const SubmapID &to_submap,
+                                 const Transformation &transform);
   void addGpsMeasurement() {}
   void addHeightMeasurement(const SubmapID &submap_id, const double &height);
 
@@ -76,6 +78,10 @@ class PoseGraphInterface {
   // Keep track of which submaps overlap
   OverlappingSubmapList overlapping_submap_list_;
   void updateOverlappingSubmapList();
+
+  // Keep track of whether new loop closures have been added
+  // since the pose graph was last optimized
+  bool new_loop_closures_added_since_last_optimization_;
 
   // Helper to add reference frames to the pose graph
   void addReferenceFrameIfMissing(ReferenceFrameNode::FrameId frame_id);

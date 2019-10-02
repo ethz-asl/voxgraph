@@ -69,17 +69,20 @@ void PoseGraph::addRegistrationConstraint(
   }
 }
 
-void PoseGraph::initialize() {
-  // Initialize the problem and add all constraints
+void PoseGraph::initialize(bool exclude_registration_constraints) {
+  // Initialize the problem
   problem_options_.local_parameterization_ownership =
       ceres::Ownership::DO_NOT_TAKE_OWNERSHIP;
   problem_ptr_.reset(new ceres::Problem(problem_options_));
-  constraints_collection_.addAllToProblem(node_collection_, problem_ptr_.get());
+
+  // Add the appropriate constraints
+  constraints_collection_.addConstraintsToProblem(
+      node_collection_, problem_ptr_.get(), exclude_registration_constraints);
 }
 
-void PoseGraph::optimize() {
+void PoseGraph::optimize(bool exclude_registration_constraints) {
   // Initialize the problem
-  initialize();
+  initialize(exclude_registration_constraints);
 
   // Run the solver
   ceres::Solver::Options ceres_options;

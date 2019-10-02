@@ -6,6 +6,7 @@
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
 #include <future>
+#include <voxgraph_msgs/LoopClosure.h>
 #include <memory>
 #include <string>
 #include "voxgraph/common.h"
@@ -21,16 +22,20 @@
 #include "voxgraph/tools/data_servers/submap_server.h"
 #include "voxgraph/tools/rosbag_helper.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
+#include "voxgraph/tools/visualization/loop_closure_visuals.h"
 
 namespace voxgraph {
 class VoxgraphMapper {
  public:
   // Constructor & Destructor
   VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
+  VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private,
+                 VoxgraphSubmap::Config submap_config);
   ~VoxgraphMapper() = default;
 
   // ROS topic callbacks
   void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
+  void loopClosureCallback(const voxgraph_msgs::LoopClosure &loop_closure_msg);
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
@@ -39,6 +44,10 @@ class VoxgraphMapper {
   bool publishCombinedMeshCallback(
       std_srvs::Empty::Request &request,     // NOLINT
       std_srvs::Empty::Response &response);  // NOLINT
+  bool optimizeGraphCallback(std_srvs::Empty::Request &request,     // NOLINT
+                             std_srvs::Empty::Response &response);  // NOLINT
+  bool finishMapCallback(std_srvs::Empty::Request &request,         // NOLINT
+                         std_srvs::Empty::Response &response);      // NOLINT
   bool saveToFileCallback(
       voxblox_msgs::FilePath::Request &request,     // NOLINT
       voxblox_msgs::FilePath::Response &response);  // NOLINT
@@ -51,9 +60,6 @@ class VoxgraphMapper {
   bool saveCombinedMeshCallback(
       voxblox_msgs::FilePath::Request &request,     // NOLINT
       voxblox_msgs::FilePath::Response &response);  // NOLINT
-  bool optimizeGraphCallback(
-      std_srvs::Empty::Request &request,     // NOLINT
-      std_srvs::Empty::Response &response);  // NOLINT
 
   const VoxgraphSubmapCollection &getSubmapCollection() {
     return *submap_collection_ptr_;
@@ -92,23 +98,30 @@ class VoxgraphMapper {
   std::future<int> optimization_async_handle_;
 
   // ROS topic subscribers
-  int subscriber_queue_length_;
   std::string pointcloud_topic_;
+  int subscriber_queue_length_;
   ros::Subscriber pointcloud_subscriber_;
+  std::string loop_closure_topic_;
+  int loop_closure_subscriber_queue_length_;
+  ros::Subscriber loop_closure_subscriber_;
+  // TODO(victorr): Add support for absolute pose measurements
 
   // ROS topic publishers
   ros::Publisher separated_mesh_pub_;
   ros::Publisher combined_mesh_pub_;
   ros::Publisher pose_history_pub_;
+  ros::Publisher loop_closure_links_pub_;
+  ros::Publisher loop_closure_axes_pub_;
 
   // ROS service servers
   ros::ServiceServer publish_separated_mesh_srv_;
   ros::ServiceServer publish_combined_mesh_srv_;
+  ros::ServiceServer optimize_graph_srv_;
+  ros::ServiceServer finish_map_srv_;
   ros::ServiceServer save_to_file_srv_;
   ros::ServiceServer save_pose_history_to_file_srv_;
   ros::ServiceServer save_separated_mesh_srv_;
   ros::ServiceServer save_combined_mesh_srv_;
-  ros::ServiceServer optimize_graph_srv_;
   // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
 
   // Constraints to be used
@@ -120,6 +133,10 @@ class VoxgraphMapper {
   VoxgraphSubmap::Config submap_config_;
   VoxgraphSubmapCollection::Ptr submap_collection_ptr_;
 
+  // Visualization tools
+  SubmapVisuals submap_vis_;
+  LoopClosureVisuals loop_closure_vis_;
+
   // Interface to ease interaction with the pose graph
   PoseGraphInterface pose_graph_interface_;
 
@@ -130,9 +147,6 @@ class VoxgraphMapper {
   ProjectedMapServer projected_map_server_;
   SubmapServer submap_server_;
   LoopClosureEdgeServer loop_closure_edge_server_;
-
-  // Visualization tools
-  SubmapVisuals submap_vis_;
 
   // Map tracker handles the odometry input and refines it using scan-to-map ICP
   bool use_icp_refinement_;

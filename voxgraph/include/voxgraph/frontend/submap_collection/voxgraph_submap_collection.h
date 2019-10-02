@@ -53,6 +53,11 @@ class VoxgraphSubmapCollection
     return submap_timeline_.getLastSubmapId();
   }
 
+  bool lookupActiveSubmapByTime(const ros::Time &timestamp,
+                                SubmapID *submap_id) {
+    return submap_timeline_.lookupActiveSubmapByTime(timestamp, submap_id);
+  }
+
   PoseStampedVector getPoseHistory() const;
 
   // Create a gravity aligned poses, as used for the submap origins

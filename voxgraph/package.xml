@@ -13,6 +13,7 @@
   <buildtool_depend>catkin</buildtool_depend>
   <buildtool_depend>catkin_simple</buildtool_depend>
 
+  <depend>roscpp</depend>
   <depend>voxblox</depend>
   <depend>voxblox_ros</depend>
   <depend>cblox</depend>

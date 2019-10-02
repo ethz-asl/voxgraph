@@ -1,4 +1,0 @@
-#!/bin/bash
-
-psrecord $(pgrep voxgraph) --interval 0.5 --plot ../last_run_cpu_usage.png;
-display ../last_run_cpu_usage.png;
