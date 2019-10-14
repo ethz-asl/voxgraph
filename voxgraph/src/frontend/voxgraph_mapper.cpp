@@ -421,13 +421,23 @@ void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
   SubmapID active_submap_id = submap_collection_ptr_->getActiveSubmapID();
   pose_graph_interface_.addSubmap(active_submap_id);
 
+  // Store the odom estimate and then continue tracking w.r.t. the new submap
+  const Transformation T_S1_B = map_tracker_.get_T_S_B();
+  map_tracker_.switchToNewSubmap();
+
   // Add an odometry constraint from the previous to the new submap
   if (odometry_constraints_enabled_ && submap_collection_ptr_->size() >= 2) {
     pose_graph_interface_.setVerbosity(true);
-    std::cout << "T_S_B: " << map_tracker_.get_T_S_B() << std::endl;
+
+    // Compute the relative odom from previous submap S1 to current submap S2
+    const Transformation T_B_S2 = map_tracker_.get_T_S_B().inverse();
+    const Transformation T_S1_S2 = T_S1_B * T_B_S2;
+    std::cout << "T_S1_S2: " << T_S1_S2 << std::endl;
+
+    // Add the constraint to the pose graph
     pose_graph_interface_.addOdometryMeasurement(
         submap_collection_ptr_->getPreviousSubmapId(),
-        submap_collection_ptr_->getActiveSubmapID(), map_tracker_.get_T_S_B());
+        submap_collection_ptr_->getActiveSubmapID(), T_S1_S2);
   }
 
   // Constrain the height
@@ -439,9 +449,6 @@ void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
     pose_graph_interface_.addHeightMeasurement(active_submap_id,
                                                current_height);
   }
-
-  // Start tracking the odometry relative to the new submap
-  map_tracker_.switchToNewSubmap();
 }
 
 int VoxgraphMapper::optimizePoseGraph() {
