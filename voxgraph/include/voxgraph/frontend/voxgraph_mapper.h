@@ -64,6 +64,9 @@ class VoxgraphMapper {
   bool saveCombinedMeshCallback(
       voxblox_msgs::FilePath::Request &request,     // NOLINT
       voxblox_msgs::FilePath::Response &response);  // NOLINT
+  bool saveOptimizationTimesCallback(
+      voxblox_msgs::FilePath::Request &request,     // NOLINT
+      voxblox_msgs::FilePath::Response &response);  // NOLINT
   bool publishActiveSubmapCallback(
       cblox_msgs::SubmapSrv::Request &request,
       cblox_msgs::SubmapSrv::Response &response);
@@ -133,6 +136,7 @@ class VoxgraphMapper {
   ros::ServiceServer save_pose_history_to_file_srv_;
   ros::ServiceServer save_separated_mesh_srv_;
   ros::ServiceServer save_combined_mesh_srv_;
+  ros::ServiceServer save_optimization_times_srv_;
   // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
   ros::ServiceServer publish_active_submap_srv_;
 

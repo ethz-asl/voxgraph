@@ -88,21 +88,22 @@ void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
                     auto_pause_rosbag_);
 
-  //  // Load the transform from the base frame to the sensor frame, if
-  //  available
-  //  // NOTE: If the transform is not specified through ROS params, voxgraph
-  //  will
-  //  //       attempt to get if from TFs
-  //  XmlRpc::XmlRpcValue T_base_sensor_xml;
-  //  get_sensor_calibration_from_tfs_ =
-  //      !nh_private_.getParam("T_base_sensor", T_base_sensor_xml);
-  //  if (!get_sensor_calibration_from_tfs_) {
-  //    kindr::minimal::xmlRpcToKindr(T_base_sensor_xml, &T_B_C_);
-  //  }
-  //  ROS_INFO_STREAM(
-  //      "Using transform from pointcloud sensor to robot base "
-  //      "link from "
-  //      << (get_sensor_calibration_from_tfs_ ? "TFs" : "ROS params"));
+  // Load the transform from the base frame to the sensor frame, if
+  // available
+  // NOTE: If the transform is not specified through ROS params, voxgraph
+  //       will attempt to get if from TFs
+  XmlRpc::XmlRpcValue T_base_sensor_xml;
+  bool get_sensor_calibration_from_tfs =
+      !nh_private_.getParam("T_base_link_sensor", T_base_sensor_xml);
+  if (!get_sensor_calibration_from_tfs) {
+    Transformation T_B_C;
+    kindr::minimal::xmlRpcToKindr(T_base_sensor_xml, &T_B_C);
+    map_tracker_.set_T_B_C(T_B_C);
+  }
+  ROS_INFO_STREAM(
+      "Using transform from pointcloud sensor to robot base "
+      "link from "
+      << (get_sensor_calibration_from_tfs ? "TFs" : "ROS params"));
 
   // Read the measurement params from their sub-namespace
   ros::NodeHandle nh_measurement_params(nh_private_, "measurements");
@@ -194,6 +195,9 @@ void VoxgraphMapper::advertiseServices() {
       "save_separated_mesh", &VoxgraphMapper::saveSeparatedMeshCallback, this);
   save_combined_mesh_srv_ = nh_private_.advertiseService(
       "save_combined_mesh", &VoxgraphMapper::saveCombinedMeshCallback, this);
+  save_optimization_times_srv_ = nh_private_.advertiseService(
+      "save_optimization_times", &VoxgraphMapper::saveOptimizationTimesCallback,
+      this);
 
   // Service for submaps
   publish_active_submap_srv_ = nh_private_.advertiseService(
@@ -435,6 +439,22 @@ bool VoxgraphMapper::saveCombinedMeshCallback(
   return true;  // Tell ROS it succeeded
 }
 
+bool VoxgraphMapper::saveOptimizationTimesCallback(
+    voxblox_msgs::FilePath::Request &request,
+    voxblox_msgs::FilePath::Response &response) {
+  ROS_INFO_STREAM(
+      "Writing optimization times to csv at: " << request.file_path);
+  const PoseGraph::SolverSummaryList& solver_summary_list =
+      pose_graph_interface_.getSolverSummaries();
+  std::vector<double> total_times;
+  for (const ceres::Solver::Summary& summary : solver_summary_list) {
+    total_times.push_back(summary.total_time_in_seconds);
+  }
+  io::saveVectorToFile(request.file_path, total_times);
+  return true;  // Tell ROS it succeeded
+}
+
+
 void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
   // Indicate that the previous submap is finished
   // s.t. its cached members are generated
@@ -459,13 +479,23 @@ void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
   SubmapID active_submap_id = submap_collection_ptr_->getActiveSubmapID();
   pose_graph_interface_.addSubmap(active_submap_id);
 
+  // Store the odom estimate and then continue tracking w.r.t. the new submap
+  const Transformation T_S1_B = map_tracker_.get_T_S_B();
+  map_tracker_.switchToNewSubmap();
+
   // Add an odometry constraint from the previous to the new submap
   if (odometry_constraints_enabled_ && submap_collection_ptr_->size() >= 2) {
     pose_graph_interface_.setVerbosity(true);
-    std::cout << "T_S_B: " << map_tracker_.get_T_S_B() << std::endl;
+
+    // Compute the relative odom from previous submap S1 to current submap S2
+    const Transformation T_B_S2 = map_tracker_.get_T_S_B().inverse();
+    const Transformation T_S1_S2 = T_S1_B * T_B_S2;
+    std::cout << "T_S1_S2: " << T_S1_S2 << std::endl;
+
+    // Add the constraint to the pose graph
     pose_graph_interface_.addOdometryMeasurement(
         submap_collection_ptr_->getPreviousSubmapId(),
-        submap_collection_ptr_->getActiveSubmapID(), map_tracker_.get_T_S_B());
+        submap_collection_ptr_->getActiveSubmapID(), T_S1_S2);
   }
 
   // Constrain the height
@@ -477,9 +507,6 @@ void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
     pose_graph_interface_.addHeightMeasurement(active_submap_id,
                                                current_height);
   }
-
-  // Start tracking the odometry relative to the new submap
-  map_tracker_.switchToNewSubmap();
 }
 
 int VoxgraphMapper::optimizePoseGraph() {
