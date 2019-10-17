@@ -56,7 +56,8 @@ class SubmapVisuals {
 
  private:
   voxblox::MeshIntegratorConfig mesh_config_;
-  std::unique_ptr<cblox::SubmapMesher> submap_mesher_;
+  std::unique_ptr<cblox::SubmapMesher> separated_submap_mesher_;
+  std::unique_ptr<cblox::SubmapMesher> combined_submap_mesher_;
 };
 }  // namespace voxgraph
 
