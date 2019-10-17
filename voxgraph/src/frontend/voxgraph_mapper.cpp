@@ -347,7 +347,9 @@ void VoxgraphMapper::publishActiveMeshCallback(const ros::TimerEvent& /*event*/)
   // publish active mesh
   if (active_mesh_pub_.getNumSubscribers() > 0) {
     submap_vis_.publishMesh(*submap_collection_ptr_,
-        submap_collection_ptr_->getActiveSubmapID(), voxblox::Color::Gray(),
+        submap_collection_ptr_->getActiveSubmapID(),
+//        voxblox::rainbowColorMap(1.0),
+        voxblox::Color::Gray(),
         map_tracker_.getFrameNames().active_submap_frame, active_mesh_pub_);
   }
 }
@@ -522,7 +524,9 @@ void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
             const cblox::SubmapID&, const voxblox::Color&, const std::string&,
             const ros::Publisher&)>(&SubmapVisuals::publishMesh),
         &submap_vis_, *submap_collection_ptr_,
-        submap_collection_ptr_->getActiveSubmapID(), voxblox::Color::Gray(),
+        submap_collection_ptr_->getActiveSubmapID(),
+//        voxblox::rainbowColorMap(1.0),
+        voxblox::Color::Gray(),
         map_tracker_.getFrameNames().active_submap_frame, active_mesh_pub_);
     active_mesh_thread.detach();
   }
