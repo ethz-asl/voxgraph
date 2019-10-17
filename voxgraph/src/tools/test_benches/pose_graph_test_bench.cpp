@@ -3,6 +3,7 @@
 #include <cblox/io/tsdf_submap_io.h>
 #include <glog/logging.h>
 #include <ros/ros.h>
+#include <voxblox_ros/ros_params.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -123,7 +124,8 @@ int main(int argc, char** argv) {
         size_t(submap.getTsdfMap().getTsdfLayer().block_size() /
                submap_config.tsdf_voxel_size);
   }
-  SubmapVisuals submap_vis(submap_config);
+  SubmapVisuals submap_vis(
+      submap_config, voxblox::getMeshIntegratorConfigFromRosParam(nh_private));
   ros::Publisher separated_mesh_original_pub =
       nh_private.advertise<visualization_msgs::Marker>(
           "separated_mesh_original", 1, true);

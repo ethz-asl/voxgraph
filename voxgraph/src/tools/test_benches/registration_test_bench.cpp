@@ -6,6 +6,7 @@
 #include <time.h>
 #include <voxblox/io/layer_io.h>
 #include <voxblox_ros/ptcloud_vis.h>
+#include <voxblox_ros/ros_params.h>
 #include <boost/filesystem.hpp>
 #include <string>
 #include <vector>
@@ -185,7 +186,9 @@ int main(int argc, char **argv) {
                                              registerer_options);
 
   // Setup visualization tools
-  voxgraph::SubmapVisuals submap_vis(submap_collection_ptr->getConfig());
+  voxgraph::SubmapVisuals submap_vis(
+      submap_collection_ptr->getConfig(),
+      voxblox::getMeshIntegratorConfigFromRosParam(nh_private));
 
   // Save the reference submap pose and the original reading submap pose
   Transformation transform_getter;

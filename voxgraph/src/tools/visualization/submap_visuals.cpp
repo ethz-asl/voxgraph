@@ -9,10 +9,13 @@
 #include <utility>
 
 namespace voxgraph {
-SubmapVisuals::SubmapVisuals(const VoxgraphSubmap::Config &submap_config) {
+SubmapVisuals::SubmapVisuals(VoxgraphSubmap::Config submap_config,
+                             voxblox::MeshIntegratorConfig mesh_config) :
+                             mesh_config_(std::move(mesh_config)) {
   // TODO(victorr): Read this from ROS params
-  mesh_config_.min_weight = 1;
-  submap_mesher_.reset(new cblox::SubmapMesher(submap_config, mesh_config_));
+  //mesh_config_.min_weight = 1;
+  submap_mesher_.reset(
+      new cblox::SubmapMesher(std::move(submap_config), mesh_config_));
 }
 
 void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
