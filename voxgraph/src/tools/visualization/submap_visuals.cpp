@@ -12,8 +12,9 @@ namespace voxgraph {
 SubmapVisuals::SubmapVisuals(VoxgraphSubmap::Config submap_config,
                              voxblox::MeshIntegratorConfig mesh_config)
     : mesh_config_(std::move(mesh_config)) {
-  // TODO(victorr): Read this from ROS params
-  // mesh_config_.min_weight = 1;
+  // Meshing params from ROS params server
+  // NOTE(alexmillane): The separated mesher *requires* color, so this is
+  //                    hard-coded.
   combined_submap_mesher_.reset(
       new cblox::SubmapMesher(std::move(submap_config), mesh_config_));
   mesh_config_.use_color = true;
