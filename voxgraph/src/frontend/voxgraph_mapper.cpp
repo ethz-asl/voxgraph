@@ -284,13 +284,15 @@ void VoxgraphMapper::loopClosureCallback(
 
   // Find the submaps that were active at both timestamps
   SubmapID submap_id_A, submap_id_B;
-  submap_collection_ptr_->lookupActiveSubmapByTime(
+  bool success_A = submap_collection_ptr_->lookupActiveSubmapByTime(
       loop_closure_msg.from_timestamp, &submap_id_A);
-  submap_collection_ptr_->lookupActiveSubmapByTime(
+  bool success_B = submap_collection_ptr_->lookupActiveSubmapByTime(
       loop_closure_msg.to_timestamp, &submap_id_B);
-  if (!submap_id_A || !submap_id_B) {
+  if (!success_A || !success_B) {
     ROS_WARN_STREAM(warning_msg_prefix.str() << ": timestamp A or B has no "
                                                 "corresponding submap");
+    ROS_INFO("[VoxgraphMapper] timestamp A: %d, timestamp B: %d",
+        submap_id_A, submap_id_B);
     return;
   }
   if (submap_id_A == submap_id_B) {
