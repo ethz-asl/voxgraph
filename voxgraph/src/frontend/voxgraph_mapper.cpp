@@ -225,6 +225,9 @@ void VoxgraphMapper::pointcloudCallback(
     // Add the finished submap to the pose graph
     switchToNewSubmap(current_timestamp);
 
+    // Visualize new submap mesh
+    publishActiveMeshCallback(ros::TimerEvent());
+
     // Optimize the pose graph in a separate thread
     if (optimization_async_handle_.valid()) {
       // Wait for the previous optimization to finish before starting a new one
@@ -345,15 +348,14 @@ void VoxgraphMapper::publishActiveMeshCallback(const ros::TimerEvent& /*event*/)
   if (!submap_collection_ptr_->exists(submap_collection_ptr_->getActiveSubmapID())) {
     return;
   }
-  // publish submap transform
-  map_tracker_.publishTFs();
-
   // publish active mesh
   if (active_mesh_pub_.getNumSubscribers() > 0) {
-    submap_vis_.publishMesh(*submap_collection_ptr_,
-        submap_collection_ptr_->getActiveSubmapID(),
-//        voxblox::rainbowColorMap(1.0),
-        voxblox::Color::Gray(),
+    cblox::SubmapID active_submap_id =
+        submap_collection_ptr_->getActiveSubmapID();
+    submap_vis_.publishMesh(*submap_collection_ptr_, active_submap_id,
+        voxblox::rainbowColorMap(static_cast<double>(active_submap_id) /
+                static_cast<double>(active_submap_id + 1)),
+//        voxblox::Color::Gray(),
         map_tracker_.getFrameNames().active_submap_frame, active_mesh_pub_);
   }
 }
@@ -541,21 +543,6 @@ void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
         *submap_collection_ptr_, map_tracker_.getFrameNames().mission_frame,
         separated_mesh_pub_);
     separated_mesh_thread.detach();
-  }
-
-  // publish active mesh
-  if (active_mesh_pub_.getNumSubscribers() > 0) {
-    std::thread active_mesh_thread(
-        static_cast<void (voxgraph::SubmapVisuals::*)(
-            const cblox::SubmapCollection<VoxgraphSubmap>&,
-            const cblox::SubmapID&, const voxblox::Color&, const std::string&,
-            const ros::Publisher&)>(&SubmapVisuals::publishMesh),
-        &submap_vis_, *submap_collection_ptr_,
-        submap_collection_ptr_->getActiveSubmapID(),
-//        voxblox::rainbowColorMap(1.0),
-        voxblox::Color::Gray(),
-        map_tracker_.getFrameNames().active_submap_frame, active_mesh_pub_);
-    active_mesh_thread.detach();
   }
 
   // Publish the previous (finished) submap
