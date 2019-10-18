@@ -271,8 +271,6 @@ void VoxgraphMapper::loopClosureCallback(
   if (!success_A || !success_B) {
     ROS_WARN_STREAM(warning_msg_prefix.str() << ": timestamp A or B has no "
                                                 "corresponding submap");
-    ROS_INFO("[VoxgraphMapper] timestamp A: %d, timestamp B: %d",
-        submap_id_A, submap_id_B);
     return;
   }
   if (submap_id_A == submap_id_B) {
