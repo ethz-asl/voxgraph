@@ -1,0 +1,12 @@
+- git:
+    local-name: ceres_catkin
+    uri: https://github.com/ethz-asl/ceres_catkin.git
+- git:
+    local-name: suitesparse
+    uri: https://github.com/ethz-asl/suitesparse.git
+- git:
+    local-name: cblox
+    uri: https://github.com/ethz-asl/cblox.git
+- git:
+    local-name: maplab_msgs
+    uri: https://github.com/ethz-asl/maplab_msgs.git
