@@ -28,8 +28,8 @@ void ProjectedMapServer::publishProjectedMap(
   // Set the message's TSDF
   voxblox::serializeLayerAsMsg<voxblox::TsdfVoxel>(
       submap_collection.getProjectedMap()->getTsdfLayer(), false,
-      &projected_map_tsdf_msg.layer);
-  projected_map_tsdf_msg.layer.action =
+      &projected_map_tsdf_msg.tsdf_layer);
+  projected_map_tsdf_msg.tsdf_layer.action =
       static_cast<uint8_t>(voxblox::MapDerializationAction::kReset);
 
   // Publish

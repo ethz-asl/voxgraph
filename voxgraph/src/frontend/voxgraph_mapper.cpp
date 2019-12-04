@@ -200,9 +200,9 @@ void VoxgraphMapper::advertiseServices() {
       this);
 
   // Service for submaps
-  publish_active_submap_srv_ = nh_private_.advertiseService(
+  /*publish_active_submap_srv_ = nh_private_.advertiseService(
       "publish_active_submap",
-      &VoxgraphMapper::publishActiveSubmapCallback, this);
+      &VoxgraphMapper::publishActiveSubmapCallback, this);*/
 }
 
 void VoxgraphMapper::pointcloudCallback(
@@ -291,8 +291,6 @@ void VoxgraphMapper::loopClosureCallback(
   if (!success_A || !success_B) {
     ROS_WARN_STREAM(warning_msg_prefix.str() << ": timestamp A or B has no "
                                                 "corresponding submap");
-    ROS_INFO("[VoxgraphMapper] timestamp A: %d, timestamp B: %d",
-        submap_id_A, submap_id_B);
     return;
   }
   if (submap_id_A == submap_id_B) {
@@ -411,7 +409,6 @@ bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request &request,
 bool VoxgraphMapper::optimizeGraphCallback(
     std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
   optimizePoseGraph();
-  publishMaps(ros::Time::now());
   return true;
 }
 
@@ -570,9 +567,9 @@ void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
       pose_graph_interface_, *submap_collection_ptr_, current_timestamp);
 }
 
-bool VoxgraphMapper::publishActiveSubmapCallback(
-    cblox_msgs::SubmapSrv::Request &request,
-    cblox_msgs::SubmapSrv::Response &response) {
+/*bool VoxgraphMapper::publishActiveSubmapCallback(
+    voxgraph_msgs::SubmapSrv::Request &request,
+    voxgraph_msgs::SubmapSrv::Response &response) {
   ROS_INFO("[VoxgraphMapper] Request for Active Submap Received, Processing.");
   if (!submap_collection_ptr_->empty()) {
     cblox_msgs::MapLayer msg = submap_server_.serializeActiveSubmap(
@@ -582,5 +579,5 @@ bool VoxgraphMapper::publishActiveSubmapCallback(
   } else {
     return false;
   }
-}
+}*/
 }  // namespace voxgraph

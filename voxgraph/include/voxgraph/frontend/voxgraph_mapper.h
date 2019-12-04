@@ -7,7 +7,6 @@
 #include <voxblox_msgs/FilePath.h>
 #include <future>
 #include <voxgraph_msgs/LoopClosure.h>
-#include <cblox_msgs/SubmapSrv.h>
 #include <memory>
 #include <string>
 #include "voxgraph/common.h"
@@ -67,9 +66,9 @@ class VoxgraphMapper {
   bool saveOptimizationTimesCallback(
       voxblox_msgs::FilePath::Request &request,     // NOLINT
       voxblox_msgs::FilePath::Response &response);  // NOLINT
-  bool publishActiveSubmapCallback(
+  /*bool publishActiveSubmapCallback(
       cblox_msgs::SubmapSrv::Request &request,
-      cblox_msgs::SubmapSrv::Response &response);
+      cblox_msgs::SubmapSrv::Response &response);*/
 
   const VoxgraphSubmapCollection &getSubmapCollection() {
     return *submap_collection_ptr_;
