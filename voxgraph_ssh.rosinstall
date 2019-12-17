@@ -1,0 +1,4 @@
+- git: 
+    local-name: maplab_msgs
+    uri: git@github.com:ethz-asl/maplab_msgs.git
+
