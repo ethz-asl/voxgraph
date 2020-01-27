@@ -9,7 +9,6 @@
 #include <utility>
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/frame_names.h"
-#include "voxgraph/frontend/map_tracker/scan_to_map_registerer.h"
 #include "voxgraph/frontend/map_tracker/transformers/odometry_transformer.h"
 #include "voxgraph/frontend/map_tracker/transformers/tf_transformer.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
@@ -30,8 +29,6 @@ class MapTracker {
   bool updateToTime(const ros::Time &timestamp,
                     std::string sensor_frame_id);
   void switchToNewSubmap();
-
-  void registerPointcloud(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
 
   void publishTFs();
   void publishOdometry();
@@ -92,10 +89,6 @@ class MapTracker {
   //       false if a calibration is provided through method set_T_B_C()
   TfTransformer tf_transformer_;
   OdometryTransformer odom_transformer_;
-
-  // Scan to submap registerer used to refine the odometry estimate,
-  // akin to voxblox ICP
-  ScanToMapRegisterer scan_to_map_registerer_;
 
   // Odometry input
   ros::Subscriber imu_biases_subscriber_;

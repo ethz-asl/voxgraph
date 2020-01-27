@@ -6,10 +6,10 @@
 #include <sensor_msgs/Imu.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <chrono>
-#include <limits>
 #include <memory>
 #include <string>
 #include <thread>
+#include <vector>
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/tools/io.h"
 #include "voxgraph/tools/ros_params.h"
@@ -46,7 +46,6 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       projected_map_server_(nh_private),
       submap_server_(nh_private),
       loop_closure_edge_server_(nh_private),
-      use_icp_refinement_(false),
       map_tracker_(submap_collection_ptr_,
                    FrameNames::fromRosParams(nh_private), verbose_) {
   // Setup interaction with ROS
@@ -117,17 +116,6 @@ void VoxgraphMapper::getParametersFromRos() {
                     << (height_constraints_enabled_ ? "enabled" : "disabled"));
   pose_graph_interface_.setMeasurementConfigFromRosParams(
       nh_measurement_params);
-
-  // Enable or disable voxgraph ICP
-  nh_private_.param("use_icp_refinement", use_icp_refinement_,
-                    use_icp_refinement_);
-  ROS_INFO_STREAM_COND(verbose_, "ICP refinement: "
-                       << (use_icp_refinement_ ? "enabled" : "disabled"));
-  // TODO(victorr): Remove this once ICP refinement is compatible with the new
-  //                frame convention
-  CHECK(!use_icp_refinement_) << "ICP refinement is temporarely unavailable as "
-                                 "it is not yet compatible "
-                                 "with the new coordinate frame convention.";
 
   // Read TSDF integrator params from their sub-namespace
   ros::NodeHandle nh_tsdf_params(nh_private_, "tsdf_integrator");
@@ -221,11 +209,6 @@ void VoxgraphMapper::pointcloudCallback(
 
     // Resume playing the rosbag
     if (auto_pause_rosbag_) rosbag_helper_.playRosbag();
-  }
-
-  // Refine the camera pose using scan to submap matching
-  if (use_icp_refinement_) {
-    map_tracker_.registerPointcloud(pointcloud_msg);
   }
 
   // Integrate the pointcloud

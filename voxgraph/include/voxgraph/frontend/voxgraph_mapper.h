@@ -12,7 +12,6 @@
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/frame_names.h"
 #include "voxgraph/frontend/map_tracker/map_tracker.h"
-#include "voxgraph/frontend/map_tracker/scan_to_map_registerer.h"
 #include "voxgraph/frontend/measurement_processors/gps_processor.h"
 #include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
@@ -153,7 +152,6 @@ class VoxgraphMapper {
   LoopClosureEdgeServer loop_closure_edge_server_;
 
   // Map tracker handles the odometry input and refines it using scan-to-map ICP
-  bool use_icp_refinement_;
   MapTracker map_tracker_;
 };
 }  // namespace voxgraph

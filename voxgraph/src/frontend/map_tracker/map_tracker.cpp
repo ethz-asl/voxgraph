@@ -10,7 +10,6 @@ MapTracker::MapTracker(VoxgraphSubmapCollection::ConstPtr submap_collection_ptr,
     : verbose_(verbose),
       submap_collection_ptr_(submap_collection_ptr),
       frame_names_(std::move(frame_names)),
-      scan_to_map_registerer_(submap_collection_ptr, true),
       tf_transformer_(),
       odom_transformer_() {}
 
@@ -95,21 +94,6 @@ void MapTracker::switchToNewSubmap() {
   // NOTE: This initial pose can differ from Identity, since the submap pose
   //       has zero pitch and roll whereas the robot pose is in 6DoF
   T_S_B_ = initial_T_S_O_ * T_O_B_;
-}
-
-void MapTracker::registerPointcloud(
-    const sensor_msgs::PointCloud2::Ptr &pointcloud_msg) {
-  ROS_WARN("ICP pose refinement is currently not supported.");
-  //  Transformation T_M_C_refined;
-  //  bool pose_refinement_successful =
-  //  scan_to_map_registerer_.refineSensorPose(
-  //      pointcloud_msg, get_T_M_C(), &T_M_C_refined);
-  //  if (pose_refinement_successful) {
-  //    // Update the corrected odometry frame
-  //    T_M_O_ = T_M_C_refined * T_B_C_.inverse() * T_O_B_.inverse();
-  //  } else {
-  //    ROS_WARN("Pose refinement failed");
-  //  }
 }
 
 void MapTracker::publishTFs() {
