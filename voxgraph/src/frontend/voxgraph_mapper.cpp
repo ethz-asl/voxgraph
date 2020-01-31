@@ -398,7 +398,6 @@ bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request &request,
   optimizePoseGraph();
 
   // Publishing the finished submap
-  // todo: fix double publishing
   submap_server_.publishActiveSubmap(submap_collection_ptr_, ros::Time::now());
   publishMaps(ros::Time::now());
 

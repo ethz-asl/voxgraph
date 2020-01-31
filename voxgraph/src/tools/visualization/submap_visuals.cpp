@@ -24,7 +24,7 @@ void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
   voxblox::fillMarkerWithMesh(mesh_layer_ptr, color_mode, &marker);
   marker.header.frame_id = submap_frame;
   // Update the marker's transform each time its TF frame is updated:
-  marker.frame_locked = false;
+  marker.frame_locked = true;
   publisher.publish(marker);
 }
 
