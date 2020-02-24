@@ -9,7 +9,9 @@ namespace voxgraph {
 VoxgraphSubmap::VoxgraphSubmap(const voxblox::Transformation &T_M_S,
                                const cblox::SubmapID &submap_id,
                                const voxgraph::VoxgraphSubmap::Config &config)
-    : cblox::TsdfEsdfSubmap(T_M_S, submap_id, config), config_(config) {}
+    : cblox::TsdfEsdfSubmap(T_M_S, submap_id, config), config_(config) {
+    T_S_M_ = T_M_S.inverse();
+}
 
 VoxgraphSubmap::VoxgraphSubmap(
     const voxblox::Transformation &T_M_S, const cblox::SubmapID &submap_id,
@@ -26,6 +28,8 @@ VoxgraphSubmap::VoxgraphSubmap(
 
   // Reset the inherited TsdfMap to contain a copy of the provided tsdf_layer
   tsdf_map_ = std::make_shared<voxblox::TsdfMap>(tsdf_layer);
+
+  T_S_M_ = T_M_S.inverse();
 }
 
 void VoxgraphSubmap::transformSubmap(const voxblox::Transformation &T_new_old) {

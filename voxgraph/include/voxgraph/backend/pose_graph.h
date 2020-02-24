@@ -50,7 +50,11 @@ class PoseGraph {
   VisualizationEdgeList getVisualizationEdges() const;
 
   const SolverSummaryList &getSolverSummaries() const {
-    return solver_summaries_;
+     return solver_summaries_;
+  }
+
+  ConstraintCollection &getConstraintCollection() {
+      return constraints_collection_;
   }
 
  private:

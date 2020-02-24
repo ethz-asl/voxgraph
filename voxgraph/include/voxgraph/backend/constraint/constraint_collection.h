@@ -25,6 +25,11 @@ class ConstraintCollection {
                                ceres::Problem *problem_ptr,
                                bool exclude_registration_constraints = false);
 
+  std::list<RegistrationConstraint>& getRegistrationConstraints() {
+      return registration_constraints_;
+  }
+
+
  private:
   Constraint::ConstraintId constraint_id_counter_ = 0;
   const Constraint::ConstraintId newConstraintId() {

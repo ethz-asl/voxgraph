@@ -32,10 +32,11 @@ class VoxgraphMapper {
   VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
   VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private,
                  VoxgraphSubmap::Config submap_config);
+
   ~VoxgraphMapper() = default;
 
   // ROS topic callbacks
-  void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
+  virtual void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
   void loopClosureCallback(const voxgraph_msgs::LoopClosure &loop_closure_msg);
 
   // ROS timer callbacks
@@ -71,15 +72,31 @@ class VoxgraphMapper {
       cblox_msgs::SubmapSrv::Request &request,
       cblox_msgs::SubmapSrv::Response &response);
 
-  const VoxgraphSubmapCollection &getSubmapCollection() {
+  VoxgraphSubmapCollection &getSubmapCollection() {
     return *submap_collection_ptr_;
+  }
+
+  std::list<RegistrationConstraint>& getRegistrationConstraint(){
+      return getPoseGraphInterface().getPoseGraph().getConstraintCollection().getRegistrationConstraints();
+  }
+
+  voxgraph::PoseGraphInterface& getPoseGraphInterface(){
+    return pose_graph_interface_;
+  }
+
+  const VoxgraphSubmap::Config& getSubmapConfig(){
+      return submap_config_;
   }
 
   const PoseGraph::SolverSummaryList &getSolverSummaries() {
     return pose_graph_interface_.getSolverSummaries();
   }
 
- private:
+  const voxblox::Point& getRobotPosition(){
+      return map_tracker_.get_T_M_B().getPosition();
+  }
+
+protected:
   // Node handles
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -94,9 +111,9 @@ class VoxgraphMapper {
   RosbagHelper rosbag_helper_;
 
   // Interaction with ROS
-  void subscribeToTopics();
-  void advertiseTopics();
-  void advertiseServices();
+  virtual void subscribeToTopics();
+  virtual void advertiseTopics();
+  virtual void advertiseServices();
   void getParametersFromRos();
 
   // New submap creation, pose graph optimization and map publishing

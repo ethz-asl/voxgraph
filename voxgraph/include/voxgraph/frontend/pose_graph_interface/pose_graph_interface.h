@@ -58,6 +58,9 @@ class PoseGraphInterface {
   const PoseGraph::SolverSummaryList &getSolverSummaries() const {
     return pose_graph_.getSolverSummaries();
   }
+  PoseGraph &getPoseGraph(){
+      return pose_graph_;
+  }
 
  private:
   bool verbose_;
