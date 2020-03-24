@@ -17,10 +17,10 @@
 int main(int argc, char **argv) {
   enum SolverReportStyle { kBrief, kFull, kNone };
   using voxblox::Transformation;
-  using voxgraph::VoxgraphSubmap;
   using voxgraph::RegistrationCostFunction;
   using voxgraph::SubmapRegistrationHelper;
   using voxgraph::TfHelper;
+  using voxgraph::VoxgraphSubmap;
 
   // Start logging
   google::InitGoogleLogging(argv[0]);
@@ -272,8 +272,9 @@ int main(int argc, char **argv) {
   } else {
     log_file << reading_submap_id;
   }
-  log_file << "," << (registerer_options.registration.visualize_residuals ||
-                      registerer_options.registration.visualize_gradients)
+  log_file << ","
+           << (registerer_options.registration.visualize_residuals ||
+               registerer_options.registration.visualize_gradients)
            << "," << registerer_options.registration.use_esdf_distance << ","
            << GIT_BRANCH << "," << GIT_COMMIT_HASH << "\n"
            << "x_true, y_true, z_true, yaw_true, pitch_true, roll_true\n"

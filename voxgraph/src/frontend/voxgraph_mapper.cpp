@@ -6,15 +6,16 @@
 #include <sensor_msgs/Imu.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <chrono>
-#include <limits>
 #include <memory>
 #include <string>
 #include <thread>
+#include <vector>
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/tools/io.h"
 #include "voxgraph/tools/ros_params.h"
 #include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
+#include "voxgraph/tools/threading_helper.h"
 
 namespace voxgraph {
 
@@ -121,8 +122,9 @@ void VoxgraphMapper::getParametersFromRos() {
   // Enable or disable voxgraph ICP
   nh_private_.param("use_icp_refinement", use_icp_refinement_,
                     use_icp_refinement_);
-  ROS_INFO_STREAM_COND(verbose_, "ICP refinement: "
-                       << (use_icp_refinement_ ? "enabled" : "disabled"));
+  ROS_INFO_STREAM_COND(
+      verbose_,
+      "ICP refinement: " << (use_icp_refinement_ ? "enabled" : "disabled"));
   // TODO(victorr): Remove this once ICP refinement is compatible with the new
   //                frame convention
   CHECK(!use_icp_refinement_) << "ICP refinement is temporarely unavailable as "
@@ -205,14 +207,21 @@ void VoxgraphMapper::pointcloudCallback(
     // Automatically pause the rosbag if requested
     if (auto_pause_rosbag_) rosbag_helper_.pauseRosbag();
 
+    // Make sure that the last optimization has completed
+    // NOTE: This is important, because switchToNewSubmap(...) updates the
+    //       constraints collection, which causes segfaults if it's still in use
+    if (optimization_async_handle_.valid() &&
+        optimization_async_handle_.wait_for(std::chrono::milliseconds(10)) !=
+            std::future_status::ready) {
+      // Wait for the previous optimization to finish before starting a new one
+      ROS_WARN("Previous pose graph optimization not yet complete. Waiting...");
+      optimization_async_handle_.wait();
+    }
+
     // Add the finished submap to the pose graph
     switchToNewSubmap(current_timestamp);
 
     // Optimize the pose graph in a separate thread
-    if (optimization_async_handle_.valid()) {
-      // Wait for the previous optimization to finish before starting a new one
-      optimization_async_handle_.wait();
-    }
     optimization_async_handle_ = std::async(
         std::launch::async, &VoxgraphMapper::optimizePoseGraph, this);
 
@@ -405,16 +414,15 @@ bool VoxgraphMapper::saveOptimizationTimesCallback(
     voxblox_msgs::FilePath::Response &response) {
   ROS_INFO_STREAM(
       "Writing optimization times to csv at: " << request.file_path);
-  const PoseGraph::SolverSummaryList& solver_summary_list =
+  const PoseGraph::SolverSummaryList &solver_summary_list =
       pose_graph_interface_.getSolverSummaries();
   std::vector<double> total_times;
-  for (const ceres::Solver::Summary& summary : solver_summary_list) {
+  for (const ceres::Solver::Summary &summary : solver_summary_list) {
     total_times.push_back(summary.total_time_in_seconds);
   }
   io::saveVectorToFile(request.file_path, total_times);
   return true;  // Tell ROS it succeeded
 }
-
 
 void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
   // Indicate that the previous submap is finished
@@ -487,18 +495,16 @@ void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
   // NOTE: Users can request new meshes at any time through service calls
   //       so there's no point in publishing them just in case
   if (combined_mesh_pub_.getNumSubscribers() > 0) {
-    std::thread combined_mesh_thread(&SubmapVisuals::publishCombinedMesh,
-                                     &submap_vis_, *submap_collection_ptr_,
-                                     map_tracker_.getFrameNames().mission_frame,
-                                     combined_mesh_pub_);
-    combined_mesh_thread.detach();
+    ThreadingHelper::launchBackgroundThread(
+        &SubmapVisuals::publishCombinedMesh, &submap_vis_,
+        *submap_collection_ptr_, map_tracker_.getFrameNames().mission_frame,
+        combined_mesh_pub_);
   }
   if (separated_mesh_pub_.getNumSubscribers() > 0) {
-    std::thread separated_mesh_thread(
+    ThreadingHelper::launchBackgroundThread(
         &SubmapVisuals::publishSeparatedMesh, &submap_vis_,
         *submap_collection_ptr_, map_tracker_.getFrameNames().mission_frame,
         separated_mesh_pub_);
-    separated_mesh_thread.detach();
   }
 
   // Publish the previous (finished) submap

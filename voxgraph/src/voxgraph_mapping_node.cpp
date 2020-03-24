@@ -5,6 +5,7 @@
 int main(int argc, char** argv) {
   // Start logging
   google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
 
   // Register with ROS master
   ros::init(argc, argv, "voxgraph_mapping");

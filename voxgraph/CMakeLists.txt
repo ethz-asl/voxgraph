@@ -77,6 +77,10 @@ cs_add_executable(odometry_simulator
     src/odometry_simulator_node.cpp)
 target_link_libraries(odometry_simulator ${PROJECT_NAME} ${PROTO_LIBRARIES})
 
+cs_add_executable(odom_topic_to_tf_node
+    src/odom_topic_to_tf_node.cpp)
+target_link_libraries(odom_topic_to_tf_node ${PROJECT_NAME} ${PROTO_LIBRARIES})
+
 cs_add_executable(registration_test_bench
     src/tools/test_benches/registration_test_bench.cpp)
 target_link_libraries(registration_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES})

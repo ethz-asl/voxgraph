@@ -1,4 +1,3 @@
-#include "voxgraph/backend/pose_graph.h"
 #include <cblox/core/submap_collection.h>
 #include <cblox/io/tsdf_submap_io.h>
 #include <glog/logging.h>
@@ -6,16 +5,17 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "voxgraph/backend/pose_graph.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/tools/visualization/pose_graph_visuals.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
 
 int main(int argc, char** argv) {
-  using voxgraph::VoxgraphSubmap;
   using voxgraph::PoseGraph;
-  using voxgraph::SubmapNode;
   using voxgraph::RegistrationConstraint;
+  using voxgraph::SubmapNode;
   using voxgraph::SubmapVisuals;
+  using voxgraph::VoxgraphSubmap;
   struct SubmapPerturbation {
     struct NormalDistribution {
       double mean = 0, stddev = 0;

@@ -3,8 +3,8 @@
 
 #include <ceres/ceres.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <utility>
 #include <Eigen/Core>
+#include <utility>
 #include "voxgraph/backend/node/pose/pose_6d.h"
 #include "voxgraph/frontend/map_tracker/cost_functions/scan_registration_cost_function.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
@@ -29,8 +29,8 @@ class ScanToMapRegisterer {
   VoxgraphSubmapCollection::ConstPtr submap_collection_ptr_;
 
   // Define the logging format used for Eigen matrices
-  Eigen::IOFormat ioformat_{
-    4, Eigen::DontAlignCols, "; ", "; ", "", "", "", ""};
+  Eigen::IOFormat ioformat_{4, Eigen::DontAlignCols, "; ", "; ", "", "", "",
+                            ""};
 };
 }  // namespace voxgraph
 

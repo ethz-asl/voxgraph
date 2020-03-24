@@ -2,7 +2,7 @@
 #define VOXGRAPH_FRONTEND_MAP_TRACKER_COST_FUNCTIONS_SCAN_REGISTRATION_COST_FUNCTION_INL_H_
 
 namespace voxgraph {
-template<typename T>
+template <typename T>
 bool ScanRegistrationCostFunction::operator()(const T *const t_S_C_estimate_ptr,
                                               const T *const q_S_C_estimate_ptr,
                                               T *residuals_ptr) const {
@@ -27,8 +27,7 @@ bool ScanRegistrationCostFunction::operator()(const T *const t_S_C_estimate_ptr,
        residual_idx < num_residuals_per_pointcloud_; residual_idx++) {
     if (pointcloud_it != pointcloud_it.end()) {
       // Get the position of the current point P in sensor frame C
-      voxblox::Point t_C_P(pointcloud_it[0],
-                           pointcloud_it[1],
+      voxblox::Point t_C_P(pointcloud_it[0], pointcloud_it[1],
                            pointcloud_it[2]);
       // Transform the point into Submap frame S
       Eigen::Matrix<T, 3, 1> t_S_P = t_S_C * t_C_P.cast<T>();
@@ -50,12 +49,10 @@ bool ScanRegistrationCostFunction::operator()(const T *const t_S_C_estimate_ptr,
         //                space and space behind surfaces is handled well
         const double nearest_weight = neighboring_voxels[0]->weight;
 
-
         // Interpolate distance at point P
         const T interpolated_distance =
-            jet_q_vector
-                * (interp_table_.cast<T>()
-                    * neighboring_distances.transpose().cast<T>());
+            jet_q_vector * (interp_table_.cast<T>() *
+                            neighboring_distances.transpose().cast<T>());
         residuals[residual_idx] = -interpolated_distance * nearest_weight;
       } else {
         residuals[residual_idx] = T(0.0);  // no_correspondence_cost;
@@ -86,26 +83,24 @@ bool ScanRegistrationCostFunction::operator()(const T *const t_S_C_estimate_ptr,
   return true;
 }
 
-template<typename T>
+template <typename T>
 bool ScanRegistrationCostFunction::getVoxelsAndJetQVector(
-    const Eigen::Matrix<T, 3, 1> &jet_pos,
-    const voxblox::TsdfVoxel **voxels,
+    const Eigen::Matrix<T, 3, 1> &jet_pos, const voxblox::TsdfVoxel **voxels,
     Eigen::Matrix<T, 1, 8> *jet_q_vector) const {
   CHECK_NOTNULL(jet_q_vector);
 
   // get block and voxels indexes (some voxels may have negative indexes)
   voxblox::BlockIndex block_index;
   voxblox::InterpIndexes voxel_indexes;
-  if (!tsdf_interpolator_.setIndexes(
-      getScalarPart(jet_pos), &block_index, &voxel_indexes)) {
+  if (!tsdf_interpolator_.setIndexes(getScalarPart(jet_pos), &block_index,
+                                     &voxel_indexes)) {
     return false;
   }
 
   // get distances of 8 surrounding voxels and weights vector
   // for each voxel index
   for (size_t i = 0; i < static_cast<size_t>(voxel_indexes.cols()); ++i) {
-    typename voxblox::Layer<voxblox::TsdfVoxel>
-    ::BlockType::ConstPtr block_ptr =
+    typename voxblox::Layer<voxblox::TsdfVoxel>::BlockType::ConstPtr block_ptr =
         submap_ptr_->getTsdfMap().getTsdfLayer().getBlockPtrByIndex(
             block_index);
     if (block_ptr == nullptr) {
@@ -123,9 +118,8 @@ bool ScanRegistrationCostFunction::getVoxelsAndJetQVector(
           voxel_index(j) -= block_ptr->voxels_per_side();
         }
       }
-      block_ptr =
-          submap_ptr_->getTsdfMap().getTsdfLayer().getBlockPtrByIndex(
-              new_block_index);
+      block_ptr = submap_ptr_->getTsdfMap().getTsdfLayer().getBlockPtrByIndex(
+          new_block_index);
       if (block_ptr == nullptr) {
         return false;
       }
@@ -155,7 +149,7 @@ bool ScanRegistrationCostFunction::getVoxelsAndJetQVector(
       // clang-format on
     }
 
-    const voxblox::TsdfVoxel& voxel =
+    const voxblox::TsdfVoxel &voxel =
         block_ptr->getVoxelByVoxelIndex(voxel_index);
 
     voxels[i] = &voxel;

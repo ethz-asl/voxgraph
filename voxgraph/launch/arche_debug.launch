@@ -2,9 +2,9 @@
   <param name="use_sim_time" value="true"/>
 
   <node if="1" name="player" pkg="rosbag" type="play" output="screen"
-        args="-r 1.0 -s 5 -q --clock /home/victorr/data/arche_week/arche_day_2/flight1_2ms.bag"/>
+        args="-r 1.0 -s 5 -q --clock /home/victor/data/arche_week/arche_day_2/flight1_2ms.bag"/>
   <node if="0" name="player" pkg="rosbag" type="play" output="screen"
-        args="-r 1.0 -s 5 -q --clock /home/victorr/data/arche_week/arche_day_3/2019-07-03-14-24-45.bag"/>
+        args="-r 1.0 -s 5 -q --clock /home/victor/data/arche_week/arche_day_3/2019-07-03-14-24-45.bag"/>
 
   <node pkg="tf" type="static_transform_publisher" name="odom_to_mission" args="0 0 0 0 0 0 1 odom mission 100"/>
   <node pkg="tf" type="static_transform_publisher" name="os1_stuff" args="0 0 0 0 0 1 0 os1_sensor os1_lidar 100"/>

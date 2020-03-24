@@ -161,41 +161,42 @@ void MapTracker::publishOdometry() {
 
       // Forward or hardcode the twist and covariances
       nav_msgs::Odometry closest_received_odom_msg_;
-      if (!use_odom_from_tfs_
-          && odom_transformer_.lookupOdometryMsg(current_timestamp_,
-                                                 &closest_received_odom_msg_)) {
-          // Forward the twist from ROVIO
-          odometry_with_imu_biases.twist = closest_received_odom_msg_.twist;
+      if (!use_odom_from_tfs_ &&
+          odom_transformer_.lookupOdometryMsg(current_timestamp_,
+                                              &closest_received_odom_msg_)) {
+        // Forward the twist from ROVIO
+        odometry_with_imu_biases.twist = closest_received_odom_msg_.twist;
 
-          // Forward the pose and twist covariances
-          odometry_with_imu_biases.pose.covariance =
-              closest_received_odom_msg_.pose.covariance;
-          odometry_with_imu_biases.twist.covariance =
-              closest_received_odom_msg_.twist.covariance;
-        } else {
-          ROS_WARN("Could not find closest odometry msg. Will set twist to "
-                   "zero and covariances of pose and twist to identity."
-                   "Make sure to set a valid odometry topic in ROS parms.");
+        // Forward the pose and twist covariances
+        odometry_with_imu_biases.pose.covariance =
+            closest_received_odom_msg_.pose.covariance;
+        odometry_with_imu_biases.twist.covariance =
+            closest_received_odom_msg_.twist.covariance;
+      } else {
+        ROS_WARN(
+            "Could not find closest odometry msg. Will set twist to "
+            "zero and covariances of pose and twist to identity."
+            "Make sure to set a valid odometry topic in ROS parms.");
 
-          // Set the twist to zero
-          BiasVectorType zero_vector = BiasVectorType::Zero();
-          tf::vectorKindrToMsg(zero_vector,
-                                 &odometry_with_imu_biases.twist.twist.linear);
-          tf::vectorKindrToMsg(zero_vector,
-                                 &odometry_with_imu_biases.twist.twist.angular);
+        // Set the twist to zero
+        BiasVectorType zero_vector = BiasVectorType::Zero();
+        tf::vectorKindrToMsg(zero_vector,
+                             &odometry_with_imu_biases.twist.twist.linear);
+        tf::vectorKindrToMsg(zero_vector,
+                             &odometry_with_imu_biases.twist.twist.angular);
 
-          // Set the pose and twist covariances to identity
-          for (int row = 0; row < 6; ++row) {
-            for (int col = 0; col < 6; ++col) {
-              if (row == col) {
-                odometry_with_imu_biases.twist.covariance[row * 6 + col] = 1.0;
-                odometry_with_imu_biases.pose.covariance[row * 6 + col] = 1.0;
-              } else {
-                odometry_with_imu_biases.twist.covariance[row * 6 + col] = 0.0;
-                odometry_with_imu_biases.pose.covariance[row * 6 + col] = 0.0;
-              }
+        // Set the pose and twist covariances to identity
+        for (int row = 0; row < 6; ++row) {
+          for (int col = 0; col < 6; ++col) {
+            if (row == col) {
+              odometry_with_imu_biases.twist.covariance[row * 6 + col] = 1.0;
+              odometry_with_imu_biases.pose.covariance[row * 6 + col] = 1.0;
+            } else {
+              odometry_with_imu_biases.twist.covariance[row * 6 + col] = 0.0;
+              odometry_with_imu_biases.pose.covariance[row * 6 + col] = 0.0;
             }
           }
+        }
       }
 
       // Forward the biases from ROVIO
@@ -208,9 +209,10 @@ void MapTracker::publishOdometry() {
       odom_with_imu_biases_pub_.publish(odometry_with_imu_biases);
     }
 
-    ROS_WARN("The voxgraph odometry output topic has subscribers, but no IMU "
-             "biases have yet been received. Make sure to set a valid IMU "
-             "biases topics in ROS params such that it can be forwarded");
+    ROS_WARN(
+        "The voxgraph odometry output topic has subscribers, but no IMU "
+        "biases have yet been received. Make sure to set a valid IMU "
+        "biases topics in ROS params such that it can be forwarded");
   }
 }
 

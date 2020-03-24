@@ -5,8 +5,8 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
-#include <future>
 #include <voxgraph_msgs/LoopClosure.h>
+#include <future>
 #include <memory>
 #include <string>
 #include "voxgraph/common.h"
@@ -21,8 +21,8 @@
 #include "voxgraph/tools/data_servers/projected_map_server.h"
 #include "voxgraph/tools/data_servers/submap_server.h"
 #include "voxgraph/tools/rosbag_helper.h"
-#include "voxgraph/tools/visualization/submap_visuals.h"
 #include "voxgraph/tools/visualization/loop_closure_visuals.h"
+#include "voxgraph/tools/visualization/submap_visuals.h"
 
 namespace voxgraph {
 class VoxgraphMapper {
@@ -42,8 +42,8 @@ class VoxgraphMapper {
       std_srvs::Empty::Request &request,     // NOLINT
       std_srvs::Empty::Response &response);  // NOLINT
   bool publishCombinedMeshCallback(
-      std_srvs::Empty::Request &request,     // NOLINT
-      std_srvs::Empty::Response &response);  // NOLINT
+      std_srvs::Empty::Request &request,                            // NOLINT
+      std_srvs::Empty::Response &response);                         // NOLINT
   bool optimizeGraphCallback(std_srvs::Empty::Request &request,     // NOLINT
                              std_srvs::Empty::Response &response);  // NOLINT
   bool finishMapCallback(std_srvs::Empty::Request &request,         // NOLINT

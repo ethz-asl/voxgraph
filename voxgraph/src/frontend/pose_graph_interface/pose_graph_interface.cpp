@@ -119,7 +119,7 @@ void PoseGraphInterface::updateOverlappingSubmapList() {
     if (submap_pub_.getNumSubscribers() > 0) {
       submap_vis_.publishBox(
           first_submap.getMissionFrameSurfaceAabb().getCornerCoordinates(),
-          voxblox::Color::Blue(), "odom",
+          voxblox::Color::Blue(), "mission",
           "surface_abb" + std::to_string(first_submap_id), submap_pub_);
     }
 
@@ -188,7 +188,7 @@ void PoseGraphInterface::optimize() {
 
   // Publish debug visuals
   if (pose_graph_pub_.getNumSubscribers() > 0) {
-    pose_graph_vis_.publishPoseGraph(pose_graph_, "odom", "optimized",
+    pose_graph_vis_.publishPoseGraph(pose_graph_, "mission", "optimized",
                                      pose_graph_pub_);
   }
 }
