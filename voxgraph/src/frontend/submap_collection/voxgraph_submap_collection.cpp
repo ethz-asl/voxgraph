@@ -66,7 +66,7 @@ Transformation VoxgraphSubmapCollection::gravityAlignPose(
   Transformation::Vector6 T_vec = input_pose.log();
 
   // Print a warning if the original pitch & roll components were non-negligible
-  if (T_vec[3] > 0.05) {
+  if (std::abs(T_vec[3]) > 0.05) {
     ROS_WARN_STREAM_THROTTLE(
         1, "New submap creation called with proposed roll: "
                << T_vec[3]
@@ -74,7 +74,7 @@ Transformation VoxgraphSubmapCollection::gravityAlignPose(
                   " XYZ+Yaw only. Please provide submap poses whose Z-axis"
                   " is roughly gravity aligned.");
   }
-  if (T_vec[4] > 0.05) {
+  if (std::abs(T_vec[4]) > 0.05) {
     ROS_WARN_STREAM_THROTTLE(
         1, "New submap creation called with proposed pitch: "
                << T_vec[4]

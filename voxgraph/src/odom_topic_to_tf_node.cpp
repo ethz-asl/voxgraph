@@ -12,9 +12,6 @@ void odometryCallback(
   voxgraph::TfHelper::publishTransform(T_odom_base_link.cast<float>(), "odom",
                                        "imu", false,
                                        odometry_msg->header.stamp);
-  voxgraph::TfHelper::publishTransform(voxblox::Transformation(), "mission",
-                                       "odom", false,
-                                       odometry_msg->header.stamp);
 }
 
 int main(int argc, char** argv) {

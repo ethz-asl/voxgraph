@@ -83,7 +83,8 @@ int main(int argc, char **argv) {
       "- number of sampling ratios: " << vectorToString(sampling_ratios));
   // TF frame names
   std::string mission_frame;
-  nh_private.param<std::string>("mission_frame", mission_frame, "mission");
+  nh_private.param<std::string>("output_mission_frame", mission_frame,
+                                "mission");
   ROS_INFO_STREAM("- mission frame: " << mission_frame);
   std::string uncorrected_base_frame;
   nh_private.param<std::string>("uncorrected_base_frame",

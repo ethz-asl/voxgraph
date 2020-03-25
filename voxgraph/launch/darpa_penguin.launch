@@ -40,13 +40,11 @@
                 submap_creation_interval: 10
                 pointcloud_topic: "lidar_undistortion/pointcloud_corrected"
                 subscriber_queue_length: 1000
-                world_frame: "world"
-                odom_frame: "odom"
-                base_frame: "imu"
-                odom_frame_corrected: "odom_voxgraph"
-                robot_frame_corrected: "robot_voxgraph"
-                sensor_frame_corrected: "sensor_voxgraph"
-                use_tf_transforms: True
+                input_odom_frame: "odom"
+                input_base_link_frame: "imu"
+                output_mission_frame: "world"
+                output_base_link_frame: "imu_voxgraph"
+                output_sensor_frame: "sensor_voxgraph"
                 tsdf_integrator:
                     tsdf_voxel_size: 0.20
                     truncation_distance: 0.60

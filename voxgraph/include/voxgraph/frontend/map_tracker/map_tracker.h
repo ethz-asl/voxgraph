@@ -28,12 +28,11 @@ class MapTracker {
                        const std::string &odometry_output_topic);
 
   bool updateToTime(const ros::Time &timestamp, std::string sensor_frame_id);
-  void switchToNewSubmap();
+  void switchToNewSubmap(const Transformation &T_M_S_new);
 
   void registerPointcloud(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
 
   void publishTFs();
-  void publishOdometry();
 
   // Transform getter methods
   // NOTE: For more info on the frame naming conventions,
@@ -64,9 +63,6 @@ class MapTracker {
   //       and the other ROS nodes
   FrameNames frame_names_;
 
-  // Transform used to aggregate the incremental ICP corrections
-  Transformation T_M_O_;
-
   // Transform that stores the current raw odometry input
   Transformation T_O_B_;
 
@@ -75,6 +71,7 @@ class MapTracker {
   // NOTE: This transform is used to convert the pose from the odometry input
   //       into the coordinate frame of the current submap
   Transformation initial_T_S_O_;
+  Transformation initial_T_M_S_;  // for visualization purposes only
 
   // Transform that tracks the odometry in submap frame
   Transformation T_S_B_;

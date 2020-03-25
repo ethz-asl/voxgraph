@@ -49,8 +49,8 @@ bool MapTracker::updateToTime(const ros::Time &timestamp,
   // Update the odometry
   if (use_odom_from_tfs_) {
     // Update the odometry estimate
-    if (!tf_transformer_.lookupTransform(frame_names_.odom_frame,
-                                         frame_names_.base_link_frame,
+    if (!tf_transformer_.lookupTransform(frame_names_.input_odom_frame,
+                                         frame_names_.input_base_link_frame,
                                          timestamp, &T_O_B_)) {
       return false;
     }
@@ -74,7 +74,7 @@ bool MapTracker::updateToTime(const ros::Time &timestamp,
     }
 
     // Lookup the transform
-    if (!tf_transformer_.lookupTransform(frame_names_.base_link_frame,
+    if (!tf_transformer_.lookupTransform(frame_names_.input_base_link_frame,
                                          sensor_frame_id, timestamp, &T_B_C_)) {
       return false;
     }
@@ -84,7 +84,10 @@ bool MapTracker::updateToTime(const ros::Time &timestamp,
   return true;
 }
 
-void MapTracker::switchToNewSubmap() {
+void MapTracker::switchToNewSubmap(const Transformation &T_M_S_new) {
+  // Store the initial submap pose for visualization purposes
+  initial_T_M_S_ = T_M_S_new;
+
   // Get the pose of the new submap in odom frame
   Transformation T_O_S = VoxgraphSubmapCollection::gravityAlignPose(T_O_B_);
 
@@ -113,24 +116,31 @@ void MapTracker::registerPointcloud(
 }
 
 void MapTracker::publishTFs() {
-  TfHelper::publishTransform(T_M_O_, frame_names_.mission_frame,
-                             frame_names_.odom_frame_corrected, false,
-                             current_timestamp_);
-  TfHelper::publishTransform(T_O_B_, frame_names_.odom_frame_corrected,
-                             frame_names_.base_link_frame_corrected, false,
-                             current_timestamp_);
-  TfHelper::publishTransform(T_B_C_, frame_names_.base_link_frame_corrected,
-                             frame_names_.sensor_frame_corrected, true,
-                             current_timestamp_);
-  TfHelper::publishTransform(T_S_B_, frame_names_.active_submap_frame,
-                             frame_names_.base_link_frame_corrected, false,
-                             current_timestamp_);
+  // Republish the inputs (for debugging purposes)
   TfHelper::publishTransform(
-      initial_T_S_O_, frame_names_.active_submap_frame + "_initial",
-      frame_names_.odom_frame_corrected, false, current_timestamp_);
+      initial_T_M_S_, frame_names_.output_mission_frame,
+      frame_names_.output_active_submap_frame + "_initial", false,
+      current_timestamp_);
   TfHelper::publishTransform(
-      submap_collection_ptr_->getActiveSubmapPose(), frame_names_.mission_frame,
-      frame_names_.active_submap_frame, false, current_timestamp_);
+      initial_T_S_O_, frame_names_.output_active_submap_frame + "_initial",
+      frame_names_.input_odom_frame, false, current_timestamp_);
+  if (!use_odom_from_tfs_) {
+    TfHelper::publishTransform(T_O_B_, frame_names_.input_odom_frame,
+                               frame_names_.input_base_link_frame, false,
+                               current_timestamp_);
+  }
+
+  // Output
+  TfHelper::publishTransform(submap_collection_ptr_->getActiveSubmapPose(),
+                             frame_names_.output_mission_frame,
+                             frame_names_.output_active_submap_frame, false,
+                             current_timestamp_);
+  TfHelper::publishTransform(T_S_B_, frame_names_.output_active_submap_frame,
+                             frame_names_.output_base_link_frame, false,
+                             current_timestamp_);
+  TfHelper::publishTransform(T_B_C_, frame_names_.output_base_link_frame,
+                             frame_names_.output_sensor_frame, true,
+                             current_timestamp_);
 }
 
 Transformation MapTracker::get_T_M_B() {
@@ -139,80 +149,6 @@ Transformation MapTracker::get_T_M_B() {
     return T_O_B_;
   } else {
     return submap_collection_ptr_->getActiveSubmapPose() * T_S_B_;
-  }
-}
-
-void MapTracker::publishOdometry() {
-  if (odom_with_imu_biases_pub_.getNumSubscribers() > 0) {
-    constexpr double double_min = std::numeric_limits<double>::lowest();
-    if ((forwarded_accel_bias_.array() >= double_min).all() &&
-        (forwarded_gyro_bias_.array() >= double_min).all()) {
-      // Create the message and set its header
-      maplab_msgs::OdometryWithImuBiases odometry_with_imu_biases;
-      odometry_with_imu_biases.header.frame_id = frame_names_.mission_frame;
-      odometry_with_imu_biases.header.stamp = current_timestamp_;
-      odometry_with_imu_biases.child_frame_id = frame_names_.base_link_frame;
-      odometry_with_imu_biases.odometry_state = 0u;
-
-      // Set the odometry pose
-      const Transformation refined_odometry = T_M_O_ * T_O_B_;
-      tf::poseKindrToMsg(refined_odometry.cast<double>(),
-                         &odometry_with_imu_biases.pose.pose);
-
-      // Forward or hardcode the twist and covariances
-      nav_msgs::Odometry closest_received_odom_msg_;
-      if (!use_odom_from_tfs_ &&
-          odom_transformer_.lookupOdometryMsg(current_timestamp_,
-                                              &closest_received_odom_msg_)) {
-        // Forward the twist from ROVIO
-        odometry_with_imu_biases.twist = closest_received_odom_msg_.twist;
-
-        // Forward the pose and twist covariances
-        odometry_with_imu_biases.pose.covariance =
-            closest_received_odom_msg_.pose.covariance;
-        odometry_with_imu_biases.twist.covariance =
-            closest_received_odom_msg_.twist.covariance;
-      } else {
-        ROS_WARN(
-            "Could not find closest odometry msg. Will set twist to "
-            "zero and covariances of pose and twist to identity."
-            "Make sure to set a valid odometry topic in ROS parms.");
-
-        // Set the twist to zero
-        BiasVectorType zero_vector = BiasVectorType::Zero();
-        tf::vectorKindrToMsg(zero_vector,
-                             &odometry_with_imu_biases.twist.twist.linear);
-        tf::vectorKindrToMsg(zero_vector,
-                             &odometry_with_imu_biases.twist.twist.angular);
-
-        // Set the pose and twist covariances to identity
-        for (int row = 0; row < 6; ++row) {
-          for (int col = 0; col < 6; ++col) {
-            if (row == col) {
-              odometry_with_imu_biases.twist.covariance[row * 6 + col] = 1.0;
-              odometry_with_imu_biases.pose.covariance[row * 6 + col] = 1.0;
-            } else {
-              odometry_with_imu_biases.twist.covariance[row * 6 + col] = 0.0;
-              odometry_with_imu_biases.pose.covariance[row * 6 + col] = 0.0;
-            }
-          }
-        }
-      }
-
-      // Forward the biases from ROVIO
-      tf::vectorKindrToMsg(forwarded_accel_bias_,
-                           &odometry_with_imu_biases.accel_bias);
-      tf::vectorKindrToMsg(forwarded_gyro_bias_,
-                           &odometry_with_imu_biases.gyro_bias);
-
-      // Publish the odom message
-      odom_with_imu_biases_pub_.publish(odometry_with_imu_biases);
-    }
-
-    ROS_WARN(
-        "The voxgraph odometry output topic has subscribers, but no IMU "
-        "biases have yet been received. Make sure to set a valid IMU "
-        "biases topics in ROS params such that it can be forwarded");
   }
 }
 

@@ -1,21 +1,21 @@
 <launch>
     <param name="use_sim_time" value="true"/>
 
-    <node if="1" name="player" pkg="rosbag" type="play" output="screen"
-          args="-r 1.0 -q --clock
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-46-16_0.bag
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-48-57_1.bag
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-51-32_2.bag
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-54-08_3.bag
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-56-42_4.bag
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-59-17_5.bag
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-01-51_6.bag
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-04-27_7.bag
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-07-03_8.bag
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-09-40_9.bag
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-12-17_10.bag
-        /home/victor/data/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-15-00_11.bag"/>
     <node if="0" name="player" pkg="rosbag" type="play" output="screen"
+          args="-r 1.0 -q --clock
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-46-16_0.bag
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-48-57_1.bag
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-51-32_2.bag
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-54-08_3.bag
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-56-42_4.bag
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-04-59-17_5.bag
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-01-51_6.bag
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-04-27_7.bag
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-07-03_8.bag
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-09-40_9.bag
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-12-17_10.bag
+        /home/victor/data/darpa/20200220_DARPA_Urban_Alpha_1/Bear/2020-02-21-05-15-00_11.bag"/>
+    <node if="1" name="player" pkg="rosbag" type="play" output="screen"
           args="-r 1.0 -q --clock
         /media/victor/SSD_1TB/DARPA/20200222_DARPA_Urban_Beta_1/Bear/mission_2020-02-22-09-03-53_00.bag
         /media/victor/SSD_1TB/DARPA/20200222_DARPA_Urban_Beta_1/Bear/mission_2020-02-22-09-03-53_01.bag
@@ -44,24 +44,24 @@
             debug: true
             submap_creation_interval: 10
             auto_pause_rosbag: false
-            pointcloud_topic: "/velodyne/point_cloud"
+<!--            pointcloud_topic: "/velodyne/point_cloud"-->
+            pointcloud_topic: "/velodyne_points"
             subscriber_queue_length: 10
             use_icp_refinement: false
-            mission_frame: "mission"
-            odom_frame: "odom"
-            base_link_frame: "imu"
-            odom_frame_corrected: "odom_corrected"
-            base_frame_corrected: "base_corrected"
-            sensor_frame_corrected: "sensor_corrected"
+            input_odom_frame: "odom"
+            input_base_link_frame: "imu"
+            output_mission_frame: "mission"
+            output_base_link_frame: "imu_voxgraph"
+            output_sensor_frame: "velodyne"
             T_base_link_sensor:
                 - [ 0.999987,    -0.00495793, -0.000759009, -0.0271503]
                 - [ 0.00495486,   0.99998,    -0.00399064,   0.0450645]
                 - [ 0.000778779,  0.00398683,  0.999992,     0.0486125]
                 - [ 0,            0,           0,            1]
             tsdf_integrator:
-                tsdf_voxel_size: 0.20
+                tsdf_voxel_size: 0.15
                 truncation_distance: 0.60
-                max_ray_length_m: 12.0
+                max_ray_length_m: 20.0
                 use_const_weight: true
                 use_weight_dropoff: true
                 use_sparsity_compensation_factor: true
@@ -80,15 +80,17 @@
                 odometry:
                     enabled: true
                     information_matrix:
-                        x_x:     1.0
-                        y_y:     1.0
-                        z_z:     2500.0
-                        yaw_yaw: 2500.0
+                        x_x:     100.0
+                        y_y:     100.0
+                        z_z:     5000.0
+                        yaw_yaw: 5000.0
                 height:
                     enabled: false
                     information_zz: 2500.0
         </rosparam>
     </node>
+
+    <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch"/>
 
     <!--    <include file="$(find lidar_undistortion)/launch/os1_undistortion.launch"/>-->
 

@@ -246,17 +246,14 @@ void VoxgraphMapper::pointcloudCallback(
   submap_collection_ptr_->getActiveSubmapPtr()->addPoseToHistory(
       current_timestamp, map_tracker_.get_T_S_B());
 
-  // Publish the odometry
-  map_tracker_.publishOdometry();
-
   // Publish the TF frames
   map_tracker_.publishTFs();
 
   // Publish the pose history
   if (pose_history_pub_.getNumSubscribers() > 0) {
-    submap_vis_.publishPoseHistory(*submap_collection_ptr_,
-                                   map_tracker_.getFrameNames().mission_frame,
-                                   pose_history_pub_);
+    submap_vis_.publishPoseHistory(
+        *submap_collection_ptr_,
+        map_tracker_.getFrameNames().output_mission_frame, pose_history_pub_);
   }
 }
 
@@ -326,26 +323,28 @@ void VoxgraphMapper::loopClosureCallback(
   const Transformation T_M_t1 = T_M_A * T_A_t1;
   const Transformation T_M_t2 = T_M_B * T_B_t2;
   loop_closure_vis_.publishLoopClosure(
-      T_M_t1, T_M_t2, T_t1_t2, map_tracker_.getFrameNames().mission_frame,
+      T_M_t1, T_M_t2, T_t1_t2,
+      map_tracker_.getFrameNames().output_mission_frame,
       loop_closure_links_pub_);
-  loop_closure_vis_.publishAxes(T_M_t1, T_M_t2, T_t1_t2,
-                                map_tracker_.getFrameNames().mission_frame,
-                                loop_closure_axes_pub_);
+  loop_closure_vis_.publishAxes(
+      T_M_t1, T_M_t2, T_t1_t2,
+      map_tracker_.getFrameNames().output_mission_frame,
+      loop_closure_axes_pub_);
 }
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
     std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
-  submap_vis_.publishSeparatedMesh(*submap_collection_ptr_,
-                                   map_tracker_.getFrameNames().mission_frame,
-                                   separated_mesh_pub_);
+  submap_vis_.publishSeparatedMesh(
+      *submap_collection_ptr_,
+      map_tracker_.getFrameNames().output_mission_frame, separated_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
 bool VoxgraphMapper::publishCombinedMeshCallback(
     std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
-  submap_vis_.publishCombinedMesh(*submap_collection_ptr_,
-                                  map_tracker_.getFrameNames().mission_frame,
-                                  combined_mesh_pub_);
+  submap_vis_.publishCombinedMesh(
+      *submap_collection_ptr_,
+      map_tracker_.getFrameNames().output_mission_frame, combined_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
@@ -450,7 +449,7 @@ void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
 
   // Store the odom estimate and then continue tracking w.r.t. the new submap
   const Transformation T_S1_B = map_tracker_.get_T_S_B();
-  map_tracker_.switchToNewSubmap();
+  map_tracker_.switchToNewSubmap(submap_collection_ptr_->getActiveSubmapPose());
 
   // Add an odometry constraint from the previous to the new submap
   if (odometry_constraints_enabled_ && submap_collection_ptr_->size() >= 2) {
@@ -497,14 +496,14 @@ void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
   if (combined_mesh_pub_.getNumSubscribers() > 0) {
     ThreadingHelper::launchBackgroundThread(
         &SubmapVisuals::publishCombinedMesh, &submap_vis_,
-        *submap_collection_ptr_, map_tracker_.getFrameNames().mission_frame,
-        combined_mesh_pub_);
+        *submap_collection_ptr_,
+        map_tracker_.getFrameNames().output_mission_frame, combined_mesh_pub_);
   }
   if (separated_mesh_pub_.getNumSubscribers() > 0) {
     ThreadingHelper::launchBackgroundThread(
         &SubmapVisuals::publishSeparatedMesh, &submap_vis_,
-        *submap_collection_ptr_, map_tracker_.getFrameNames().mission_frame,
-        separated_mesh_pub_);
+        *submap_collection_ptr_,
+        map_tracker_.getFrameNames().output_mission_frame, separated_mesh_pub_);
   }
 
   // Publish the previous (finished) submap
