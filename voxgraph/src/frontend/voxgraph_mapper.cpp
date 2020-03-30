@@ -83,6 +83,9 @@ void VoxgraphMapper::getParametersFromRos() {
         nh_private_.createTimer(ros::Duration(update_mesh_every_n_sec),
             &VoxgraphMapper::publishActiveMeshCallback, this);
   }
+  float mesh_opacity = 1.0;
+  nh_private_.param("mesh_opacity", mesh_opacity, mesh_opacity);
+  submap_vis_.setOpacity(mesh_opacity);
 
   // Read whether or not to auto pause the rosbag during graph optimization
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
