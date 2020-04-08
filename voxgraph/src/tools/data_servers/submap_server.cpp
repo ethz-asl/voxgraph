@@ -227,8 +227,10 @@ voxgraph_msgs::MapHeader SubmapServer::generateSubmapHeaderMsg(
 void SubmapServer::publishSubmapPoses(
     const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
     const ros::Time& timestamp) {
-  publishSubmapPoses(submap_collection_ptr, "mission", timestamp,
-      submap_poses_pub_);
+  if (submap_poses_pub_.getNumSubscribers() > 0) {
+    publishSubmapPoses(submap_collection_ptr, "mission", timestamp,
+                       submap_poses_pub_);
+  }
 }
 
 void SubmapServer::publishSubmapPoses(

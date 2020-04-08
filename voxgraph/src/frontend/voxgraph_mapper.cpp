@@ -83,6 +83,9 @@ void VoxgraphMapper::getParametersFromRos() {
         nh_private_.createTimer(ros::Duration(update_mesh_every_n_sec),
             &VoxgraphMapper::publishActiveMeshCallback, this);
   }
+  float mesh_opacity = 1.0;
+  nh_private_.param("mesh_opacity", mesh_opacity, mesh_opacity);
+  submap_vis_.setMeshOpacity(mesh_opacity);
 
   // Read whether or not to auto pause the rosbag during graph optimization
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
@@ -198,11 +201,6 @@ void VoxgraphMapper::advertiseServices() {
   save_optimization_times_srv_ = nh_private_.advertiseService(
       "save_optimization_times", &VoxgraphMapper::saveOptimizationTimesCallback,
       this);
-
-  // Service for submaps
-  /*publish_active_submap_srv_ = nh_private_.advertiseService(
-      "publish_active_submap",
-      &VoxgraphMapper::publishActiveSubmapCallback, this);*/
 }
 
 void VoxgraphMapper::pointcloudCallback(
@@ -565,18 +563,4 @@ void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
   loop_closure_edge_server_.publishLoopClosureEdges(
       pose_graph_interface_, *submap_collection_ptr_, current_timestamp);
 }
-
-/*bool VoxgraphMapper::publishActiveSubmapCallback(
-    voxgraph_msgs::SubmapSrv::Request &request,
-    voxgraph_msgs::SubmapSrv::Response &response) {
-  ROS_INFO("[VoxgraphMapper] Request for Active Submap Received, Processing.");
-  if (!submap_collection_ptr_->empty()) {
-    cblox_msgs::MapLayer msg = submap_server_.serializeActiveSubmap(
-        submap_collection_ptr_, ros::Time::now());
-    response.submap_msg = msg;
-    return true;
-  } else {
-    return false;
-  }
-}*/
 }  // namespace voxgraph
