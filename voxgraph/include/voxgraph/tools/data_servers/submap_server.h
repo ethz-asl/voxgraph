@@ -24,9 +24,6 @@ class SubmapServer {
   void publishSubmapPoses(
       const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
       const ros::Time &timestamp);
-  voxgraph_msgs::MapLayer serializeActiveSubmap(
-      const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-      const ros::Time &current_timestamp);
   void publishActiveSubmap(
       const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
       const ros::Time &current_timestamp);

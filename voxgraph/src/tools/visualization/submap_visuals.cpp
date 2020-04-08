@@ -36,7 +36,7 @@ void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
 void SubmapVisuals::publishMesh(
     const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
     const cblox::SubmapID &submap_id, const voxblox::Color &submap_color,
-    const std::string &submap_frame, const ros::Publisher &publisher) {
+    const std::string &submap_frame, const ros::Publisher &publisher) const {
   // Get a pointer to the submap
   VoxgraphSubmap::ConstPtr submap_ptr =
       submap_collection.getSubmapConstPtr(submap_id);
