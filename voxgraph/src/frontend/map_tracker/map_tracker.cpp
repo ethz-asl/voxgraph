@@ -33,6 +33,11 @@ void MapTracker::advertiseTopics(ros::NodeHandle nh_private,
   odom_with_imu_biases_pub_ =
       nh_private.advertise<maplab_msgs::OdometryWithImuBiases>(
           odometry_output_topic, 3, false);
+  std::string corrected_odometry_topic = "odometry_corrected";
+  nh_private.param("corrected_odometry_topic",
+                   corrected_odometry_topic, corrected_odometry_topic);
+  corrected_odom_pub_ = nh_private.advertise<nav_msgs::Odometry>(
+      corrected_odometry_topic, 3, false);
 }
 
 void MapTracker::imuBiasesCallback(
@@ -211,6 +216,58 @@ void MapTracker::publishOdometry() {
     ROS_WARN("The voxgraph odometry output topic has subscribers, but no IMU "
              "biases have yet been received. Make sure to set a valid IMU "
              "biases topics in ROS params such that it can be forwarded");
+  }
+
+  if (corrected_odom_pub_.getNumSubscribers() > 0) {
+    // Create the message and set its header
+    nav_msgs::Odometry corrected_odometry_msg;
+    corrected_odometry_msg.header.frame_id = frame_names_.mission_frame;
+    corrected_odometry_msg.header.stamp = current_timestamp_;
+    corrected_odometry_msg.child_frame_id = frame_names_.base_link_frame;
+
+    // Set the odometry pose
+    const Transformation refined_odometry =
+        submap_collection_ptr_->getActiveSubmapPose() * T_S_B_;
+    tf::poseKindrToMsg(refined_odometry.cast<double>(),
+                       &corrected_odometry_msg.pose.pose);
+
+    // Forward or hardcode the twist and covariances
+    nav_msgs::Odometry closest_received_odom_msg_;
+    if (!use_odom_from_tfs_
+        && odom_transformer_.lookupOdometryMsg(current_timestamp_,
+                                               &closest_received_odom_msg_)) {
+      // Forward the twist from ROVIO
+      corrected_odometry_msg.twist = closest_received_odom_msg_.twist;
+
+      // Forward the pose and twist covariances
+      corrected_odometry_msg.pose.covariance =
+          closest_received_odom_msg_.pose.covariance;
+      corrected_odometry_msg.twist.covariance =
+          closest_received_odom_msg_.twist.covariance;
+    } else {
+      // Set the twist to zero
+      BiasVectorType zero_vector = BiasVectorType::Zero();
+      tf::vectorKindrToMsg(zero_vector,
+                           &corrected_odometry_msg.twist.twist.linear);
+      tf::vectorKindrToMsg(zero_vector,
+                           &corrected_odometry_msg.twist.twist.angular);
+
+      // Set the pose and twist covariances to identity
+      for (int row = 0; row < 6; ++row) {
+        for (int col = 0; col < 6; ++col) {
+          if (row == col) {
+            corrected_odometry_msg.twist.covariance[row * 6 + col] = 1.0;
+            corrected_odometry_msg.pose.covariance[row * 6 + col] = 1.0;
+          } else {
+            corrected_odometry_msg.twist.covariance[row * 6 + col] = 0.0;
+            corrected_odometry_msg.pose.covariance[row * 6 + col] = 0.0;
+          }
+        }
+      }
+    }
+
+    // Publish the odom message
+    corrected_odom_pub_.publish(corrected_odometry_msg);
   }
 }
 
