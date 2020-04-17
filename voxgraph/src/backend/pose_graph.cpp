@@ -100,7 +100,10 @@ void PoseGraph::optimize(bool exclude_registration_constraints) {
   ceres::Solve(ceres_options, problem_ptr_.get(), &summary);
 
   // Display and store the solver summary
-  std::cout << summary.FullReport() << std::endl;
+  if (verbose_) {
+    std::cout << "[PoseGraph] verbose: " << verbose_;
+    std::cout << summary.FullReport() << std::endl;
+  }
   solver_summaries_.emplace_back(summary);
 }
 

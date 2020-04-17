@@ -21,7 +21,10 @@ class PoseGraphInterface {
       VoxgraphSubmapCollection::Ptr submap_collection_ptr,
       bool verbose = false);
 
-  void setVerbosity(bool verbose) { verbose_ = verbose; }
+  void setVerbosity(bool verbose) {
+    verbose_ = verbose;
+    pose_graph_.setVerbose(verbose);
+  }
   void setMeasurementConfigFromRosParams(const ros::NodeHandle &node_handle) {
     measurement_templates_.setFromRosParams(node_handle);
   }

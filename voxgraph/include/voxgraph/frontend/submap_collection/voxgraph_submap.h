@@ -73,6 +73,8 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   const BoxCornerMatrix getMissionFrameSurfaceAabbCorners() const;
   const BoxCornerMatrix getMissionFrameSubmapAabbCorners() const;
 
+  void setVerbose(bool verbose) { verbose_ = verbose; };
+
  private:
   typedef Eigen::Matrix<voxblox::FloatingPoint, 4, 8> HomogBoxCornerMatrix;
   using TsdfVoxel = voxblox::TsdfVoxel;
@@ -104,6 +106,8 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   // History of how the robot moved through the submap
   PoseHistoryMap pose_history_;
+
+  bool verbose_;
 };
 }  // namespace voxgraph
 

@@ -32,6 +32,7 @@ class PoseGraph {
     constraints_collection_.resetRegistrationConstraints();
   }
 
+  void setVerbose(bool verbose) { verbose_ = verbose; };
   void initialize(bool exclude_registration_constraints = false);
   void optimize(bool exclude_registration_constraints = false);
 
@@ -61,6 +62,8 @@ class PoseGraph {
   ceres::Problem::Options problem_options_;
   std::shared_ptr<ceres::Problem> problem_ptr_;
   SolverSummaryList solver_summaries_;
+
+  bool verbose_ = false;
 };
 }  // namespace voxgraph
 
