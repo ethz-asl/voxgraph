@@ -435,6 +435,7 @@ void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
   // Create the new submap
   submap_collection_ptr_->createNewSubmap(map_tracker_.get_T_M_B(),
                                           current_timestamp);
+  submap_collection_ptr_->getActiveSubmapPtr()->setVerbose(verbose_);
 
   // Add the new submap to the pose graph
   SubmapID active_submap_id = submap_collection_ptr_->getActiveSubmapID();
@@ -446,12 +447,12 @@ void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
 
   // Add an odometry constraint from the previous to the new submap
   if (odometry_constraints_enabled_ && submap_collection_ptr_->size() >= 2) {
-    pose_graph_interface_.setVerbosity(true);
-
     // Compute the relative odom from previous submap S1 to current submap S2
     const Transformation T_B_S2 = map_tracker_.get_T_S_B().inverse();
     const Transformation T_S1_S2 = T_S1_B * T_B_S2;
-    std::cout << "T_S1_S2: " << T_S1_S2 << std::endl;
+    if (verbose_) {
+      std::cout << "T_S1_S2: " << T_S1_S2 << std::endl;
+    }
 
     // Add the constraint to the pose graph
     pose_graph_interface_.addOdometryMeasurement(
@@ -472,7 +473,9 @@ void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
 
 int VoxgraphMapper::optimizePoseGraph() {
   // Optimize the pose graph
-  ROS_INFO("Optimizing the pose graph");
+  if (verbose_) {
+    ROS_INFO("Optimizing the pose graph");
+  }
   pose_graph_interface_.optimize();
 
   // Update the submap poses

@@ -14,8 +14,10 @@ bool TfTransformer::waitForTransform(const std::string &to_frame_id,
     transform_lookup_retry_period_.sleep();
     t_waited += transform_lookup_retry_period_;
   }
-  ROS_WARN("Waited %.3fs, but still could not get the TF from %s to %s",
-           t_waited.toSec(), from_frame_id.c_str(), to_frame_id.c_str());
+  if (verbose_) {
+    ROS_WARN("Waited %.3fs, but still could not get the TF from %s to %s",
+             t_waited.toSec(), from_frame_id.c_str(), to_frame_id.c_str());
+  }
   return false;
 }
 

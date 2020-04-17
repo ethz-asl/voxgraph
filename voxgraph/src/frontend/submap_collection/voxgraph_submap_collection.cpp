@@ -34,9 +34,12 @@ void VoxgraphSubmapCollection::createNewSubmap(
       cblox::SubmapCollection<VoxgraphSubmap>::createNewSubmap(
           T_mission__new_submap);
 
-  ROS_INFO_STREAM("Created submap: " << new_submap_id << " with pose\n"
-                                     << T_mission__new_submap);
-
+  if (verbose_) {
+    ROS_INFO_STREAM("Created submap: " << new_submap_id << " with pose\n"
+                                       << T_mission__new_submap);
+  } else {
+    ROS_INFO_STREAM("Created submap: " << new_submap_id);
+  }
   // Add the new submap to the timeline
   submap_timeline_.addNextSubmap(timestamp, new_submap_id);
 }
