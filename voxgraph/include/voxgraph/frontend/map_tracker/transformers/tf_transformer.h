@@ -14,7 +14,10 @@ class TfTransformer {
       : tf_buffer_(ros::Duration(10.0)),
         tf_listener_(tf_buffer_),
         transform_lookup_retry_period_(0.02),
-        transform_lookup_max_time_(0.25) {}
+        transform_lookup_max_time_(0.25),
+        verbose_(true) {}
+
+  void setVerbose(bool verbose) { verbose_ = verbose; }
 
   // Method that waits for a transform to become available, while doing less
   // agressive polling that ROS's standard tf2_ros::Buffer::canTransform(...)
@@ -37,6 +40,8 @@ class TfTransformer {
   const ros::WallDuration transform_lookup_retry_period_;
   // Maximum time to wait before giving up
   const ros::WallDuration transform_lookup_max_time_;
+
+  bool verbose_;
 };
 }  // namespace voxgraph
 
