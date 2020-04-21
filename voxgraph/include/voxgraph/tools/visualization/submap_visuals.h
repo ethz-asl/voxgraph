@@ -15,7 +15,8 @@
 namespace voxgraph {
 class SubmapVisuals {
  public:
-  explicit SubmapVisuals(const VoxgraphSubmap::Config &submap_config);
+  explicit SubmapVisuals(VoxgraphSubmap::Config submap_config,
+                         voxblox::MeshIntegratorConfig mesh_config);
 
   void publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
                    const std::string &submap_frame,
@@ -55,7 +56,8 @@ class SubmapVisuals {
 
  private:
   voxblox::MeshIntegratorConfig mesh_config_;
-  std::unique_ptr<cblox::SubmapMesher> submap_mesher_;
+  std::unique_ptr<cblox::SubmapMesher> separated_submap_mesher_;
+  std::unique_ptr<cblox::SubmapMesher> combined_submap_mesher_;
 };
 }  // namespace voxgraph
 

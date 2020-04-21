@@ -29,7 +29,8 @@ class VoxgraphMapper {
   // Constructor & Destructor
   VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
   VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private,
-                 VoxgraphSubmap::Config submap_config);
+                 VoxgraphSubmap::Config submap_config,
+                 voxblox::MeshIntegratorConfig mesh_config);
   ~VoxgraphMapper() = default;
 
   // ROS topic callbacks

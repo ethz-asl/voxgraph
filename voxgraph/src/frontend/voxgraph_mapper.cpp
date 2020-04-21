@@ -22,11 +22,14 @@ namespace voxgraph {
 VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
                                const ros::NodeHandle &nh_private)
     : VoxgraphMapper(nh, nh_private,
-                     getVoxgraphSubmapConfigFromRosParams(nh_private)) {}
+                     getVoxgraphSubmapConfigFromRosParams(nh_private),
+                     voxblox::getMeshIntegratorConfigFromRosParam(nh_private)) {
+}
 
 VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
                                const ros::NodeHandle &nh_private,
-                               VoxgraphSubmap::Config submap_config)
+                               VoxgraphSubmap::Config submap_config,
+                               voxblox::MeshIntegratorConfig mesh_config)
     : nh_(nh),
       nh_private_(nh_private),
       verbose_(false),
@@ -39,11 +42,11 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       registration_constraints_enabled_(false),
       odometry_constraints_enabled_(false),
       height_constraints_enabled_(false),
-      submap_config_(submap_config),
+      submap_config_(std::move(submap_config)),
       submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
-      submap_vis_(submap_config_),
-      pose_graph_interface_(nh_private, submap_collection_ptr_),
+      submap_vis_(submap_config_, mesh_config),
+      pose_graph_interface_(nh_private, submap_collection_ptr_, mesh_config),
       projected_map_server_(nh_private),
       submap_server_(nh_private),
       loop_closure_edge_server_(nh_private),

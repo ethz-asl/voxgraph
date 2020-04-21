@@ -5,10 +5,11 @@
 namespace voxgraph {
 PoseGraphInterface::PoseGraphInterface(
     ros::NodeHandle node_handle,
-    VoxgraphSubmapCollection::Ptr submap_collection_ptr, bool verbose)
+    VoxgraphSubmapCollection::Ptr submap_collection_ptr,
+    voxblox::MeshIntegratorConfig mesh_config, bool verbose)
     : verbose_(verbose),
       submap_collection_ptr_(std::move(submap_collection_ptr)),
-      submap_vis_(submap_collection_ptr_->getConfig()),
+      submap_vis_(submap_collection_ptr_->getConfig(), mesh_config),
       new_loop_closures_added_since_last_optimization_(false) {
   // Advertise the pose graph visuals publisher
   pose_graph_pub_ = node_handle.advertise<visualization_msgs::Marker>(
