@@ -32,6 +32,7 @@ struct FrameNames {
 
   // Output frame names
   std::string output_mission_frame = "voxgraph_mission";
+  std::string output_odom_frame = "voxgraph_odom";
   std::string output_active_submap_frame = "voxgraph_active_submap";
   std::string output_base_link_frame = "voxgraph_base_link";
   std::string output_sensor_frame = "voxgraph_sensor";
@@ -49,6 +50,8 @@ struct FrameNames {
     // Outputs
     node_handle.param("output_mission_frame", frame_names.output_mission_frame,
                       frame_names.output_mission_frame);
+    node_handle.param("output_odom_frame", frame_names.output_odom_frame,
+                      frame_names.output_odom_frame);
     node_handle.param("output_active_submap_frame",
                       frame_names.output_active_submap_frame,
                       frame_names.output_active_submap_frame);

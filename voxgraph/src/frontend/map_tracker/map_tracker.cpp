@@ -116,28 +116,26 @@ void MapTracker::registerPointcloud(
 }
 
 void MapTracker::publishTFs() {
-  // Republish the inputs (for debugging purposes)
-  TfHelper::publishTransform(
-      initial_T_M_S_, frame_names_.output_mission_frame,
-      frame_names_.output_active_submap_frame + "_initial", false,
-      current_timestamp_);
-  TfHelper::publishTransform(
-      initial_T_S_O_, frame_names_.output_active_submap_frame + "_initial",
-      frame_names_.input_odom_frame, false, current_timestamp_);
-  if (!use_odom_from_tfs_) {
-    TfHelper::publishTransform(T_O_B_, frame_names_.input_odom_frame,
-                               frame_names_.input_base_link_frame, false,
-                               current_timestamp_);
-  }
-
-  // Output
   TfHelper::publishTransform(submap_collection_ptr_->getActiveSubmapPose(),
                              frame_names_.output_mission_frame,
                              frame_names_.output_active_submap_frame, false,
                              current_timestamp_);
-  TfHelper::publishTransform(T_S_B_, frame_names_.output_active_submap_frame,
-                             frame_names_.output_base_link_frame, false,
-                             current_timestamp_);
+  TfHelper::publishTransform(
+      initial_T_S_O_, frame_names_.output_active_submap_frame,
+      frame_names_.output_odom_frame, false, current_timestamp_);
+
+  if (frame_names_.input_odom_frame != frame_names_.output_odom_frame ||
+      frame_names_.input_base_link_frame !=
+          frame_names_.output_base_link_frame ||
+      !use_odom_from_tfs_) {
+    // Republish the odometry if the output frame names are different,
+    // or if the odom input is coming from a ROS topic
+    // (in which case it might not yet be in the TF tree)
+    TfHelper::publishTransform(T_O_B_, frame_names_.output_odom_frame,
+                               frame_names_.output_base_link_frame, false,
+                               current_timestamp_);
+  }
+
   TfHelper::publishTransform(T_B_C_, frame_names_.output_base_link_frame,
                              frame_names_.output_sensor_frame, true,
                              current_timestamp_);
