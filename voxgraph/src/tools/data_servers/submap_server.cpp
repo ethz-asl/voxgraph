@@ -3,8 +3,9 @@
 #include <pcl/common/transforms.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <voxblox_ros/conversions.h>
+#include <voxgraph_msgs/MapPoseList.h>
+#include <voxgraph_msgs/MapLayer.h>
 #include <voxgraph_msgs/MapSurface.h>
-#include <voxgraph_msgs/MapPoseUpdate.h>
 
 namespace voxgraph {
 SubmapServer::SubmapServer(ros::NodeHandle nh_private) {
@@ -15,7 +16,7 @@ SubmapServer::SubmapServer(ros::NodeHandle nh_private) {
   submap_surface_pointcloud_pub_ =
       nh_private.advertise<voxgraph_msgs::MapSurface>(
           "submap_surface_pointclouds", 3, false);
-  submap_poses_pub_ = nh_private.advertise<voxgraph_msgs::MapPoseUpdate>(
+  submap_poses_pub_ = nh_private.advertise<voxgraph_msgs::MapPoseList>(
           "submap_poses", 3, false);
 }
 
@@ -38,7 +39,7 @@ void SubmapServer::publishSubmap(const VoxgraphSubmap &submap,
     publishSubmapTsdf(submap, timestamp, submap_tsdf_pub_);
   }
   if (submap_esdf_pub_.getNumSubscribers() > 0) {
-    publishSubmapEsdf(submap, timestamp, submap_esdf_pub_);
+    publishSubmapTsdfAndEsdf(submap, timestamp, submap_esdf_pub_);
   }
   if (submap_surface_pointcloud_pub_.getNumSubscribers() > 0) {
     publishSubmapSurfacePointcloud(submap, timestamp,
@@ -54,11 +55,11 @@ void SubmapServer::publishSubmapTsdf(const voxgraph::VoxgraphSubmap &submap,
   }
 }
 
-void SubmapServer::publishSubmapEsdf(const voxgraph::VoxgraphSubmap &submap,
-                                     const ros::Time &timestamp) {
+void SubmapServer::publishSubmapTsdfAndEsdf(const voxgraph::VoxgraphSubmap &submap,
+                                            const ros::Time &timestamp) {
   // Only publish if there are subscribers
   if (submap_esdf_pub_.getNumSubscribers() > 0) {
-    publishSubmapEsdf(submap, timestamp, submap_esdf_pub_);
+    publishSubmapTsdfAndEsdf(submap, timestamp, submap_esdf_pub_);
   }
 }
 
@@ -89,7 +90,7 @@ void SubmapServer::publishSubmapTsdf(
   submap_tsdf_publisher.publish(submap_tsdf_msg);
 }
 
-void SubmapServer::publishSubmapEsdf(
+void SubmapServer::publishSubmapTsdfAndEsdf(
     const VoxgraphSubmap &submap, const ros::Time &timestamp,
     const ros::Publisher &submap_esdf_publisher) {
   // Create the message and set its headers
@@ -215,16 +216,12 @@ void SubmapServer::publishSubmapPoses(
     const std::string &frame_id, const ros::Time &timestamp,
     const ros::Publisher &submap_poses_publisher) {
 
-  if (submap_poses_publisher.getNumSubscribers() == 0) {
-    return;
-  }
-
   // prep map header
-  voxgraph_msgs::MapPoseUpdate pose_msg;
+  voxgraph_msgs::MapPoseList pose_msg;
   pose_msg.header.frame_id = frame_id;
   pose_msg.header.stamp = ros::Time::now();
   // fill pose array
-  for (SubmapID submap_id : submap_collection_ptr->getIDs()) {
+  for (const SubmapID& submap_id : submap_collection_ptr->getIDs()) {
     const VoxgraphSubmap &submap =
         submap_collection_ptr->getSubmap(submap_id);
     pose_msg.map_headers.emplace_back(

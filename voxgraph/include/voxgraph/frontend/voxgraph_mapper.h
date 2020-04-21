@@ -39,7 +39,7 @@ class VoxgraphMapper {
   void loopClosureCallback(const voxgraph_msgs::LoopClosure &loop_closure_msg);
 
   // ROS timer callbacks
-  void publishActiveMeshCallback(const ros::TimerEvent& /*event*/);
+  void publishActiveSubmapMeshCallback(const ros::TimerEvent& event);
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(

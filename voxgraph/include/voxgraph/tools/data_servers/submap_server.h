@@ -3,7 +3,6 @@
 
 #include <std_msgs/Header.h>
 #include <voxgraph_msgs/MapHeader.h>
-#include <voxgraph_msgs/MapLayer.h>
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
@@ -17,8 +16,8 @@ class SubmapServer {
   void publishSubmap(const VoxgraphSubmap &submap, const ros::Time &timestamp);
   void publishSubmapTsdf(const VoxgraphSubmap &submap,
                          const ros::Time &timestamp);
-  void publishSubmapEsdf(const VoxgraphSubmap &submap,
-                         const ros::Time &timestamp);
+  void publishSubmapTsdfAndEsdf(const VoxgraphSubmap &submap,
+                                const ros::Time &timestamp);
   void publishSubmapSurfacePointcloud(const VoxgraphSubmap &submap,
                                       const ros::Time &timestamp);
   void publishSubmapPoses(
@@ -35,9 +34,9 @@ class SubmapServer {
   static void publishSubmapTsdf(const VoxgraphSubmap &submap,
                                 const ros::Time &timestamp,
                                 const ros::Publisher &submap_tsdf_publisher);
-  static void publishSubmapEsdf(const VoxgraphSubmap &submap,
-                                const ros::Time &timestamp,
-                                const ros::Publisher &submap_esdf_publisher);
+  static void publishSubmapTsdfAndEsdf(const VoxgraphSubmap &submap,
+                                       const ros::Time &timestamp,
+                                       const ros::Publisher &submap_esdf_publisher);
   static void publishSubmapSurfacePointcloud(
       const VoxgraphSubmap &submap, const ros::Time &timestamp,
       const ros::Publisher &submap_surface_pointcloud_publisher);

@@ -84,7 +84,7 @@ void VoxgraphMapper::getParametersFromRos() {
   if (update_mesh_every_n_sec > 0.0) {
     update_mesh_timer_ =
         nh_private_.createTimer(ros::Duration(update_mesh_every_n_sec),
-            &VoxgraphMapper::publishActiveMeshCallback, this);
+            &VoxgraphMapper::publishActiveSubmapMeshCallback, this);
   }
   float mesh_opacity = 1.0;
   nh_private_.param("mesh_opacity", mesh_opacity, mesh_opacity);
@@ -227,7 +227,7 @@ void VoxgraphMapper::pointcloudCallback(
     switchToNewSubmap(current_timestamp);
 
     // Visualize new submap mesh
-    publishActiveMeshCallback(ros::TimerEvent());
+    publishActiveSubmapMeshCallback(ros::TimerEvent());
 
     // Optimize the pose graph in a separate thread
     if (optimization_async_handle_.valid()) {
@@ -345,17 +345,20 @@ void VoxgraphMapper::loopClosureCallback(
                                 loop_closure_axes_pub_);
 }
 
-void VoxgraphMapper::publishActiveMeshCallback(const ros::TimerEvent& /*event*/) {
+void VoxgraphMapper::publishActiveSubmapMeshCallback(
+    const ros::TimerEvent& /*event*/) {
   if (!submap_collection_ptr_->exists(submap_collection_ptr_->getActiveSubmapID())) {
+    ROS_WARN("[VoxgraphMapper] active submap does not exist.");
     return;
   }
   // publish active mesh
   if (active_mesh_pub_.getNumSubscribers() > 0) {
     cblox::SubmapID active_submap_id =
         submap_collection_ptr_->getActiveSubmapID();
-    submap_vis_.publishMesh(*submap_collection_ptr_, active_submap_id,
+    submap_vis_.publishMesh(
+        *submap_collection_ptr_, active_submap_id,
         voxblox::rainbowColorMap(static_cast<double>(active_submap_id) /
-            static_cast<double>(cblox::kDefaultColorCycleLength)),
+            static_cast<double>(submap_collection_ptr_->size())),
         map_tracker_.getFrameNames().active_submap_frame, active_mesh_pub_);
   }
 }
