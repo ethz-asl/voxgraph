@@ -50,7 +50,9 @@ catkin build voxgraph
     
 ## Run
 ##### Demo
-_[Coming soon]_
+We provide a demo dataset [here](http://robotics.ethz.ch/~asl-datasets/2020_voxgraph_arche/arche_flight1_2ms_indoor-outdoor-figure-8.zip), which features a hexacopter flying through an indoor-outdoor search and rescue training site. The rosbag includes the robot's visual, inertial and LiDAR sensor data, and the GPS RTK measurements used for the evaluations in the paper.
+
+_[Further steps coming soon]_
 
 ##### Your own dataset
 _[Coming soon]_
