@@ -8,7 +8,7 @@ Local consistency is maintained through registration constraints between overlap
 Global consistency can be achieved by adding absolute pose or loop closure constraints to the pose graph. We expect to provide an internal mechanism in voxgraph to detect global loop closures in the future. In the meantime, an interface to add loop closures from external sources is provided through a ROS topic. Absolute pose constraints are mostly implemented, but this work has not yet been completed since we don't have a direct use-case for them. Please create a [GitHub issue](https://github.com/ethz-asl/voxgraph/issues) if you would like to use them. Of course, [pull requests](https://github.com/ethz-asl/voxgraph/pulls) are even more welcome.
 
 ## Paper and Video
-_[Video - Coming soon]_
+[![Video player thumbnail for GitHub](https://user-images.githubusercontent.com/6238939/80018022-b94db700-84d5-11ea-9118-9540f7cdd67b.JPG)](https://youtu.be/K2HPAMqvh3E)
 
 When using voxgraph for research, please cite the following paper [[preprint](https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/385682/Voxgraph-ETHpreprintversion.pdf?sequence=1&isAllowed=y)|[IEEE](https://ieeexplore.ieee.org/document/8903279)]:
 
