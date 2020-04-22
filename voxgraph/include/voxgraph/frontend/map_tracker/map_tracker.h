@@ -26,7 +26,8 @@ class MapTracker {
   void advertiseTopics(ros::NodeHandle nh_private,
                        const std::string &odometry_output_topic);
 
-  bool updateToTime(const ros::Time &timestamp, std::string sensor_frame_id);
+  bool updateToTime(const ros::Time &timestamp,
+                    const std::string &sensor_frame_id);
   void switchToNewSubmap(const Transformation &T_M_S_new);
 
   void publishTFs();

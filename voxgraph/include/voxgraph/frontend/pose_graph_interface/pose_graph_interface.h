@@ -19,8 +19,7 @@ class PoseGraphInterface {
   explicit PoseGraphInterface(
       ros::NodeHandle node_handle,
       VoxgraphSubmapCollection::Ptr submap_collection_ptr,
-      voxblox::MeshIntegratorConfig mesh_config,
-      bool verbose = false);
+      voxblox::MeshIntegratorConfig mesh_config, bool verbose = false);
 
   void setVerbosity(bool verbose) { verbose_ = verbose; }
   void setMeasurementConfigFromRosParams(const ros::NodeHandle &node_handle) {

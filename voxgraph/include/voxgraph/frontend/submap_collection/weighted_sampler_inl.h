@@ -4,7 +4,7 @@
 namespace voxgraph {
 template <typename ItemType>
 void WeightedSampler<ItemType>::addItem(const ItemType &new_item,
-                                        const double &weight) {
+                                        const double weight) {
   items_.push_back(new_item);
   if (cumulative_item_weights_.empty()) {
     cumulative_item_weights_.push_back(weight);

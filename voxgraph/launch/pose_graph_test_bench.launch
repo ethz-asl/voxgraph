@@ -1,7 +1,0 @@
-<launch>
-  <node name="pose_graph_test_bench" pkg="voxgraph" type="pose_graph_test_bench" output="screen">
-    <!--  launch-prefix="gdb -ex run &#45;&#45;args">-->
-    <rosparam file="$(find voxgraph)/config/pose_graph_test_bench.yaml"/>
-  </node>
-  <node pkg="rviz" type="rviz" name="$(anon rviz)" respawn="false" output="screen"/>
-</launch>

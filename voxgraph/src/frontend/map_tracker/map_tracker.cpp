@@ -41,7 +41,7 @@ void MapTracker::imuBiasesCallback(
 }
 
 bool MapTracker::updateToTime(const ros::Time &timestamp,
-                              std::string sensor_frame_id) {
+                              const std::string &sensor_frame_id) {
   // Keep track of the timestamp that the MapTracker is currently at
   current_timestamp_ = timestamp;
 
@@ -68,13 +68,17 @@ bool MapTracker::updateToTime(const ros::Time &timestamp,
     // TODO(victorr): Implement option to provide a sensor_frame_id instead of
     //                taking the one from the message
     // Strip leading slashes if needed to avoid TF errors
+    std::string tf_sensor_frame_id;
     if (sensor_frame_id[0] == '/') {
-      sensor_frame_id = sensor_frame_id.substr(1, sensor_frame_id.length());
+      tf_sensor_frame_id = sensor_frame_id.substr(1, sensor_frame_id.length());
+    } else {
+      tf_sensor_frame_id = sensor_frame_id;
     }
 
     // Lookup the transform
     if (!tf_transformer_.lookupTransform(frame_names_.input_base_link_frame,
-                                         sensor_frame_id, timestamp, &T_B_C_)) {
+                                         tf_sensor_frame_id, timestamp,
+                                         &T_B_C_)) {
       return false;
     }
   }

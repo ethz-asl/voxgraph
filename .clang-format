@@ -2,6 +2,9 @@
 Language: Cpp
 BasedOnStyle: Google
 ColumnLimit: 80
+DerivePointerAlignment: false
+PointerAlignment: Left
+IncludeBlocks: Preserve
 ---
 Language: Proto
 BasedOnStyle: Google
