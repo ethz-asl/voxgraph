@@ -1,7 +1,9 @@
 #include "voxgraph/tools/tf_helper.h"
+
+#include <string>
+
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
-#include <string>
 
 namespace voxgraph {
 void TfHelper::publishTransform(const voxblox::Transformation& transform,

@@ -1,9 +1,12 @@
 #include "voxgraph/tools/evaluation/map_evaluation.h"
+
+#include <memory>
+#include <string>
+
 #include <ceres/ceres.h>
 #include <ros/ros.h>
 #include <voxblox/io/layer_io.h>
-#include <memory>
-#include <string>
+
 #include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 
 namespace voxgraph {

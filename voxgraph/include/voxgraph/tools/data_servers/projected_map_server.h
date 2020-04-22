@@ -2,6 +2,7 @@
 #define VOXGRAPH_TOOLS_DATA_SERVERS_PROJECTED_MAP_SERVER_H_
 
 #include <voxgraph_msgs/MapHeader.h>
+
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 

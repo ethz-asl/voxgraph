@@ -1,6 +1,9 @@
 #include "voxgraph/tools/submap_registration_helper.h"
-#include <voxblox/interpolator/interpolator.h>
+
 #include <utility>
+
+#include <voxblox/interpolator/interpolator.h>
+
 #include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 
 namespace voxgraph {

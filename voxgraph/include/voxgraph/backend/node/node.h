@@ -1,10 +1,11 @@
 #ifndef VOXGRAPH_BACKEND_NODE_NODE_H_
 #define VOXGRAPH_BACKEND_NODE_NODE_H_
 
+#include <memory>
+
 #include <ceres/ceres.h>
 #include <voxblox/core/common.h>
 #include <voxgraph/backend/node/pose/pose_4d.h>
-#include <memory>
 
 namespace voxgraph {
 class Node {

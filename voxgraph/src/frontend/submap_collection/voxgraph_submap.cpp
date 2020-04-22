@@ -1,9 +1,11 @@
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
+
+#include <memory>
+#include <utility>
+
 #include <voxblox/integrator/merge_integration.h>
 #include <voxblox/interpolator/interpolator.h>
 #include <voxblox/mesh/mesh_integrator.h>
-#include <memory>
-#include <utility>
 
 namespace voxgraph {
 VoxgraphSubmap::VoxgraphSubmap(const voxblox::Transformation& T_M_S,

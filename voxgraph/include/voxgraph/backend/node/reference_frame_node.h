@@ -2,6 +2,7 @@
 #define VOXGRAPH_BACKEND_NODE_REFERENCE_FRAME_NODE_H_
 
 #include <memory>
+
 #include "voxgraph/backend/node/node.h"
 
 namespace voxgraph {

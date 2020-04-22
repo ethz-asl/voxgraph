@@ -1,9 +1,11 @@
 #include "voxgraph/backend/pose_graph.h"
+
 #include <map>
 #include <memory>
 #include <thread>
 #include <utility>
 #include <vector>
+
 #include "voxgraph/backend/node/pose/pose.h"
 
 namespace voxgraph {

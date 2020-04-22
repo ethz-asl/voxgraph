@@ -1,8 +1,9 @@
 #ifndef VOXGRAPH_FRONTEND_FRAME_NAMES_H_
 #define VOXGRAPH_FRONTEND_FRAME_NAMES_H_
 
-#include <ros/ros.h>
 #include <string>
+
+#include <ros/ros.h>
 
 namespace voxgraph {
 struct FrameNames {

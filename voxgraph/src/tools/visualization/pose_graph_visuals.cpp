@@ -1,4 +1,5 @@
 #include "voxgraph/tools/visualization/pose_graph_visuals.h"
+
 #include <limits>
 #include <string>
 #include <vector>

@@ -1,5 +1,7 @@
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+
 #include <utility>
+
 #include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {

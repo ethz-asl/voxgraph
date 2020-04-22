@@ -1,9 +1,11 @@
 #include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
+
+#include <string>
+#include <utility>
+
 #include <pcl_conversions/pcl_conversions.h>
 #include <voxblox_ros/conversions.h>
 #include <voxblox_ros/ros_params.h>
-#include <string>
-#include <utility>
 
 namespace voxgraph {
 PointcloudIntegrator::PointcloudIntegrator(bool verbose)

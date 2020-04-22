@@ -2,6 +2,7 @@
 #define VOXGRAPH_BACKEND_CONSTRAINT_CONSTRAINT_COLLECTION_H_
 
 #include <list>
+
 #include "voxgraph/backend/constraint/absolute_pose_constraint.h"
 #include "voxgraph/backend/constraint/registration_constraint.h"
 #include "voxgraph/backend/constraint/relative_pose_constraint.h"

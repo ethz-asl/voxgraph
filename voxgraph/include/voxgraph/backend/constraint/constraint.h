@@ -1,8 +1,10 @@
 #ifndef VOXGRAPH_BACKEND_CONSTRAINT_CONSTRAINT_H_
 #define VOXGRAPH_BACKEND_CONSTRAINT_CONSTRAINT_H_
 
-#include <ceres/ceres.h>
 #include <memory>
+
+#include <ceres/ceres.h>
+
 #include "voxgraph/backend/node/node_collection.h"
 
 namespace voxgraph {

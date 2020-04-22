@@ -3,6 +3,7 @@
 
 #include <map>
 #include <memory>
+
 #include "voxgraph/backend/node/reference_frame_node.h"
 #include "voxgraph/backend/node/submap_node.h"
 

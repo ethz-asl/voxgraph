@@ -1,4 +1,5 @@
 #include "voxgraph/backend/constraint/relative_pose_constraint.h"
+
 #include "voxgraph/backend/constraint/cost_functions/relative_pose_cost_function.h"
 
 namespace voxgraph {

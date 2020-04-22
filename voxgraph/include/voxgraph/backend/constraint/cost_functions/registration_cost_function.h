@@ -2,10 +2,9 @@
 #define VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_REGISTRATION_COST_FUNCTION_H_
 
 #include <ceres/ceres.h>
-#include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
-
-// For visualization only
 #include <ros/ros.h>
+
+#include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/tools/visualization/cost_function_visuals.h"
 
 namespace voxgraph {

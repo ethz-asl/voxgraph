@@ -1,12 +1,14 @@
 #ifndef VOXGRAPH_FRONTEND_MAP_TRACKER_MAP_TRACKER_H_
 #define VOXGRAPH_FRONTEND_MAP_TRACKER_MAP_TRACKER_H_
 
+#include <string>
+#include <utility>
+
 #include <maplab_msgs/OdometryWithImuBiases.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <voxblox_ros/transformer.h>
-#include <string>
-#include <utility>
+
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/frame_names.h"
 #include "voxgraph/frontend/map_tracker/transformers/odometry_transformer.h"

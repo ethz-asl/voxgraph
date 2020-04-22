@@ -1,12 +1,14 @@
 #ifndef VOXGRAPH_TOOLS_ODOMETRY_SIMULATOR_ODOMETRY_SIMULATOR_H_
 #define VOXGRAPH_TOOLS_ODOMETRY_SIMULATOR_ODOMETRY_SIMULATOR_H_
 
+#include <string>
+
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <kindr/minimal/rotation-quaternion.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
-#include <string>
+
 #include "voxgraph/tools/odometry_simulator/normal_distribution.h"
 
 namespace voxgraph {

@@ -1,15 +1,18 @@
 #include "voxgraph/frontend/voxgraph_mapper.h"
+
+#include <chrono>
+#include <memory>
+#include <string>
+#include <thread>
+#include <vector>
+
 #include <geometry_msgs/PoseArray.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <minkindr_conversions/kindr_xml.h>
 #include <nav_msgs/Path.h>
 #include <sensor_msgs/Imu.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <chrono>
-#include <memory>
-#include <string>
-#include <thread>
-#include <vector>
+
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/tools/io.h"
 #include "voxgraph/tools/ros_params.h"

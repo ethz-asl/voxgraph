@@ -1,8 +1,9 @@
 #ifndef VOXGRAPH_TOOLS_ODOMETRY_SIMULATOR_NORMAL_DISTRIBUTION_H_
 #define VOXGRAPH_TOOLS_ODOMETRY_SIMULATOR_NORMAL_DISTRIBUTION_H_
 
-#include <glog/logging.h>
 #include <random>
+
+#include <glog/logging.h>
 
 namespace voxgraph {
 class NormalDistribution {

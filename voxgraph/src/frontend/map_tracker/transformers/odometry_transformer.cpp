@@ -1,4 +1,5 @@
 #include "voxgraph/frontend/map_tracker/transformers/odometry_transformer.h"
+
 #include <string>
 
 namespace voxgraph {

@@ -1,11 +1,12 @@
 #ifndef VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_SUBMAP_TIMELINE_H_
 #define VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_SUBMAP_TIMELINE_H_
 
-#include <cblox/core/common.h>
-#include <ros/time.h>
 #include <algorithm>
 #include <map>
 #include <vector>
+
+#include <cblox/core/common.h>
+#include <ros/time.h>
 
 namespace voxgraph {
 class SubmapTimeline {

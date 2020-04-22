@@ -1,5 +1,6 @@
 #include <glog/logging.h>
 #include <ros/ros.h>
+
 #include "voxgraph/frontend/voxgraph_mapper.h"
 
 int main(int argc, char** argv) {

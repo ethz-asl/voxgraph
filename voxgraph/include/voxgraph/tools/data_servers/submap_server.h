@@ -3,6 +3,7 @@
 
 #include <std_msgs/Header.h>
 #include <voxgraph_msgs/MapHeader.h>
+
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 

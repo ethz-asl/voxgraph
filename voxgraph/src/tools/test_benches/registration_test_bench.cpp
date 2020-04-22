@@ -1,15 +1,18 @@
+#include <time.h>
+
+#include <string>
+#include <vector>
+
 #include <cblox/core/submap_collection.h>
 #include <cblox/io/tsdf_submap_io.h>
 #include <cblox/utils/quat_transformation_protobuf_utils.h>
 #include <glog/logging.h>
 #include <ros/ros.h>
-#include <time.h>
 #include <voxblox/io/layer_io.h>
 #include <voxblox_ros/ptcloud_vis.h>
 #include <voxblox_ros/ros_params.h>
 #include <boost/filesystem.hpp>
-#include <string>
-#include <vector>
+
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"

@@ -1,15 +1,17 @@
 #ifndef VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_VOXGRAPH_SUBMAP_COLLECTION_H_
 #define VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_VOXGRAPH_SUBMAP_COLLECTION_H_
 
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include <cblox/core/common.h>
 #include <cblox/core/submap_collection.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <ros/ros.h>
 #include <voxblox/core/common.h>
-#include <memory>
-#include <utility>
-#include <vector>
+
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"

@@ -1,5 +1,7 @@
 #include "voxgraph/tools/data_servers/loop_closure_edge_server.h"
+
 #include <limits>
+
 #include "voxgraph/common.h"
 
 namespace voxgraph {

@@ -1,8 +1,10 @@
 #ifndef VOXGRAPH_BACKEND_NODE_SUBMAP_NODE_H_
 #define VOXGRAPH_BACKEND_NODE_SUBMAP_NODE_H_
 
-#include <cblox/core/common.h>
 #include <memory>
+
+#include <cblox/core/common.h>
+
 #include "voxgraph/backend/node/node.h"
 
 namespace voxgraph {

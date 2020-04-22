@@ -1,6 +1,9 @@
 #ifndef VOXGRAPH_TOOLS_VISUALIZATION_SUBMAP_VISUALS_H_
 #define VOXGRAPH_TOOLS_VISUALIZATION_SUBMAP_VISUALS_H_
 
+#include <memory>
+#include <string>
+
 #include <cblox/core/submap_collection.h>
 #include <cblox/mesh/submap_mesher.h>
 #include <minkindr_conversions/kindr_msg.h>
@@ -8,8 +11,7 @@
 #include <nav_msgs/Path.h>
 #include <ros/ros.h>
 #include <voxblox_ros/mesh_vis.h>
-#include <memory>
-#include <string>
+
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 
 namespace voxgraph {

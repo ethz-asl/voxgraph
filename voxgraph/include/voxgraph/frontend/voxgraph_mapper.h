@@ -1,14 +1,16 @@
 #ifndef VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 #define VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 
+#include <future>
+#include <memory>
+#include <string>
+
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
 #include <voxgraph_msgs/LoopClosure.h>
-#include <future>
-#include <memory>
-#include <string>
+
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/frame_names.h"
 #include "voxgraph/frontend/map_tracker/map_tracker.h"

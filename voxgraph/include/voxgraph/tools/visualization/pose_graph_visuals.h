@@ -2,6 +2,7 @@
 #define VOXGRAPH_TOOLS_VISUALIZATION_POSE_GRAPH_VISUALS_H_
 
 #include <string>
+
 #include "voxgraph/backend/pose_graph.h"
 
 namespace voxgraph {

@@ -1,10 +1,12 @@
 #ifndef VOXGRAPH_FRONTEND_MAP_TRACKER_TRANSFORMERS_TF_TRANSFORMER_H_
 #define VOXGRAPH_FRONTEND_MAP_TRACKER_TRANSFORMERS_TF_TRANSFORMER_H_
 
-#include <minkindr_conversions/kindr_msg.h>
-#include <tf2_ros/transform_listener.h>
 #include <map>
 #include <string>
+
+#include <minkindr_conversions/kindr_msg.h>
+#include <tf2_ros/transform_listener.h>
+
 #include "voxgraph/common.h"
 
 namespace voxgraph {

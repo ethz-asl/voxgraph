@@ -6,6 +6,7 @@
 #include <cblox/core/tsdf_esdf_submap.h>
 #include <cblox/core/tsdf_submap.h>
 #include <ceres/ceres.h>
+
 #include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 

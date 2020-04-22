@@ -3,6 +3,7 @@
 
 #include <voxgraph/frontend/pose_graph_interface/pose_graph_interface.h>
 #include <voxgraph_msgs/LoopClosureEdgeList.h>
+
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 
 namespace voxgraph {

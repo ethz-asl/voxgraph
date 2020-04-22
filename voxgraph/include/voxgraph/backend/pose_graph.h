@@ -6,6 +6,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+
 #include "voxgraph/backend/constraint/constraint_collection.h"
 #include "voxgraph/backend/node/node_collection.h"
 #include "voxgraph/common.h"

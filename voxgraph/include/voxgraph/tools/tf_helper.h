@@ -1,9 +1,10 @@
 #ifndef VOXGRAPH_TOOLS_TF_HELPER_H_
 #define VOXGRAPH_TOOLS_TF_HELPER_H_
 
+#include <string>
+
 #include <ros/ros.h>
 #include <voxblox/core/common.h>
-#include <string>
 
 namespace voxgraph {
 class TfHelper {

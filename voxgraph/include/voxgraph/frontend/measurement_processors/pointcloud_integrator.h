@@ -1,10 +1,12 @@
 #ifndef VOXGRAPH_FRONTEND_MEASUREMENT_PROCESSORS_POINTCLOUD_INTEGRATOR_H_
 #define VOXGRAPH_FRONTEND_MEASUREMENT_PROCESSORS_POINTCLOUD_INTEGRATOR_H_
 
+#include <memory>
+
 #include <sensor_msgs/PointCloud2.h>
 #include <voxblox/integrator/tsdf_integrator.h>
 #include <voxblox/utils/color_maps.h>
-#include <memory>
+
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 
