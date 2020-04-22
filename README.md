@@ -1,5 +1,5 @@
 # Voxgraph
-_[Logo - Coming soon]_
+![voxgraph_logo_github](https://user-images.githubusercontent.com/6238939/79927519-434b4080-8440-11ea-9187-92e28466035b.png)
 
 Voxgraph is a globally consistent volumetric mapping framework. It represents the world as a collection of Signed Distance Function submaps, each based on [voxblox](https://github.com/ethz-asl/voxblox). These are then aligned through pose graph optimization.
 
