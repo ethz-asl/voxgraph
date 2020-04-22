@@ -46,7 +46,9 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
       submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
       submap_vis_(submap_config_, mesh_config),
-      pose_graph_interface_(nh_private, submap_collection_ptr_, mesh_config),
+      pose_graph_interface_(
+          nh_private, submap_collection_ptr_, mesh_config,
+          FrameNames::fromRosParams(nh_private).output_mission_frame),
       projected_map_server_(nh_private),
       submap_server_(nh_private),
       loop_closure_edge_server_(nh_private),

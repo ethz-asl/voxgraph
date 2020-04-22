@@ -6,9 +6,11 @@ namespace voxgraph {
 PoseGraphInterface::PoseGraphInterface(
     ros::NodeHandle node_handle,
     VoxgraphSubmapCollection::Ptr submap_collection_ptr,
-    voxblox::MeshIntegratorConfig mesh_config, bool verbose)
+    voxblox::MeshIntegratorConfig mesh_config,
+    const std::string &visualizations_mission_frame, bool verbose)
     : verbose_(verbose),
       submap_collection_ptr_(std::move(submap_collection_ptr)),
+      visualization_mission_frame_(visualizations_mission_frame),
       submap_vis_(submap_collection_ptr_->getConfig(), mesh_config),
       new_loop_closures_added_since_last_optimization_(false) {
   // Advertise the pose graph visuals publisher
@@ -120,7 +122,7 @@ void PoseGraphInterface::updateOverlappingSubmapList() {
     if (submap_pub_.getNumSubscribers() > 0) {
       submap_vis_.publishBox(
           first_submap.getMissionFrameSurfaceAabb().getCornerCoordinates(),
-          voxblox::Color::Blue(), "mission",
+          voxblox::Color::Blue(), visualization_mission_frame_,
           "surface_abb" + std::to_string(first_submap_id), submap_pub_);
     }
 
@@ -189,8 +191,8 @@ void PoseGraphInterface::optimize() {
 
   // Publish debug visuals
   if (pose_graph_pub_.getNumSubscribers() > 0) {
-    pose_graph_vis_.publishPoseGraph(pose_graph_, "mission", "optimized",
-                                     pose_graph_pub_);
+    pose_graph_vis_.publishPoseGraph(pose_graph_, visualization_mission_frame_,
+                                     "optimized", pose_graph_pub_);
   }
 }
 
