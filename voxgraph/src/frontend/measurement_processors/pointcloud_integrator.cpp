@@ -13,15 +13,15 @@ PointcloudIntegrator::PointcloudIntegrator(bool verbose)
 }
 
 void PointcloudIntegrator::setTsdfIntegratorConfigFromRosParam(
-    const ros::NodeHandle &node_handle) {
+    const ros::NodeHandle& node_handle) {
   tsdf_integrator_config_ =
       voxblox::getTsdfIntegratorConfigFromRosParam(node_handle);
 }
 
 void PointcloudIntegrator::integratePointcloud(
-    const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
-    const voxblox::Transformation &T_submap_sensor,
-    VoxgraphSubmap *submap_ptr) {
+    const sensor_msgs::PointCloud2::Ptr& pointcloud_msg,
+    const voxblox::Transformation& T_submap_sensor,
+    VoxgraphSubmap* submap_ptr) {
   CHECK_NOTNULL(submap_ptr);
 
   // Convert the pointcloud msg into a voxblox::Pointcloud

@@ -17,11 +17,11 @@ class MapEvaluation {
     voxblox::Transformation T_ground_truth__reading;
   };
 
-  MapEvaluation(const ros::NodeHandle &nh,
-                const std::string &ground_truth_tsdf_file_path);
+  MapEvaluation(const ros::NodeHandle& nh,
+                const std::string& ground_truth_tsdf_file_path);
 
   MapEvaluation::EvaluationDetails evaluate(
-      const VoxgraphSubmapCollection &submap_collection);
+      const VoxgraphSubmapCollection& submap_collection);
 
   // Find and apply the best rigid body alignment of layer A to B
   void alignSubmapAtoSubmapB(VoxgraphSubmap::Ptr submap_A,

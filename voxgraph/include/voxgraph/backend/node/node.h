@@ -18,20 +18,20 @@ class Node {
     voxblox::Transformation T_mission_node_initial;
   };
 
-  Node(const Node::NodeId &node_id, const Config &config)
+  Node(const Node::NodeId& node_id, const Config& config)
       : node_id_(node_id),
         config_(config),
         optimized_pose_(config.T_mission_node_initial) {}
   virtual ~Node() = default;
 
-  const Pose &getPose() const { return optimized_pose_; }
-  Pose *getPosePtr() { return &optimized_pose_; }
+  const Pose& getPose() const { return optimized_pose_; }
+  Pose* getPosePtr() { return &optimized_pose_; }
 
   void setConstant(bool constant) { config_.set_constant = constant; }
   bool isConstant() { return config_.set_constant; }
 
-  void addToProblem(ceres::Problem *problem,
-                    ceres::LocalParameterization *local_parameterization);
+  void addToProblem(ceres::Problem* problem,
+                    ceres::LocalParameterization* local_parameterization);
 
  protected:
   const NodeId node_id_;

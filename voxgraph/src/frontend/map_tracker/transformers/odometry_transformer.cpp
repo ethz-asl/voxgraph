@@ -2,7 +2,7 @@
 #include <string>
 
 namespace voxgraph {
-bool OdometryTransformer::waitForTransform(const ros::Time &frame_timestamp) {
+bool OdometryTransformer::waitForTransform(const ros::Time& frame_timestamp) {
   // Total time spent waiting for the updated pose
   ros::WallDuration t_waited(0.0);
   while (t_waited < transform_lookup_max_time_) {
@@ -20,8 +20,8 @@ bool OdometryTransformer::waitForTransform(const ros::Time &frame_timestamp) {
   return false;
 }
 
-bool OdometryTransformer::lookupTransform(const ros::Time &frame_timestamp,
-                                          Transformation *transform) {
+bool OdometryTransformer::lookupTransform(const ros::Time& frame_timestamp,
+                                          Transformation* transform) {
   CHECK_NOTNULL(transform);
   if (!waitForTransform(frame_timestamp)) {
     return false;
@@ -46,8 +46,8 @@ bool OdometryTransformer::lookupTransform(const ros::Time &frame_timestamp,
   return true;
 }
 
-bool OdometryTransformer::lookupOdometryMsg(const ros::Time &frame_timestamp,
-                                            nav_msgs::Odometry *odometry_msg) {
+bool OdometryTransformer::lookupOdometryMsg(const ros::Time& frame_timestamp,
+                                            nav_msgs::Odometry* odometry_msg) {
   CHECK_NOTNULL(odometry_msg);
 
   if (!waitForTransform(frame_timestamp)) {
@@ -73,13 +73,13 @@ bool OdometryTransformer::lookupOdometryMsg(const ros::Time &frame_timestamp,
 }
 
 void OdometryTransformer::subscribeToTopic(ros::NodeHandle nh,
-                                           const std::string &odometry_topic) {
+                                           const std::string& odometry_topic) {
   odometry_subscriber_ = nh.subscribe(
       odometry_topic, 1, &OdometryTransformer::odometryCallback, this);
 }
 
 void OdometryTransformer::odometryCallback(
-    const nav_msgs::Odometry::ConstPtr &odometry_msg) {
+    const nav_msgs::Odometry::ConstPtr& odometry_msg) {
   if (odometry_queue_.size() >= odometry_queue_length_ &&
       !odometry_queue_.empty()) {
     odometry_queue_.erase(odometry_queue_.begin());

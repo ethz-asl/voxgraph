@@ -12,11 +12,11 @@
 namespace voxgraph {
 class OdometrySimulator {
  public:
-  explicit OdometrySimulator(const ros::NodeHandle &nh,
-                             const ros::NodeHandle &nh_private);
+  explicit OdometrySimulator(const ros::NodeHandle& nh,
+                             const ros::NodeHandle& nh_private);
   ~OdometrySimulator() = default;
 
-  void odometryCallback(const nav_msgs::Odometry::ConstPtr &odometry_msg);
+  void odometryCallback(const nav_msgs::Odometry::ConstPtr& odometry_msg);
 
  private:
   typedef kindr::minimal::RotationQuaternionTemplate<double> Rotation;
@@ -53,7 +53,7 @@ class OdometrySimulator {
   // Transform publisher for the simulated noisy pose
   void publishSimulatedPoseTf();
   // Transform publisher for the true, noise-free pose
-  void publishOriginalPoseTf(const nav_msgs::Odometry::ConstPtr &odometry_msg);
+  void publishOriginalPoseTf(const nav_msgs::Odometry::ConstPtr& odometry_msg);
 };
 }  // namespace voxgraph
 

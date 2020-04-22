@@ -12,11 +12,11 @@ class SubmapTimeline {
  public:
   SubmapTimeline() = default;
 
-  void addNextSubmap(const ros::Time &submap_creation_timestamp,
-                     const cblox::SubmapID &submap_id);
+  void addNextSubmap(const ros::Time& submap_creation_timestamp,
+                     const cblox::SubmapID& submap_id);
 
-  bool lookupActiveSubmapByTime(const ros::Time &timestamp,
-                                cblox::SubmapID *submap_id);
+  bool lookupActiveSubmapByTime(const ros::Time& timestamp,
+                                cblox::SubmapID* submap_id);
 
   cblox::SubmapID getPreviousSubmapId() const;
   cblox::SubmapID getFirstSubmapId() const;

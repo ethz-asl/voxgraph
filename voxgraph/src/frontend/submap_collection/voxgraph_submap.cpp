@@ -6,14 +6,14 @@
 #include <utility>
 
 namespace voxgraph {
-VoxgraphSubmap::VoxgraphSubmap(const voxblox::Transformation &T_M_S,
-                               const cblox::SubmapID &submap_id,
-                               const voxgraph::VoxgraphSubmap::Config &config)
+VoxgraphSubmap::VoxgraphSubmap(const voxblox::Transformation& T_M_S,
+                               const cblox::SubmapID& submap_id,
+                               const voxgraph::VoxgraphSubmap::Config& config)
     : cblox::TsdfEsdfSubmap(T_M_S, submap_id, config), config_(config) {}
 
 VoxgraphSubmap::VoxgraphSubmap(
-    const voxblox::Transformation &T_M_S, const cblox::SubmapID &submap_id,
-    const voxblox::Layer<voxblox::TsdfVoxel> &tsdf_layer)
+    const voxblox::Transformation& T_M_S, const cblox::SubmapID& submap_id,
+    const voxblox::Layer<voxblox::TsdfVoxel>& tsdf_layer)
     : cblox::TsdfEsdfSubmap(T_M_S, submap_id, Config()) {
   // Update the inherited TsdfEsdfSubmap config
   config_.tsdf_voxel_size = tsdf_layer.voxel_size();
@@ -28,7 +28,7 @@ VoxgraphSubmap::VoxgraphSubmap(
   tsdf_map_ = std::make_shared<voxblox::TsdfMap>(tsdf_layer);
 }
 
-void VoxgraphSubmap::transformSubmap(const voxblox::Transformation &T_new_old) {
+void VoxgraphSubmap::transformSubmap(const voxblox::Transformation& T_new_old) {
   // Transform TSDF
   voxblox::Layer<voxblox::TsdfVoxel> old_tsdf_layer(tsdf_map_->getTsdfLayer());
   voxblox::transformLayer(old_tsdf_layer, T_new_old,
@@ -38,7 +38,7 @@ void VoxgraphSubmap::transformSubmap(const voxblox::Transformation &T_new_old) {
   map_obb_.reset();
 
   // Transform pose history
-  for (std::pair<const ros::Time, voxblox::Transformation> &kv :
+  for (std::pair<const ros::Time, voxblox::Transformation>& kv :
        pose_history_) {
     kv.second = T_new_old * kv.second;
   }
@@ -51,12 +51,12 @@ void VoxgraphSubmap::transformSubmap(const voxblox::Transformation &T_new_old) {
 }
 
 void VoxgraphSubmap::addPoseToHistory(
-    const ros::Time &timestamp, const voxblox::Transformation &T_submap_base) {
+    const ros::Time& timestamp, const voxblox::Transformation& T_submap_base) {
   pose_history_.emplace(timestamp, T_submap_base);
 }
 
 bool VoxgraphSubmap::lookupPoseByTime(
-    const ros::Time &timestamp, voxblox::Transformation *T_submap_robot) const {
+    const ros::Time& timestamp, voxblox::Transformation* T_submap_robot) const {
   CHECK_NOTNULL(T_submap_robot);
 
   // Get an iterator to the end of the time interval in which timestamp falls
@@ -97,7 +97,7 @@ void VoxgraphSubmap::finishSubmap() {
 }
 
 void VoxgraphSubmap::setRegistrationFilterConfig(
-    const Config::RegistrationFilter &registration_filter_config) {
+    const Config::RegistrationFilter& registration_filter_config) {
   // Update registration filter config
   config_.registration_filter = registration_filter_config;
 }
@@ -118,7 +118,7 @@ const ros::Time VoxgraphSubmap::getEndTime() const {
   }
 }
 
-const WeightedSampler<RegistrationPoint> &VoxgraphSubmap::getRegistrationPoints(
+const WeightedSampler<RegistrationPoint>& VoxgraphSubmap::getRegistrationPoints(
     RegistrationPointType registration_point_type) const {
   CHECK(finished_) << "The cached registration points are only available"
                       " once the submap has been declared finished.";
@@ -135,8 +135,8 @@ void VoxgraphSubmap::findRelevantVoxelIndices() {
   relevant_voxels_.clear();
 
   // Get references to the TSDF and ESDF layers
-  const TsdfLayer &tsdf_layer = tsdf_map_->getTsdfLayer();
-  const EsdfLayer &esdf_layer = esdf_map_->getEsdfLayer();
+  const TsdfLayer& tsdf_layer = tsdf_map_->getTsdfLayer();
+  const EsdfLayer& esdf_layer = esdf_map_->getEsdfLayer();
 
   // Get list of all allocated voxel blocks in the submap
   voxblox::BlockIndexList block_list;
@@ -149,9 +149,9 @@ void VoxgraphSubmap::findRelevantVoxelIndices() {
   // Iterate over all allocated blocks in the submap
   double min_voxel_weight = config_.registration_filter.min_voxel_weight;
   double max_voxel_distance = config_.registration_filter.max_voxel_distance;
-  for (const voxblox::BlockIndex &block_index : block_list) {
+  for (const voxblox::BlockIndex& block_index : block_list) {
     // Get the TSDF block and ESDF block if needed
-    const TsdfBlock &tsdf_block = tsdf_layer.getBlockByIndex(block_index);
+    const TsdfBlock& tsdf_block = tsdf_layer.getBlockByIndex(block_index);
     EsdfBlock::ConstPtr esdf_block;
     if (config_.registration_filter.use_esdf_distance) {
       esdf_block = esdf_layer.getBlockPtrByIndex(block_index);
@@ -160,7 +160,7 @@ void VoxgraphSubmap::findRelevantVoxelIndices() {
     // Iterate over all voxels in block
     for (size_t linear_index = 0u; linear_index < num_voxels_per_block;
          ++linear_index) {
-      const TsdfVoxel &tsdf_voxel =
+      const TsdfVoxel& tsdf_voxel =
           tsdf_block.getVoxelByLinearIndex(linear_index);
       // Select the observed voxels within the truncation band
       if (tsdf_voxel.weight > min_voxel_weight &&
@@ -173,7 +173,7 @@ void VoxgraphSubmap::findRelevantVoxelIndices() {
         float distance;
         if (config_.registration_filter.use_esdf_distance) {
           CHECK(esdf_block->isValidLinearIndex(linear_index));
-          const EsdfVoxel &esdf_voxel =
+          const EsdfVoxel& esdf_voxel =
               esdf_block->getVoxelByLinearIndex(linear_index);
           distance = esdf_voxel.distance;
         } else {
@@ -212,7 +212,7 @@ void VoxgraphSubmap::findIsosurfaceVertices() {
   Interpolator tsdf_interpolator(tsdf_map_->getTsdfLayerPtr());
 
   // Extract the vertices
-  for (const auto &mesh_vertex_coordinates : connected_mesh.vertices) {
+  for (const auto& mesh_vertex_coordinates : connected_mesh.vertices) {
     // Try to interpolate the voxel weight
     voxblox::TsdfVoxel voxel;
     if (tsdf_interpolator.getVoxel(mesh_vertex_coordinates, &voxel, true)) {
@@ -231,7 +231,7 @@ void VoxgraphSubmap::findIsosurfaceVertices() {
   }
 }
 
-bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap &other_submap) const {
+bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap& other_submap) const {
   // We start with a quick AABB overlap test, to discard submap pairs
   // that definitely don't overlap
   const BoundingBox aabb = getMissionFrameSurfaceAabb();
@@ -249,7 +249,7 @@ bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap &other_submap) const {
   // current submap's surface has a correspondence in the other submap
   voxblox::Transformation T_other_submap__current_submap =
       other_submap.getPose().inverse() * getPose();
-  for (const voxblox::BlockIndex &block_index : isosurface_blocks_) {
+  for (const voxblox::BlockIndex& block_index : isosurface_blocks_) {
     const voxblox::Point t_current_submap__block =
         voxblox::getCenterPointFromGridIndex(block_index, block_size());
     const voxblox::Point t_other_submap__block =
@@ -287,13 +287,13 @@ const BoundingBox VoxgraphSubmap::getSubmapFrameSurfaceObb() const {
     // Iterate over all allocated blocks in the submap
     double min_voxel_weight = config_.registration_filter.min_voxel_weight;
     double max_voxel_distance = config_.registration_filter.max_voxel_distance;
-    for (const voxblox::BlockIndex &block_index : block_list) {
-      const voxblox::Block<voxblox::TsdfVoxel> &block =
+    for (const voxblox::BlockIndex& block_index : block_list) {
+      const voxblox::Block<voxblox::TsdfVoxel>& block =
           tsdf_map_->getTsdfLayer().getBlockByIndex(block_index);
       // Iterate over all voxels in block
       for (size_t linear_index = 0u; linear_index < num_voxels_per_block;
            ++linear_index) {
-        const voxblox::TsdfVoxel &voxel =
+        const voxblox::TsdfVoxel& voxel =
             block.getVoxelByLinearIndex(linear_index);
         // Select the observed voxels within the truncation band
         if (voxel.weight > min_voxel_weight &&
@@ -327,7 +327,7 @@ const BoundingBox VoxgraphSubmap::getSubmapFrameSubmapObb() const {
         0.5 * block_size() * voxblox::Point::Ones();
 
     // Iterate over all allocated blocks in the submap
-    for (const voxblox::BlockIndex &block_index : block_list) {
+    for (const voxblox::BlockIndex& block_index : block_list) {
       // Update the min and max points of the OBB
       voxblox::Point block_coordinates =
           voxblox::getCenterPointFromGridIndex(block_index, block_size());

@@ -2,11 +2,11 @@
 #include "voxgraph/backend/constraint/cost_functions/relative_pose_cost_function.h"
 
 namespace voxgraph {
-void AbsolutePoseConstraint::addToProblem(const NodeCollection &node_collection,
-                                          ceres::Problem *problem) {
+void AbsolutePoseConstraint::addToProblem(const NodeCollection& node_collection,
+                                          ceres::Problem* problem) {
   CHECK_NOTNULL(problem);
 
-  ceres::LossFunction *loss_function = nullptr;
+  ceres::LossFunction* loss_function = nullptr;
 
   // Get pointers to both submap nodes
   ReferenceFrameNode::Ptr reference_frame_node_ptr =
@@ -23,7 +23,7 @@ void AbsolutePoseConstraint::addToProblem(const NodeCollection &node_collection,
                                 node_collection.getLocalParameterization());
 
   // Add the constraint to the optimization and keep track of it
-  ceres::CostFunction *cost_function = RelativePoseCostFunction::Create(
+  ceres::CostFunction* cost_function = RelativePoseCostFunction::Create(
       config_.T_ref_submap, sqrt_information_matrix_);
   residual_block_id_ = problem->AddResidualBlock(
       cost_function, loss_function,

@@ -14,8 +14,8 @@ MapTracker::MapTracker(VoxgraphSubmapCollection::ConstPtr submap_collection_ptr,
       odom_transformer_() {}
 
 void MapTracker::subscribeToTopics(ros::NodeHandle nh,
-                                   const std::string &odometry_input_topic,
-                                   const std::string &imu_biases_topic) {
+                                   const std::string& odometry_input_topic,
+                                   const std::string& imu_biases_topic) {
   if (!odometry_input_topic.empty()) {
     ROS_INFO_STREAM("Using odometry from ROS topic: " << odometry_input_topic);
     use_odom_from_tfs_ = false;
@@ -28,20 +28,20 @@ void MapTracker::subscribeToTopics(ros::NodeHandle nh,
 }
 
 void MapTracker::advertiseTopics(ros::NodeHandle nh_private,
-                                 const std::string &odometry_output_topic) {
+                                 const std::string& odometry_output_topic) {
   odom_with_imu_biases_pub_ =
       nh_private.advertise<maplab_msgs::OdometryWithImuBiases>(
           odometry_output_topic, 3, false);
 }
 
 void MapTracker::imuBiasesCallback(
-    const sensor_msgs::Imu::ConstPtr &imu_biases) {
+    const sensor_msgs::Imu::ConstPtr& imu_biases) {
   tf::vectorMsgToKindr(imu_biases->linear_acceleration, &forwarded_accel_bias_);
   tf::vectorMsgToKindr(imu_biases->angular_velocity, &forwarded_gyro_bias_);
 }
 
-bool MapTracker::updateToTime(const ros::Time &timestamp,
-                              const std::string &sensor_frame_id) {
+bool MapTracker::updateToTime(const ros::Time& timestamp,
+                              const std::string& sensor_frame_id) {
   // Keep track of the timestamp that the MapTracker is currently at
   current_timestamp_ = timestamp;
 
@@ -87,7 +87,7 @@ bool MapTracker::updateToTime(const ros::Time &timestamp,
   return true;
 }
 
-void MapTracker::switchToNewSubmap(const Transformation &T_M_S_new) {
+void MapTracker::switchToNewSubmap(const Transformation& T_M_S_new) {
   // Store the initial submap pose for visualization purposes
   initial_T_M_S_ = T_M_S_new;
 
@@ -138,7 +138,7 @@ Transformation MapTracker::get_T_M_B() {
   }
 }
 
-void MapTracker::set_T_B_C(const Transformation &T_B_C) {
+void MapTracker::set_T_B_C(const Transformation& T_B_C) {
   T_B_C_ = T_B_C;
   use_sensor_calibration_from_tfs_ = false;
 }

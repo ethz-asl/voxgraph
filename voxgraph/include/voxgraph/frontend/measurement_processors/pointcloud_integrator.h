@@ -13,11 +13,11 @@ class PointcloudIntegrator {
  public:
   explicit PointcloudIntegrator(bool verbose = false);
 
-  void setTsdfIntegratorConfigFromRosParam(const ros::NodeHandle &node_handle);
+  void setTsdfIntegratorConfigFromRosParam(const ros::NodeHandle& node_handle);
 
-  void integratePointcloud(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
-                           const voxblox::Transformation &T_submap_sensor,
-                           VoxgraphSubmap *submap_ptr);
+  void integratePointcloud(const sensor_msgs::PointCloud2::Ptr& pointcloud_msg,
+                           const voxblox::Transformation& T_submap_sensor,
+                           VoxgraphSubmap* submap_ptr);
 
  private:
   bool verbose_;

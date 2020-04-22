@@ -13,13 +13,13 @@ class WeightedSampler {
 
   WeightedSampler() = default;
 
-  void addItem(const ItemType &new_item, const double weight);
+  void addItem(const ItemType& new_item, const double weight);
 
   // Deterministically get the i-th item
-  inline const ItemType &operator[](int i) const { return items_[i]; }
+  inline const ItemType& operator[](int i) const { return items_[i]; }
 
   // Randomly draw an item with probability proportional to its weight
-  inline const ItemType &getRandomItem() const;
+  inline const ItemType& getRandomItem() const;
 
   size_t size() const { return items_.size(); }
 

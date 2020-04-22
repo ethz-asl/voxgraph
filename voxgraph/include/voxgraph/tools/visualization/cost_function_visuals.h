@@ -9,11 +9,11 @@ class CostFunctionVisuals {
  public:
   CostFunctionVisuals();
 
-  void addResidual(const voxblox::Point &coordinate, const double &residual);
-  void addJacobian(const voxblox::Point &coordinate,
-                   const voxblox::Point &jacobian);
+  void addResidual(const voxblox::Point& coordinate, const double& residual);
+  void addJacobian(const voxblox::Point& coordinate,
+                   const voxblox::Point& jacobian);
 
-  void scaleAndPublish(const double &factor);
+  void scaleAndPublish(const double& factor);
 
   void reset();
 

@@ -9,10 +9,10 @@ class PoseGraphVisuals {
  public:
   PoseGraphVisuals() = default;
 
-  void publishPoseGraph(const PoseGraph &pose_graph,
-                        const std::string &frame_id,
-                        const std::string &name_space,
-                        const ros::Publisher &publisher) const;
+  void publishPoseGraph(const PoseGraph& pose_graph,
+                        const std::string& frame_id,
+                        const std::string& name_space,
+                        const ros::Publisher& publisher) const;
 };
 }  // namespace voxgraph
 

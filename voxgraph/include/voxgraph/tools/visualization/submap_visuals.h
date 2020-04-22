@@ -18,41 +18,41 @@ class SubmapVisuals {
   explicit SubmapVisuals(VoxgraphSubmap::Config submap_config,
                          voxblox::MeshIntegratorConfig mesh_config);
 
-  void publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
-                   const std::string &submap_frame,
-                   const ros::Publisher &publisher,
-                   const voxblox::ColorMode &color_mode =
+  void publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
+                   const std::string& submap_frame,
+                   const ros::Publisher& publisher,
+                   const voxblox::ColorMode& color_mode =
                        voxblox::ColorMode::kLambertColor) const;
 
   void publishMesh(
-      const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-      const cblox::SubmapID &submap_id, const voxblox::Color &submap_color,
-      const std::string &submap_frame, const ros::Publisher &publisher) const;
+      const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
+      const cblox::SubmapID& submap_id, const voxblox::Color& submap_color,
+      const std::string& submap_frame, const ros::Publisher& publisher) const;
 
   void publishSeparatedMesh(
-      const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-      const std::string &mission_frame, const ros::Publisher &publisher);
+      const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
+      const std::string& mission_frame, const ros::Publisher& publisher);
 
   void publishCombinedMesh(
-      const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-      const std::string &mission_frame, const ros::Publisher &publisher);
+      const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
+      const std::string& mission_frame, const ros::Publisher& publisher);
 
   void saveSeparatedMesh(
-      const std::string &filepath,
-      const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection);
+      const std::string& filepath,
+      const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection);
 
   void saveCombinedMesh(
-      const std::string &filepath,
-      const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection);
+      const std::string& filepath,
+      const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection);
 
-  void publishBox(const BoxCornerMatrix &box_corner_matrix,
-                  const voxblox::Color &box_color, const std::string &frame_id,
-                  const std::string &name_space,
-                  const ros::Publisher &publisher) const;
+  void publishBox(const BoxCornerMatrix& box_corner_matrix,
+                  const voxblox::Color& box_color, const std::string& frame_id,
+                  const std::string& name_space,
+                  const ros::Publisher& publisher) const;
 
-  void publishPoseHistory(const VoxgraphSubmapCollection &submap_collection,
-                          const std::string &mission_frame,
-                          const ros::Publisher &publisher) const;
+  void publishPoseHistory(const VoxgraphSubmapCollection& submap_collection,
+                          const std::string& mission_frame,
+                          const ros::Publisher& publisher) const;
 
  private:
   voxblox::MeshIntegratorConfig mesh_config_;

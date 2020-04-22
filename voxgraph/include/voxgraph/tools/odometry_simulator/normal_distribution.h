@@ -7,11 +7,11 @@
 namespace voxgraph {
 class NormalDistribution {
  public:
-  explicit NormalDistribution(const double &mean = 0, const double &stddev = 1)
+  explicit NormalDistribution(const double& mean = 0, const double& stddev = 1)
       : mean_(mean), stddev_(stddev) {}
 
-  double &mean() { return mean_; }
-  double &stddev() { return stddev_; }
+  double& mean() { return mean_; }
+  double& stddev() { return stddev_; }
 
   // Return a sample from the normal distribution N(mean_, stddev_)
   double operator()() {

@@ -43,23 +43,23 @@ class RegistrationCostFunction : public ceres::CostFunction {
 
   RegistrationCostFunction(VoxgraphSubmap::ConstPtr reference_submap_ptr,
                            VoxgraphSubmap::ConstPtr reading_submap_ptr,
-                           const Config &config);
+                           const Config& config);
 
-  bool Evaluate(double const *const *parameters, double *residuals,
-                double **jacobians) const override;
+  bool Evaluate(double const* const* parameters, double* residuals,
+                double** jacobians) const override;
 
  protected:
   Config config_;
 
   // Pointers and const refs to the reading submap that will be aligned
   VoxgraphSubmap::ConstPtr reading_submap_ptr_;
-  const voxblox::Layer<voxblox::TsdfVoxel> &reading_tsdf_layer_;
-  const voxblox::Layer<voxblox::EsdfVoxel> &reading_esdf_layer_;
+  const voxblox::Layer<voxblox::TsdfVoxel>& reading_tsdf_layer_;
+  const voxblox::Layer<voxblox::EsdfVoxel>& reading_esdf_layer_;
 
   // Reference to registration point sampler
   // NOTE: These points are voxels or isosurface vertices
   //       of the reference submap
-  const WeightedSampler<RegistrationPoint> &registration_points_;
+  const WeightedSampler<RegistrationPoint>& registration_points_;
 
   // Interpolators
   voxblox::Interpolator<voxblox::TsdfVoxel> tsdf_interpolator_;

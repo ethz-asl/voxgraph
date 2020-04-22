@@ -28,42 +28,42 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
     } registration_filter;
   };
 
-  VoxgraphSubmap(const voxblox::Transformation &T_M_S,
-                 const cblox::SubmapID &submap_id, const Config &config);
+  VoxgraphSubmap(const voxblox::Transformation& T_M_S,
+                 const cblox::SubmapID& submap_id, const Config& config);
 
   // Create a VoxgraphSubmap based on a COPY of a TsdfLayer
-  VoxgraphSubmap(const voxblox::Transformation &T_M_S,
-                 const cblox::SubmapID &submap_id,
-                 const voxblox::Layer<voxblox::TsdfVoxel> &tsdf_layer);
+  VoxgraphSubmap(const voxblox::Transformation& T_M_S,
+                 const cblox::SubmapID& submap_id,
+                 const voxblox::Layer<voxblox::TsdfVoxel>& tsdf_layer);
 
   // Setter method for the registration filter config
   // NOTE: This method is mainly useful for copy or proto constructed submaps
   void setRegistrationFilterConfig(
-      const Config::RegistrationFilter &registration_filter_config);
+      const Config::RegistrationFilter& registration_filter_config);
 
   const ros::Time getStartTime() const;
   const ros::Time getEndTime() const;
 
-  void addPoseToHistory(const ros::Time &timestamp,
-                        const voxblox::Transformation &T_submap_base);
-  const PoseHistoryMap &getPoseHistory() const { return pose_history_; }
-  bool lookupPoseByTime(const ros::Time &timestamp,
-                        voxblox::Transformation *T_submap_robot) const;
+  void addPoseToHistory(const ros::Time& timestamp,
+                        const voxblox::Transformation& T_submap_base);
+  const PoseHistoryMap& getPoseHistory() const { return pose_history_; }
+  bool lookupPoseByTime(const ros::Time& timestamp,
+                        voxblox::Transformation* T_submap_robot) const;
 
   // Indicate that the submap is finished and generate all cached members
   // NOTE: These cached members are mainly used in the registration cost funcs
   void finishSubmap();
 
-  void transformSubmap(const voxblox::Transformation &T_new_old);
+  void transformSubmap(const voxblox::Transformation& T_new_old);
 
   // The type of registration points supported by this submap
   enum class RegistrationPointType { kIsosurfacePoints = 0, kVoxels };
   // Getter to get the registration points of a certain type
-  const WeightedSampler<RegistrationPoint> &getRegistrationPoints(
+  const WeightedSampler<RegistrationPoint>& getRegistrationPoints(
       RegistrationPointType registration_point_type) const;
 
   // Overlap and Bounding Box related methods
-  bool overlapsWith(const VoxgraphSubmap &other_submap) const;
+  bool overlapsWith(const VoxgraphSubmap& other_submap) const;
   const BoundingBox getSubmapFrameSurfaceObb() const;
   const BoundingBox getSubmapFrameSubmapObb() const;
   const BoundingBox getMissionFrameSurfaceAabb() const;

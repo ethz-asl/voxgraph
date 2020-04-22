@@ -20,10 +20,10 @@ class PoseGraphInterface {
       ros::NodeHandle node_handle,
       VoxgraphSubmapCollection::Ptr submap_collection_ptr,
       voxblox::MeshIntegratorConfig mesh_config,
-      const std::string &visualizations_mission_frame, bool verbose = false);
+      const std::string& visualizations_mission_frame, bool verbose = false);
 
   void setVerbosity(bool verbose) { verbose_ = verbose; }
-  void setMeasurementConfigFromRosParams(const ros::NodeHandle &node_handle) {
+  void setMeasurementConfigFromRosParams(const ros::NodeHandle& node_handle) {
     measurement_templates_.setFromRosParams(node_handle);
   }
 
@@ -36,27 +36,27 @@ class PoseGraphInterface {
   // NOTE: The pose graph optimization works in 4D. Therefore the
   //       pitch and roll components of T_S1_S2 are simply ignored
   //       by the RelativePoseCostFunction.
-  void addOdometryMeasurement(const SubmapID &first_submap_id,
-                              const SubmapID &second_submap_id,
-                              const Transformation &T_S1_S2);
-  void addLoopClosureMeasurement(const SubmapID &from_submap,
-                                 const SubmapID &to_submap,
-                                 const Transformation &transform);
+  void addOdometryMeasurement(const SubmapID& first_submap_id,
+                              const SubmapID& second_submap_id,
+                              const Transformation& T_S1_S2);
+  void addLoopClosureMeasurement(const SubmapID& from_submap,
+                                 const SubmapID& to_submap,
+                                 const Transformation& transform);
   void addGpsMeasurement() {}
-  void addHeightMeasurement(const SubmapID &submap_id, const double &height);
+  void addHeightMeasurement(const SubmapID& submap_id, const double& height);
 
   void optimize();
 
   void updateSubmapCollectionPoses();
 
-  const OverlappingSubmapList &getOverlappingSubmapList() const {
+  const OverlappingSubmapList& getOverlappingSubmapList() const {
     return overlapping_submap_list_;
   }
 
   bool getEdgeCovarianceMap(
-      PoseGraph::EdgeCovarianceMap *edge_covariance_map_ptr) const;
+      PoseGraph::EdgeCovarianceMap* edge_covariance_map_ptr) const;
 
-  const PoseGraph::SolverSummaryList &getSolverSummaries() const {
+  const PoseGraph::SolverSummaryList& getSolverSummaries() const {
     return pose_graph_.getSolverSummaries();
   }
 

@@ -20,15 +20,15 @@ class MapTracker {
                       FrameNames frame_names, bool verbose = false);
 
   void subscribeToTopics(ros::NodeHandle nh,
-                         const std::string &odometry_input_topic,
-                         const std::string &imu_biases_topic);
-  void imuBiasesCallback(const sensor_msgs::Imu::ConstPtr &imu_biases);
+                         const std::string& odometry_input_topic,
+                         const std::string& imu_biases_topic);
+  void imuBiasesCallback(const sensor_msgs::Imu::ConstPtr& imu_biases);
   void advertiseTopics(ros::NodeHandle nh_private,
-                       const std::string &odometry_output_topic);
+                       const std::string& odometry_output_topic);
 
-  bool updateToTime(const ros::Time &timestamp,
-                    const std::string &sensor_frame_id);
-  void switchToNewSubmap(const Transformation &T_M_S_new);
+  bool updateToTime(const ros::Time& timestamp,
+                    const std::string& sensor_frame_id);
+  void switchToNewSubmap(const Transformation& T_M_S_new);
 
   void publishTFs();
 
@@ -40,9 +40,9 @@ class MapTracker {
   Transformation get_T_S_B() { return T_S_B_; }
   Transformation get_T_S_C() { return T_S_B_ * T_B_C_; }
 
-  void set_T_B_C(const Transformation &T_B_C);
+  void set_T_B_C(const Transformation& T_B_C);
 
-  const FrameNames &getFrameNames() const { return frame_names_; }
+  const FrameNames& getFrameNames() const { return frame_names_; }
 
   // Config get/setters
   void setVerbosity(bool verbose) { verbose_ = verbose; }

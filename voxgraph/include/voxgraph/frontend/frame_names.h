@@ -38,7 +38,7 @@ struct FrameNames {
   std::string output_sensor_frame = "voxgraph_sensor";
 
   // Static method to parse ROS params
-  static FrameNames fromRosParams(const ros::NodeHandle &node_handle) {
+  static FrameNames fromRosParams(const ros::NodeHandle& node_handle) {
     FrameNames frame_names;
     // Inputs
     node_handle.param("input_odom_frame", frame_names.input_odom_frame,

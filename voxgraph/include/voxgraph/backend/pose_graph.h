@@ -19,14 +19,14 @@ class PoseGraph {
 
   PoseGraph() = default;
 
-  void addSubmapNode(const SubmapNode::Config &config);
-  bool hasSubmapNode(const SubmapNode::SubmapId &submap_id);
-  void addReferenceFrameNode(const ReferenceFrameNode::Config &config);
-  bool hasReferenceFrameNode(const ReferenceFrameNode::FrameId &frame_id);
+  void addSubmapNode(const SubmapNode::Config& config);
+  bool hasSubmapNode(const SubmapNode::SubmapId& submap_id);
+  void addReferenceFrameNode(const ReferenceFrameNode::Config& config);
+  bool hasReferenceFrameNode(const ReferenceFrameNode::FrameId& frame_id);
 
-  void addAbsolutePoseConstraint(const AbsolutePoseConstraint::Config &config);
-  void addRelativePoseConstraint(const RelativePoseConstraint::Config &config);
-  void addRegistrationConstraint(const RegistrationConstraint::Config &config);
+  void addAbsolutePoseConstraint(const AbsolutePoseConstraint::Config& config);
+  void addRelativePoseConstraint(const RelativePoseConstraint::Config& config);
+  void addRegistrationConstraint(const RegistrationConstraint::Config& config);
 
   void resetRegistrationConstraints() {
     constraints_collection_.resetRegistrationConstraints();
@@ -39,7 +39,7 @@ class PoseGraph {
 
   typedef Eigen::Matrix<double, 4, 4> EdgeCovarianceMatrix;
   typedef std::map<SubmapIdPair, EdgeCovarianceMatrix> EdgeCovarianceMap;
-  bool getEdgeCovarianceMap(EdgeCovarianceMap *edge_covariance_map) const;
+  bool getEdgeCovarianceMap(EdgeCovarianceMap* edge_covariance_map) const;
 
   struct VisualizationEdge {
     Transformation::Position first_node_position;
@@ -49,7 +49,7 @@ class PoseGraph {
   typedef std::vector<VisualizationEdge> VisualizationEdgeList;
   VisualizationEdgeList getVisualizationEdges() const;
 
-  const SolverSummaryList &getSolverSummaries() const {
+  const SolverSummaryList& getSolverSummaries() const {
     return solver_summaries_;
   }
 

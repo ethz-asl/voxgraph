@@ -25,7 +25,7 @@ const BoxCornerMatrix BoundingBox::getCornerCoordinates() const {
 }
 
 const BoundingBox BoundingBox::getAabbFromObbAndPose(
-    const BoundingBox &obb, const voxblox::Transformation &pose) {
+    const BoundingBox& obb, const voxblox::Transformation& pose) {
   // Create AABB
   BoundingBox aabb;
   // Transform the OBB corners into mission frame and update the AABB

@@ -32,16 +32,16 @@ class VoxgraphSubmapCollection
     submap_creation_interval_ = std::move(submap_creation_interval);
   }
 
-  bool shouldCreateNewSubmap(const ros::Time &current_time);
+  bool shouldCreateNewSubmap(const ros::Time& current_time);
 
   // Overriden method that guarantees that the submap gets added to the timeline
-  void createNewSubmap(const Transformation &T_mission_base,
-                       const ros::Time &timestamp);
+  void createNewSubmap(const Transformation& T_mission_base,
+                       const ros::Time& timestamp);
 
   // Delete the inherited methods to avoid accidental calls
-  void createNewSubmap(const Transformation &T_M_S,
+  void createNewSubmap(const Transformation& T_M_S,
                        const SubmapID submap_id) = delete;
-  SubmapID createNewSubmap(const Transformation &T_M_S) = delete;
+  SubmapID createNewSubmap(const Transformation& T_M_S) = delete;
 
   SubmapID getPreviousSubmapId() const {
     return submap_timeline_.getPreviousSubmapId();
@@ -53,8 +53,8 @@ class VoxgraphSubmapCollection
     return submap_timeline_.getLastSubmapId();
   }
 
-  bool lookupActiveSubmapByTime(const ros::Time &timestamp,
-                                SubmapID *submap_id) {
+  bool lookupActiveSubmapByTime(const ros::Time& timestamp,
+                                SubmapID* submap_id) {
     return submap_timeline_.lookupActiveSubmapByTime(timestamp, submap_id);
   }
 
@@ -63,7 +63,7 @@ class VoxgraphSubmapCollection
   // Create a gravity aligned poses, as used for the submap origins
   // NOTE: The submap origin poses must have zero pitch and roll since
   //       the pose graph optimization only operates in 4D (x, y, z and yaw).
-  static Transformation gravityAlignPose(const Transformation &input_pose);
+  static Transformation gravityAlignPose(const Transformation& input_pose);
 
  private:
   bool verbose_;

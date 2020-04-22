@@ -18,15 +18,15 @@ class TfTransformer {
 
   // Method that waits for a transform to become available, while doing less
   // agressive polling that ROS's standard tf2_ros::Buffer::canTransform(...)
-  bool waitForTransform(const std::string &to_frame_id,
-                        const std::string &from_frame_id,
-                        const ros::Time &frame_timestamp);
+  bool waitForTransform(const std::string& to_frame_id,
+                        const std::string& from_frame_id,
+                        const ros::Time& frame_timestamp);
 
   // Method to lookup transforms and convert them Kindr
-  bool lookupTransform(const std::string &to_frame_id,
-                       const std::string &from_frame_id,
-                       const ros::Time &frame_timestamp,
-                       Transformation *transform);
+  bool lookupTransform(const std::string& to_frame_id,
+                       const std::string& from_frame_id,
+                       const ros::Time& frame_timestamp,
+                       Transformation* transform);
 
  private:
   tf2_ros::Buffer tf_buffer_;
