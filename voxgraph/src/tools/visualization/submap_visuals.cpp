@@ -9,11 +9,18 @@
 #include <utility>
 
 namespace voxgraph {
-SubmapVisuals::SubmapVisuals(const VoxgraphSubmap::Config &submap_config)
-    : mesh_opacity_(1.0) {
-  // TODO(victorr): Read this from ROS params
-  mesh_config_.min_weight = 1;
-  submap_mesher_.reset(new cblox::SubmapMesher(submap_config, mesh_config_));
+SubmapVisuals::SubmapVisuals(VoxgraphSubmap::Config submap_config,
+                             voxblox::MeshIntegratorConfig mesh_config)
+    : mesh_config_(std::move(mesh_config)),
+      mesh_opacity_(1.0) {
+  // Meshing params from ROS params server
+  // NOTE(alexmillane): The separated mesher *requires* color, so this is
+  //                    hard-coded.
+  combined_submap_mesher_.reset(
+      new cblox::SubmapMesher(std::move(submap_config), mesh_config_));
+  mesh_config_.use_color = true;
+  separated_submap_mesher_.reset(
+      new cblox::SubmapMesher(std::move(submap_config), mesh_config_));
 }
 
 void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
@@ -51,7 +58,7 @@ void SubmapVisuals::publishMesh(
       mesh_config_, submap_ptr->getTsdfMap().getTsdfLayer(),
       mesh_layer_ptr.get());
   reference_mesh_integrator.generateMesh(false, false);
-  submap_mesher_->colorMeshLayer(submap_color, mesh_layer_ptr.get());
+  separated_submap_mesher_->colorMeshLayer(submap_color, mesh_layer_ptr.get());
 
   // Publish mesh
   publishMesh(mesh_layer_ptr, submap_frame, publisher);
@@ -62,8 +69,8 @@ void SubmapVisuals::publishSeparatedMesh(
     const std::string &mission_frame, const ros::Publisher &publisher) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
-  submap_mesher_->generateSeparatedMesh(submap_collection,
-                                        mesh_layer_ptr.get());
+  separated_submap_mesher_->generateSeparatedMesh(submap_collection,
+                                                  mesh_layer_ptr.get());
   publishMesh(mesh_layer_ptr, mission_frame, publisher);
 }
 
@@ -72,7 +79,8 @@ void SubmapVisuals::publishCombinedMesh(
     const std::string &mission_frame, const ros::Publisher &publisher) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
-  submap_mesher_->generateCombinedMesh(submap_collection, mesh_layer_ptr.get());
+  combined_submap_mesher_->generateCombinedMesh(submap_collection,
+                                                mesh_layer_ptr.get());
   publishMesh(mesh_layer_ptr, mission_frame, publisher,
               voxblox::ColorMode::kNormals);
 }
@@ -82,8 +90,8 @@ void SubmapVisuals::saveSeparatedMesh(
     const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
-  submap_mesher_->generateSeparatedMesh(submap_collection,
-                                        mesh_layer_ptr.get());
+  separated_submap_mesher_->generateSeparatedMesh(submap_collection,
+                                                  mesh_layer_ptr.get());
   voxblox::outputMeshLayerAsPly(filepath, *mesh_layer_ptr);
 }
 
@@ -92,7 +100,8 @@ void SubmapVisuals::saveCombinedMesh(
     const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
-  submap_mesher_->generateCombinedMesh(submap_collection, mesh_layer_ptr.get());
+  combined_submap_mesher_->generateCombinedMesh(submap_collection,
+                                                mesh_layer_ptr.get());
   voxblox::outputMeshLayerAsPly(filepath, *mesh_layer_ptr);
 }
 
