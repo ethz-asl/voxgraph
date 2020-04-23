@@ -66,7 +66,6 @@ bool VoxgraphSubmap::lookupPoseByTime(
 
   // Ensure that the timestamp is not from before this submap was first used
   if (iterator == pose_history_.begin()) {
-    T_submap_robot = nullptr;
     return false;
   }
 
@@ -200,7 +199,7 @@ void VoxgraphSubmap::findIsosurfaceVertices() {
   voxblox::MeshIntegratorConfig mesh_integrator_config;
   mesh_integrator_config.use_color = false;
   mesh_integrator_config.min_weight =
-      config_.registration_filter.min_voxel_weight;
+      static_cast<float>(config_.registration_filter.min_voxel_weight);
   voxblox::MeshIntegrator<voxblox::TsdfVoxel> mesh_integrator(
       mesh_integrator_config, tsdf_map_->getTsdfLayer(), &mesh_layer);
   mesh_integrator.generateMesh(false, false);
@@ -249,7 +248,7 @@ bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap& other_submap) const {
 
   // Next, we refine our overlap test by checking if at least one block on the
   // current submap's surface has a correspondence in the other submap
-  voxblox::Transformation T_other_submap__current_submap =
+  const voxblox::Transformation T_other_submap__current_submap =
       other_submap.getPose().inverse() * getPose();
   for (const voxblox::BlockIndex& block_index : isosurface_blocks_) {
     const voxblox::Point t_current_submap__block =

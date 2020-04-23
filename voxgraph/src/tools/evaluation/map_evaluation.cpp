@@ -121,7 +121,7 @@ void MapEvaluation::alignSubmapAtoSubmapB(
 
   // Create and configure Ceres the problem
   ceres::Problem problem;
-  ceres::LossFunction* loss_function = nullptr;
+  ceres::LossFunction* loss_function = nullptr;  // No robust loss function
   ceres::Solver::Summary summary;
   ceres::Solver::Options ceres_options;
   ceres_options.max_num_iterations = 200;

@@ -27,7 +27,7 @@ bool SubmapRegistrationHelper::testRegistration(
 
   // Create problem and initial conditions
   ceres::Problem problem;
-  ceres::LossFunction* loss_function = nullptr;
+  ceres::LossFunction* loss_function = nullptr;  // No robust loss function
 
   // Get initial pose of reference submap (not touched by the optimization)
   voxblox::Transformation::Vector6 T_vec_ref =

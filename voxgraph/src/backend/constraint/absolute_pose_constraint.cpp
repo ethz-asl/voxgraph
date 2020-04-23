@@ -7,7 +7,7 @@ void AbsolutePoseConstraint::addToProblem(const NodeCollection& node_collection,
                                           ceres::Problem* problem) {
   CHECK_NOTNULL(problem);
 
-  ceres::LossFunction* loss_function = nullptr;
+  ceres::LossFunction* loss_function = kNoRobustLossFunction;
 
   // Get pointers to both submap nodes
   ReferenceFrameNode::Ptr reference_frame_node_ptr =

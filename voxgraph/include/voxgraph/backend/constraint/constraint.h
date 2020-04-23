@@ -33,6 +33,8 @@ class Constraint {
   }
 
  protected:
+  static constexpr ceres::LossFunction* kNoRobustLossFunction = nullptr;
+
   const ConstraintId constraint_id_;
   ceres::ResidualBlockId residual_block_id_ = nullptr;
 

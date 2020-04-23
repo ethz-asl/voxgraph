@@ -66,7 +66,7 @@ void CostFunctionVisuals::addJacobian(const voxblox::Point& coordinate,
   jacobian_arrows_.points.push_back(jacobian_vector_msg);
 }
 
-void CostFunctionVisuals::scaleAndPublish(const double& factor) {
+void CostFunctionVisuals::scaleAndPublish(const double factor) {
   size_t num_residuals = residual_ptcloud_.size();
   size_t num_jacobians = jacobian_origins_.points.size();
   // Scale the residuals

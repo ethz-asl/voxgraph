@@ -13,7 +13,7 @@ class CostFunctionVisuals {
   void addJacobian(const voxblox::Point& coordinate,
                    const voxblox::Point& jacobian);
 
-  void scaleAndPublish(const double& factor);
+  void scaleAndPublish(const double factor);
 
   void reset();
 
