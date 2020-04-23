@@ -3,6 +3,7 @@
 
 #include <map>
 #include <memory>
+
 #include "voxgraph/backend/node/reference_frame_node.h"
 #include "voxgraph/backend/node/submap_node.h"
 
@@ -15,18 +16,18 @@ class NodeCollection {
 
   NodeCollection();
 
-  void addSubmapNode(const SubmapNode::Config &config);
-  void addReferenceFrameNode(const ReferenceFrameNode::Config &config);
+  void addSubmapNode(const SubmapNode::Config& config);
+  void addReferenceFrameNode(const ReferenceFrameNode::Config& config);
 
-  ceres::LocalParameterization *getLocalParameterization() const {
+  ceres::LocalParameterization* getLocalParameterization() const {
     return local_parameterization_.get();
   }
 
-  SubmapNode::Ptr getSubmapNodePtrById(const cblox::SubmapID &submap_id) const;
+  SubmapNode::Ptr getSubmapNodePtrById(const cblox::SubmapID& submap_id) const;
   ReferenceFrameNode::Ptr getReferenceFrameNodePtrById(
-      const ReferenceFrameNode::FrameId &frame_id) const;
+      const ReferenceFrameNode::FrameId& frame_id) const;
 
-  const SubmapNodeMap &getSubmapNodes() { return submap_nodes_; }
+  const SubmapNodeMap& getSubmapNodes() { return submap_nodes_; }
 
  private:
   Node::NodeId node_id_counter_ = 0;

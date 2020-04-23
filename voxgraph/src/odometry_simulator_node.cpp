@@ -1,5 +1,6 @@
 #include <glog/logging.h>
 #include <ros/ros.h>
+
 #include "voxgraph/tools/odometry_simulator/odometry_simulator.h"
 
 int main(int argc, char** argv) {

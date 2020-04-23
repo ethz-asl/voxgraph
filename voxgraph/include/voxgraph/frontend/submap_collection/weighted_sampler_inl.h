@@ -3,7 +3,7 @@
 
 namespace voxgraph {
 template <typename ItemType>
-void WeightedSampler<ItemType>::addItem(const ItemType &new_item,
+void WeightedSampler<ItemType>::addItem(const ItemType& new_item,
                                         const double weight) {
   items_.push_back(new_item);
   if (cumulative_item_weights_.empty()) {
@@ -16,7 +16,7 @@ void WeightedSampler<ItemType>::addItem(const ItemType &new_item,
 }
 
 template <typename ItemType>
-const ItemType &WeightedSampler<ItemType>::getRandomItem() const {
+const ItemType& WeightedSampler<ItemType>::getRandomItem() const {
   const double random_number = uniform_distribution_(random_number_generator_);
   const double random_cumulative_weight =
       random_number * cumulative_item_weights_.back();

@@ -1,4 +1,5 @@
 #include "voxgraph/tools/data_servers/projected_map_server.h"
+
 #include <voxblox_ros/conversions.h>
 #include <voxgraph_msgs/MapLayer.h>
 
@@ -9,8 +10,8 @@ ProjectedMapServer::ProjectedMapServer(ros::NodeHandle nh_private) {
 }
 
 void ProjectedMapServer::publishProjectedMap(
-    const voxgraph::VoxgraphSubmapCollection &submap_collection,
-    const ros::Time &timestamp) {
+    const voxgraph::VoxgraphSubmapCollection& submap_collection,
+    const ros::Time& timestamp) {
   // Only publish if there are subscribers
   if (projected_tsdf_map_pub_.getNumSubscribers() > 0) {
     publishProjectedMap(submap_collection, timestamp, projected_tsdf_map_pub_);
@@ -18,8 +19,8 @@ void ProjectedMapServer::publishProjectedMap(
 }
 
 void ProjectedMapServer::publishProjectedMap(
-    const VoxgraphSubmapCollection &submap_collection,
-    const ros::Time &timestamp, const ros::Publisher &projected_map_publisher) {
+    const VoxgraphSubmapCollection& submap_collection,
+    const ros::Time& timestamp, const ros::Publisher& projected_map_publisher) {
   // Create the message and set its headers
   voxgraph_msgs::MapLayer projected_map_tsdf_msg;
   projected_map_tsdf_msg.header = generateHeaderMsg(timestamp);
@@ -37,7 +38,7 @@ void ProjectedMapServer::publishProjectedMap(
 }
 
 std_msgs::Header ProjectedMapServer::generateHeaderMsg(
-    const ros::Time &timestamp) {
+    const ros::Time& timestamp) {
   std_msgs::Header msg_header;
   // TODO(victorr): Get the world frame name from FrameNames once implemented
   msg_header.frame_id = "mission";
@@ -46,7 +47,7 @@ std_msgs::Header ProjectedMapServer::generateHeaderMsg(
 }
 
 voxgraph_msgs::MapHeader ProjectedMapServer::generateMapHeaderMsg(
-    const VoxgraphSubmapCollection &submap_collection) {
+    const VoxgraphSubmapCollection& submap_collection) {
   // Set the map ID and type
   voxgraph_msgs::MapHeader map_header;
   map_header.id = 0;

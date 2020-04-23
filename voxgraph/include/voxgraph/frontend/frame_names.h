@@ -1,8 +1,9 @@
 #ifndef VOXGRAPH_FRONTEND_FRAME_NAMES_H_
 #define VOXGRAPH_FRONTEND_FRAME_NAMES_H_
 
-#include <ros/ros.h>
 #include <string>
+
+#include <ros/ros.h>
 
 namespace voxgraph {
 struct FrameNames {
@@ -38,7 +39,7 @@ struct FrameNames {
   std::string output_sensor_frame = "voxgraph_sensor";
 
   // Static method to parse ROS params
-  static FrameNames fromRosParams(const ros::NodeHandle &node_handle) {
+  static FrameNames fromRosParams(const ros::NodeHandle& node_handle) {
     FrameNames frame_names;
     // Inputs
     node_handle.param("input_odom_frame", frame_names.input_odom_frame,

@@ -1,11 +1,13 @@
 #ifndef VOXGRAPH_TOOLS_IO_H_
 #define VOXGRAPH_TOOLS_IO_H_
 
-#include <rosbag/bag.h>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include <rosbag/bag.h>
+
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 
 namespace voxgraph {

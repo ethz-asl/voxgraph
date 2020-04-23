@@ -1,8 +1,10 @@
 #ifndef VOXGRAPH_TOOLS_VISUALIZATION_LOOP_CLOSURE_VISUALS_H_
 #define VOXGRAPH_TOOLS_VISUALIZATION_LOOP_CLOSURE_VISUALS_H_
 
-#include <visualization_msgs/Marker.h>
 #include <string>
+
+#include <visualization_msgs/Marker.h>
+
 #include "voxgraph/backend/pose_graph.h"
 
 namespace voxgraph {

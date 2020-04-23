@@ -1,4 +1,5 @@
 #include "voxgraph/frontend/pose_graph_interface/measurement_templates.h"
+
 #include <string>
 
 namespace voxgraph {
@@ -32,7 +33,7 @@ MeasurementTemplates::MeasurementTemplates(bool verbose)
 }
 
 void MeasurementTemplates::setFromRosParams(
-    const ros::NodeHandle &node_handle) {
+    const ros::NodeHandle& node_handle) {
   if (node_handle.hasParam("odometry")) {
     // Set the information matrix
     setInformationMatrixFromRosParams(
@@ -123,10 +124,10 @@ void MeasurementTemplates::setFromRosParams(
 }
 
 void MeasurementTemplates::setInformationMatrixFromRosParams(
-    const ros::NodeHandle &node_handle,
-    Constraint::InformationMatrix *information_matrix) {
+    const ros::NodeHandle& node_handle,
+    Constraint::InformationMatrix* information_matrix) {
   CHECK_NOTNULL(information_matrix);
-  Constraint::InformationMatrix &information_matrix_ref = *information_matrix;
+  Constraint::InformationMatrix& information_matrix_ref = *information_matrix;
 
   // Set the upper triangular part of the information matrix from ROS params
   node_handle.param("x_x", information_matrix_ref(0, 0), 0.0);

@@ -1,11 +1,12 @@
 #include "voxgraph/tools/odometry_simulator/odometry_simulator.h"
+
 #include <eigen_conversions/eigen_msg.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <tf2_ros/transform_broadcaster.h>
 
 namespace voxgraph {
-OdometrySimulator::OdometrySimulator(const ros::NodeHandle &nh,
-                                     const ros::NodeHandle &nh_private)
+OdometrySimulator::OdometrySimulator(const ros::NodeHandle& nh,
+                                     const ros::NodeHandle& nh_private)
     : nh_(nh),
       nh_private_(nh_private),
       debug_(false),
@@ -61,7 +62,7 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle &nh,
 }
 
 void OdometrySimulator::odometryCallback(
-    const nav_msgs::Odometry::ConstPtr &odometry_msg) {
+    const nav_msgs::Odometry::ConstPtr& odometry_msg) {
   // Check if this is the first odometry message
   if (internal_pose_.header.stamp.isZero()) {
     // Initialize the internal pose
@@ -169,7 +170,7 @@ void OdometrySimulator::publishSimulatedPoseTf() {
 }
 
 void OdometrySimulator::publishOriginalPoseTf(
-    const nav_msgs::Odometry::ConstPtr &odometry_msg) {
+    const nav_msgs::Odometry::ConstPtr& odometry_msg) {
   // Declare the TF broadcaster
   static tf2_ros::TransformBroadcaster transform_broadcaster;
 

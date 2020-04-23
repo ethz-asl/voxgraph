@@ -2,14 +2,14 @@
 
 namespace voxgraph {
 void voxgraph::SubmapTimeline::addNextSubmap(
-    const ros::Time &submap_creation_timestamp,
-    const cblox::SubmapID &submap_id) {
+    const ros::Time& submap_creation_timestamp,
+    const cblox::SubmapID& submap_id) {
   submap_timeline_.emplace_hint(submap_timeline_.end(),
                                 submap_creation_timestamp, submap_id);
 }
 
-bool SubmapTimeline::lookupActiveSubmapByTime(const ros::Time &timestamp,
-                                              cblox::SubmapID *submap_id) {
+bool SubmapTimeline::lookupActiveSubmapByTime(const ros::Time& timestamp,
+                                              cblox::SubmapID* submap_id) {
   CHECK_NOTNULL(submap_id);
 
   // Get an iterator to the end of the time interval in which timestamp falls

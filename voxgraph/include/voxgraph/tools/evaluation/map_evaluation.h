@@ -1,10 +1,12 @@
 #ifndef VOXGRAPH_TOOLS_EVALUATION_MAP_EVALUATION_H_
 #define VOXGRAPH_TOOLS_EVALUATION_MAP_EVALUATION_H_
 
+#include <string>
+
 #include <voxblox/core/layer.h>
 #include <voxblox/utils/evaluation_utils.h>
 #include <voxblox_ros/ptcloud_vis.h>
-#include <string>
+
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
 
@@ -17,11 +19,11 @@ class MapEvaluation {
     voxblox::Transformation T_ground_truth__reading;
   };
 
-  MapEvaluation(const ros::NodeHandle &nh,
-                const std::string &ground_truth_tsdf_file_path);
+  MapEvaluation(const ros::NodeHandle& nh,
+                const std::string& ground_truth_tsdf_file_path);
 
   MapEvaluation::EvaluationDetails evaluate(
-      const VoxgraphSubmapCollection &submap_collection);
+      const VoxgraphSubmapCollection& submap_collection);
 
   // Find and apply the best rigid body alignment of layer A to B
   void alignSubmapAtoSubmapB(VoxgraphSubmap::Ptr submap_A,

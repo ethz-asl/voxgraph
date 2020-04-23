@@ -1,14 +1,17 @@
 #include "voxgraph/tools/evaluation/map_evaluation.h"
+
+#include <memory>
+#include <string>
+
 #include <ceres/ceres.h>
 #include <ros/ros.h>
 #include <voxblox/io/layer_io.h>
-#include <memory>
-#include <string>
+
 #include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 
 namespace voxgraph {
-MapEvaluation::MapEvaluation(const ros::NodeHandle &node_handle,
-                             const std::string &ground_truth_tsdf_file_path)
+MapEvaluation::MapEvaluation(const ros::NodeHandle& node_handle,
+                             const std::string& ground_truth_tsdf_file_path)
     : node_handle_(node_handle) {
   // Load the ground truth TSDF layer
   // NOTE: The initial layer will be overwritten but the ptr cannot be null
@@ -54,7 +57,7 @@ MapEvaluation::MapEvaluation(const ros::NodeHandle &node_handle,
 }
 
 MapEvaluation::EvaluationDetails MapEvaluation::evaluate(
-    const VoxgraphSubmapCollection &submap_collection) {
+    const VoxgraphSubmapCollection& submap_collection) {
   // Get the voxel size and number of voxels per side
   voxblox::FloatingPoint voxel_size =
       ground_truth_map_ptr_->getTsdfMap().voxel_size();
@@ -118,7 +121,7 @@ void MapEvaluation::alignSubmapAtoSubmapB(
 
   // Create and configure Ceres the problem
   ceres::Problem problem;
-  ceres::LossFunction *loss_function = nullptr;
+  ceres::LossFunction* loss_function = nullptr;
   ceres::Solver::Summary summary;
   ceres::Solver::Options ceres_options;
   ceres_options.max_num_iterations = 200;
@@ -137,7 +140,7 @@ void MapEvaluation::alignSubmapAtoSubmapB(
   problem.AddParameterBlock(layer_A_pose, 4);
 
   // Create and add the submap alignment cost function to the problem
-  ceres::CostFunction *cost_function =
+  ceres::CostFunction* cost_function =
       new RegistrationCostFunction(submap_B, submap_A, cost_config);
   problem.AddResidualBlock(cost_function, loss_function, layer_B_pose,
                            layer_A_pose);

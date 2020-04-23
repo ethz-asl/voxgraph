@@ -1,15 +1,18 @@
 #include "voxgraph/frontend/voxgraph_mapper.h"
+
+#include <chrono>
+#include <memory>
+#include <string>
+#include <thread>
+#include <vector>
+
 #include <geometry_msgs/PoseArray.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <minkindr_conversions/kindr_xml.h>
 #include <nav_msgs/Path.h>
 #include <sensor_msgs/Imu.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <chrono>
-#include <memory>
-#include <string>
-#include <thread>
-#include <vector>
+
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/tools/io.h"
 #include "voxgraph/tools/ros_params.h"
@@ -19,15 +22,15 @@
 
 namespace voxgraph {
 
-VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
-                               const ros::NodeHandle &nh_private)
+VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
+                               const ros::NodeHandle& nh_private)
     : VoxgraphMapper(nh, nh_private,
                      getVoxgraphSubmapConfigFromRosParams(nh_private),
                      voxblox::getMeshIntegratorConfigFromRosParam(nh_private)) {
 }
 
-VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle &nh,
-                               const ros::NodeHandle &nh_private,
+VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
+                               const ros::NodeHandle& nh_private,
                                VoxgraphSubmap::Config submap_config,
                                voxblox::MeshIntegratorConfig mesh_config)
     : nh_(nh),
@@ -183,7 +186,7 @@ void VoxgraphMapper::advertiseServices() {
 }
 
 void VoxgraphMapper::pointcloudCallback(
-    const sensor_msgs::PointCloud2::Ptr &pointcloud_msg) {
+    const sensor_msgs::PointCloud2::Ptr& pointcloud_msg) {
   // Lookup the robot pose at the time of the pointcloud message
   ros::Time current_timestamp = pointcloud_msg->header.stamp;
   if (!map_tracker_.updateToTime(current_timestamp,
@@ -245,12 +248,12 @@ void VoxgraphMapper::pointcloudCallback(
 }
 
 void VoxgraphMapper::loopClosureCallback(
-    const voxgraph_msgs::LoopClosure &loop_closure_msg) {
+    const voxgraph_msgs::LoopClosure& loop_closure_msg) {
   // TODO(victorr): Introduce flag to switch between default or msg info. matrix
   // TODO(victorr): Move the code below to a measurement processor
   // Setup warning msg prefix
-  const ros::Time &timestamp_A = loop_closure_msg.from_timestamp;
-  const ros::Time &timestamp_B = loop_closure_msg.to_timestamp;
+  const ros::Time& timestamp_A = loop_closure_msg.from_timestamp;
+  const ros::Time& timestamp_B = loop_closure_msg.to_timestamp;
   std::ostringstream warning_msg_prefix;
   warning_msg_prefix << "Could not add loop closure from timestamp "
                      << timestamp_A << " to " << timestamp_B;
@@ -271,9 +274,9 @@ void VoxgraphMapper::loopClosureCallback(
                                                 "within the same submap");
     return;
   }
-  const VoxgraphSubmap &submap_A =
+  const VoxgraphSubmap& submap_A =
       submap_collection_ptr_->getSubmap(submap_id_A);
-  const VoxgraphSubmap &submap_B =
+  const VoxgraphSubmap& submap_B =
       submap_collection_ptr_->getSubmap(submap_id_B);
 
   // Find the robot pose at both timestamp in their active submap frame
@@ -305,8 +308,8 @@ void VoxgraphMapper::loopClosureCallback(
                                                   T_AB);
 
   // Visualize the loop closure link
-  const Transformation &T_M_A = submap_A.getPose();
-  const Transformation &T_M_B = submap_B.getPose();
+  const Transformation& T_M_A = submap_A.getPose();
+  const Transformation& T_M_B = submap_B.getPose();
   const Transformation T_M_t1 = T_M_A * T_A_t1;
   const Transformation T_M_t2 = T_M_B * T_B_t2;
   loop_closure_vis_.publishLoopClosure(
@@ -320,7 +323,7 @@ void VoxgraphMapper::loopClosureCallback(
 }
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
-    std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
+    std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
   submap_vis_.publishSeparatedMesh(
       *submap_collection_ptr_,
       map_tracker_.getFrameNames().output_mission_frame, separated_mesh_pub_);
@@ -328,15 +331,15 @@ bool VoxgraphMapper::publishSeparatedMeshCallback(
 }
 
 bool VoxgraphMapper::publishCombinedMeshCallback(
-    std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
+    std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
   submap_vis_.publishCombinedMesh(
       *submap_collection_ptr_,
       map_tracker_.getFrameNames().output_mission_frame, combined_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
-bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request &request,
-                                       std_srvs::Empty::Response &response) {
+bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request& request,
+                                       std_srvs::Empty::Response& response) {
   // Indicate that the previous submap is finished
   // s.t. its cached members are generated
   if (!submap_collection_ptr_->empty()) {
@@ -360,21 +363,21 @@ bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request &request,
 }
 
 bool VoxgraphMapper::optimizeGraphCallback(
-    std_srvs::Empty::Request &request, std_srvs::Empty::Response &response) {
+    std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
   optimizePoseGraph();
   return true;
 }
 
 bool VoxgraphMapper::saveToFileCallback(
-    voxblox_msgs::FilePath::Request &request,
-    voxblox_msgs::FilePath::Response &response) {
+    voxblox_msgs::FilePath::Request& request,
+    voxblox_msgs::FilePath::Response& response) {
   submap_collection_ptr_->saveToFile(request.file_path);
   return true;
 }
 
 bool VoxgraphMapper::savePoseHistoryToFileCallback(
-    voxblox_msgs::FilePath::Request &request,
-    voxblox_msgs::FilePath::Response &response) {
+    voxblox_msgs::FilePath::Request& request,
+    voxblox_msgs::FilePath::Response& response) {
   ROS_INFO_STREAM("Writing pose history to bag at: " << request.file_path);
   io::savePoseHistoryToFile(request.file_path,
                             submap_collection_ptr_->getPoseHistory());
@@ -382,35 +385,35 @@ bool VoxgraphMapper::savePoseHistoryToFileCallback(
 }
 
 bool VoxgraphMapper::saveSeparatedMeshCallback(
-    voxblox_msgs::FilePath::Request &request,
-    voxblox_msgs::FilePath::Response &response) {
+    voxblox_msgs::FilePath::Request& request,
+    voxblox_msgs::FilePath::Response& response) {
   submap_vis_.saveSeparatedMesh(request.file_path, *submap_collection_ptr_);
   return true;  // Tell ROS it succeeded
 }
 
 bool VoxgraphMapper::saveCombinedMeshCallback(
-    voxblox_msgs::FilePath::Request &request,
-    voxblox_msgs::FilePath::Response &response) {
+    voxblox_msgs::FilePath::Request& request,
+    voxblox_msgs::FilePath::Response& response) {
   submap_vis_.saveCombinedMesh(request.file_path, *submap_collection_ptr_);
   return true;  // Tell ROS it succeeded
 }
 
 bool VoxgraphMapper::saveOptimizationTimesCallback(
-    voxblox_msgs::FilePath::Request &request,
-    voxblox_msgs::FilePath::Response &response) {
+    voxblox_msgs::FilePath::Request& request,
+    voxblox_msgs::FilePath::Response& response) {
   ROS_INFO_STREAM(
       "Writing optimization times to csv at: " << request.file_path);
-  const PoseGraph::SolverSummaryList &solver_summary_list =
+  const PoseGraph::SolverSummaryList& solver_summary_list =
       pose_graph_interface_.getSolverSummaries();
   std::vector<double> total_times;
-  for (const ceres::Solver::Summary &summary : solver_summary_list) {
+  for (const ceres::Solver::Summary& summary : solver_summary_list) {
     total_times.push_back(summary.total_time_in_seconds);
   }
   io::saveVectorToFile(request.file_path, total_times);
   return true;  // Tell ROS it succeeded
 }
 
-void VoxgraphMapper::switchToNewSubmap(const ros::Time &current_timestamp) {
+void VoxgraphMapper::switchToNewSubmap(const ros::Time& current_timestamp) {
   // Indicate that the previous submap is finished
   // s.t. its cached members are generated
   if (!submap_collection_ptr_->empty()) {
@@ -476,7 +479,7 @@ int VoxgraphMapper::optimizePoseGraph() {
   return 1;
 }
 
-void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
+void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
   // Publish the meshes if there are subscribers
   // NOTE: Users can request new meshes at any time through service calls
   //       so there's no point in publishing them just in case

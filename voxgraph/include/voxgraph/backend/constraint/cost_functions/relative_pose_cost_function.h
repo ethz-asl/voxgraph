@@ -2,6 +2,7 @@
 #define VOXGRAPH_BACKEND_CONSTRAINT_COST_FUNCTIONS_RELATIVE_POSE_COST_FUNCTION_H_
 
 #include <ceres/ceres.h>
+
 #include "voxgraph/backend/constraint/constraint.h"
 
 namespace voxgraph {
