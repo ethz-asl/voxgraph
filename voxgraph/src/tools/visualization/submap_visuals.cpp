@@ -31,6 +31,7 @@ void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
   // Create a marker containing the mesh
   visualization_msgs::Marker marker;
   voxblox::fillMarkerWithMesh(mesh_layer_ptr, color_mode, &marker);
+  marker.color.a = mesh_opacity_;
   for (std_msgs::ColorRGBA& color : marker.colors) {
     color.a = mesh_opacity_;
   }

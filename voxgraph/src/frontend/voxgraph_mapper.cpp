@@ -582,7 +582,9 @@ void VoxgraphMapper::publishMaps(const ros::Time &current_timestamp) {
 bool VoxgraphMapper::publishActiveSubmapCallback(
     cblox_msgs::SubmapSrv::Request &request,
     cblox_msgs::SubmapSrv::Response &response) {
-  ROS_INFO("[VoxgraphMapper] Request for Active Submap Received, Processing.");
+  if (verbose_) {
+    ROS_INFO("[VoxgraphMapper] Request for Active Submap Received, Processing.");
+  }
   if (!submap_collection_ptr_->empty()) {
     cblox_msgs::MapLayer msg = submap_server_.serializeActiveSubmap(
         submap_collection_ptr_, ros::Time::now());
