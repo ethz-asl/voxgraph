@@ -18,10 +18,10 @@ class SubmapServer {
   void publishSubmap(const VoxgraphSubmap& submap, const ros::Time& timestamp);
   void publishSubmapTsdf(const VoxgraphSubmap& submap,
                          const ros::Time& timestamp);
-  void publishSubmapSurfacePointcloud(const VoxgraphSubmap& submap,
-                                      const ros::Time& timestamp);
   void publishSubmapEsdf(const VoxgraphSubmap& submap,
                          const ros::Time& timestamp);
+  void publishSubmapSurfacePointcloud(const VoxgraphSubmap& submap,
+                                      const ros::Time& timestamp);
   void publishSubmapPoses(
       const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
       const ros::Time& timestamp);
@@ -59,7 +59,6 @@ class SubmapServer {
   static constexpr bool fake_6dof_transforms_ = true;
 
   // Convenience methods to generate the message and submap headers
-  static cblox_msgs::MapHeader generateSubmapHeaderMsg(
   static std_msgs::Header generateHeaderMsg(const VoxgraphSubmap& submap,
                                             const ros::Time& timestamp);
   static cblox_msgs::MapHeader generateSubmapHeaderMsg(

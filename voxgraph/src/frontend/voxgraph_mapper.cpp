@@ -358,9 +358,7 @@ void VoxgraphMapper::publishActiveMeshCallback(const ros::TimerEvent& /*event*/)
     submap_vis_.publishMesh(*submap_collection_ptr_, active_submap_id,
         voxblox::rainbowColorMap(static_cast<double>(active_submap_id) /
             static_cast<double>(cblox::kDefaultColorCycleLength)),
-//                static_cast<double>(active_submap_id + 1)),
-//        voxblox::Color::Gray(),
-        map_tracker_.getFrameNames().active_submap_frame, active_mesh_pub_);
+        map_tracker_.getFrameNames().output_active_submap_frame, active_mesh_pub_);
   }
 }
 

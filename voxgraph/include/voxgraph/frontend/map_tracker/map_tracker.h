@@ -96,7 +96,6 @@ class MapTracker {
 
   // Odometry output
   ros::Publisher odom_with_imu_biases_pub_;
-  ros::Publisher corrected_odom_pub_;
 };
 }  // namespace voxgraph
 
