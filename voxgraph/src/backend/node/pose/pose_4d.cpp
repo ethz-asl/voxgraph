@@ -1,7 +1,7 @@
 #include "voxgraph/backend/node/pose/pose_4d.h"
 
 namespace voxgraph {
-Pose4D::Pose4D(const Transformation &initial_pose) : Pose(initial_pose) {
+Pose4D::Pose4D(const Transformation& initial_pose) : Pose(initial_pose) {
   // Initialize the optimization variables
   xyz_yaw_vector_[0] = initial_pose_vec_[0];
   xyz_yaw_vector_[1] = initial_pose_vec_[1];

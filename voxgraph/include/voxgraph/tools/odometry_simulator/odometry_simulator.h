@@ -1,22 +1,24 @@
 #ifndef VOXGRAPH_TOOLS_ODOMETRY_SIMULATOR_ODOMETRY_SIMULATOR_H_
 #define VOXGRAPH_TOOLS_ODOMETRY_SIMULATOR_ODOMETRY_SIMULATOR_H_
 
+#include <string>
+
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <kindr/minimal/rotation-quaternion.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
-#include <string>
+
 #include "voxgraph/tools/odometry_simulator/normal_distribution.h"
 
 namespace voxgraph {
 class OdometrySimulator {
  public:
-  explicit OdometrySimulator(const ros::NodeHandle &nh,
-                             const ros::NodeHandle &nh_private);
+  explicit OdometrySimulator(const ros::NodeHandle& nh,
+                             const ros::NodeHandle& nh_private);
   ~OdometrySimulator() = default;
 
-  void odometryCallback(const nav_msgs::Odometry::ConstPtr &odometry_msg);
+  void odometryCallback(const nav_msgs::Odometry::ConstPtr& odometry_msg);
 
  private:
   typedef kindr::minimal::RotationQuaternionTemplate<double> Rotation;
@@ -53,7 +55,7 @@ class OdometrySimulator {
   // Transform publisher for the simulated noisy pose
   void publishSimulatedPoseTf();
   // Transform publisher for the true, noise-free pose
-  void publishOriginalPoseTf(const nav_msgs::Odometry::ConstPtr &odometry_msg);
+  void publishOriginalPoseTf(const nav_msgs::Odometry::ConstPtr& odometry_msg);
 };
 }  // namespace voxgraph
 

@@ -11,20 +11,20 @@ class MeasurementTemplates {
  public:
   explicit MeasurementTemplates(bool verbose = false);
 
-  void setFromRosParams(const ros::NodeHandle &node_handle);
+  void setFromRosParams(const ros::NodeHandle& node_handle);
 
-  const RelativePoseConstraint::Config &odometry;
-  const RelativePoseConstraint::Config &loop_closure;
-  const AbsolutePoseConstraint::Config &gps;
-  const AbsolutePoseConstraint::Config &height;
-  const RegistrationConstraint::Config &registration;
+  const RelativePoseConstraint::Config& odometry;
+  const RelativePoseConstraint::Config& loop_closure;
+  const AbsolutePoseConstraint::Config& gps;
+  const AbsolutePoseConstraint::Config& height;
+  const RegistrationConstraint::Config& registration;
 
  private:
   bool verbose_;
 
   void setInformationMatrixFromRosParams(
-      const ros::NodeHandle &node_handle,
-      Constraint::InformationMatrix *information_matrix);
+      const ros::NodeHandle& node_handle,
+      Constraint::InformationMatrix* information_matrix);
 
   RelativePoseConstraint::Config odometry_;
   RelativePoseConstraint::Config loop_closure_;

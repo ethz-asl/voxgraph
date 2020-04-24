@@ -1,13 +1,14 @@
 #include "voxgraph/tools/visualization/pose_graph_visuals.h"
+
 #include <limits>
 #include <string>
 #include <vector>
 
 namespace voxgraph {
-void PoseGraphVisuals::publishPoseGraph(const PoseGraph &pose_graph,
-                                        const std::string &frame_id,
-                                        const std::string &name_space,
-                                        const ros::Publisher &publisher) const {
+void PoseGraphVisuals::publishPoseGraph(const PoseGraph& pose_graph,
+                                        const std::string& frame_id,
+                                        const std::string& name_space,
+                                        const ros::Publisher& publisher) const {
   // Initialize the Rviz marker msg
   visualization_msgs::Marker marker;
   marker.header.frame_id = frame_id;
@@ -32,14 +33,14 @@ void PoseGraphVisuals::publishPoseGraph(const PoseGraph &pose_graph,
 
   // Compute the maximum cost, for normalization of the edge colors
   double max_cost = -std::numeric_limits<double>::infinity();
-  for (const PoseGraph::VisualizationEdge &edge : edges) {
+  for (const PoseGraph::VisualizationEdge& edge : edges) {
     if (edge.residual > max_cost) {
       max_cost = edge.residual;
     }
   }
 
   // Add the edges to the marker
-  for (const PoseGraph::VisualizationEdge &edge : edges) {
+  for (const PoseGraph::VisualizationEdge& edge : edges) {
     // Add edge endpoints
     geometry_msgs::Point point_msg;
     tf::pointEigenToMsg(edge.first_node_position.cast<double>(), point_msg);

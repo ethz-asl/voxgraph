@@ -1,8 +1,10 @@
 #ifndef VOXGRAPH_BACKEND_CONSTRAINT_CONSTRAINT_H_
 #define VOXGRAPH_BACKEND_CONSTRAINT_CONSTRAINT_H_
 
-#include <ceres/ceres.h>
 #include <memory>
+
+#include <ceres/ceres.h>
+
 #include "voxgraph/backend/node/node_collection.h"
 
 namespace voxgraph {
@@ -20,17 +22,19 @@ class Constraint {
     bool allow_semi_definite_information_matrix = false;
   };
 
-  explicit Constraint(ConstraintId constraint_id, const Config &config);
+  explicit Constraint(ConstraintId constraint_id, const Config& config);
   virtual ~Constraint() = default;
 
-  virtual void addToProblem(const NodeCollection &node_collection,
-                            ceres::Problem *problem) = 0;
+  virtual void addToProblem(const NodeCollection& node_collection,
+                            ceres::Problem* problem) = 0;
 
   const ceres::ResidualBlockId getResidualBlockId() {
     return residual_block_id_;
   }
 
  protected:
+  static constexpr ceres::LossFunction* kNoRobustLossFunction = nullptr;
+
   const ConstraintId constraint_id_;
   ceres::ResidualBlockId residual_block_id_ = nullptr;
 

@@ -1,28 +1,33 @@
 verbose: false
 debug: true
+auto_pause_rosbag: false
+
 submap_creation_interval: 10
-pointcloud_topic: "/velodyne_points"
-subscriber_queue_length: 1000
-mission_frame: "mission"
-odom_frame: "odom"
-base_frame: "base"
-odom_frame_corrected: "odom_corrected"
-base_frame_corrected: "base_corrected"
-sensor_frame_corrected: "velodyne_corrected"
-use_gt_ptcloud_pose_from_sensor_tf: false
-T_base_sensor:
-  - [0.877583,  0.0, 0.479426,  7.43428e-05]
-  - [0.0,       1.0, 0.0,       0.0]
-  - [-0.479426, 0.0, 0.877583, -0.0669151]
-  - [0.0,       0.0, 0.0,       1.0]
+subscriber_queue_length: 10
+
+input_odom_frame: "odom"
+input_base_link_frame: "imu"
+output_mission_frame: "mission"
+output_odom_frame: "odom"
+output_base_link_frame: "imu"
+output_sensor_frame: "sensor_voxgraph"
+
+# T_base_sensor:
+# - [-0.9908275, -0.0196803, 0.1336922, -0.024]
+# - [ 0.0202159, -0.9997921, 0.0026504, -0.011]
+# - [ 0.1336122,  0.0053288, 0.9910194, -0.131]
+# - [ 0.0,        0.0,       0.0,        1.0]
+
 tsdf_integrator:
   tsdf_voxel_size: 0.20
   truncation_distance: 0.60
-  max_ray_length_m: 20.0
+  max_ray_length_m: 16.0
   use_const_weight: true
   use_weight_dropoff: true
   use_sparsity_compensation_factor: true
-  sparsity_compensation_factor: 8.0
+  sparsity_compensation_factor: 20.0
+  # integration_order_mode: "sorted"
+
 measurements:
   submap_registration:
     enabled: true
@@ -34,12 +39,12 @@ measurements:
       z_z:     1.0
       yaw_yaw: 1.0
   odometry:
-    enabled: false
+    enabled: true
     information_matrix:
       x_x:     1.0
       y_y:     1.0
-      z_z:     1000.0
-      yaw_yaw: 1000.0
+      z_z:     2500.0
+      yaw_yaw: 2500.0
   height:
     enabled: false
-    information_zz: 1000.0
+    information_zz: 2500.0

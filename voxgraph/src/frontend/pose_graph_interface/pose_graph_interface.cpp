@@ -1,4 +1,5 @@
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
+
 #include <utility>
 #include <vector>
 
@@ -6,9 +7,11 @@ namespace voxgraph {
 PoseGraphInterface::PoseGraphInterface(
     ros::NodeHandle node_handle,
     VoxgraphSubmapCollection::Ptr submap_collection_ptr,
-    voxblox::MeshIntegratorConfig mesh_config, bool verbose)
+    voxblox::MeshIntegratorConfig mesh_config,
+    const std::string& visualizations_mission_frame, bool verbose)
     : verbose_(verbose),
       submap_collection_ptr_(std::move(submap_collection_ptr)),
+      visualization_mission_frame_(visualizations_mission_frame),
       submap_vis_(submap_collection_ptr_->getConfig(), mesh_config),
       new_loop_closures_added_since_last_optimization_(false) {
   // Advertise the pose graph visuals publisher
@@ -36,8 +39,8 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id) {
 }
 
 void PoseGraphInterface::addOdometryMeasurement(
-    const SubmapID &first_submap_id, const SubmapID &second_submap_id,
-    const Transformation &T_S1_S2) {
+    const SubmapID& first_submap_id, const SubmapID& second_submap_id,
+    const Transformation& T_S1_S2) {
   // Configure the odometry constraint
   RelativePoseConstraint::Config constraint_config =
       measurement_templates_.odometry;
@@ -63,8 +66,8 @@ void PoseGraphInterface::addOdometryMeasurement(
 }
 
 void PoseGraphInterface::addLoopClosureMeasurement(
-    const SubmapID &from_submap, const SubmapID &to_submap,
-    const Transformation &transform) {
+    const SubmapID& from_submap, const SubmapID& to_submap,
+    const Transformation& transform) {
   // Configure the loop closure constraint
   RelativePoseConstraint::Config constraint_config =
       measurement_templates_.loop_closure;
@@ -88,8 +91,8 @@ void PoseGraphInterface::addLoopClosureMeasurement(
   new_loop_closures_added_since_last_optimization_ = true;
 }
 
-void PoseGraphInterface::addHeightMeasurement(const SubmapID &submap_id,
-                                              const double &height) {
+void PoseGraphInterface::addHeightMeasurement(const SubmapID& submap_id,
+                                              const double& height) {
   // Configure the constraint
   AbsolutePoseConstraint::Config constraint_config =
       measurement_templates_.height;
@@ -112,7 +115,7 @@ void PoseGraphInterface::updateOverlappingSubmapList() {
   for (size_t i = 0; i < submap_ids.size(); i++) {
     // Get a pointer to the first submap
     cblox::SubmapID first_submap_id = submap_ids[i];
-    const VoxgraphSubmap &first_submap =
+    const VoxgraphSubmap& first_submap =
         submap_collection_ptr_->getSubmap(first_submap_id);
 
     // Publish debug visuals
@@ -120,7 +123,7 @@ void PoseGraphInterface::updateOverlappingSubmapList() {
     if (submap_pub_.getNumSubscribers() > 0) {
       submap_vis_.publishBox(
           first_submap.getMissionFrameSurfaceAabb().getCornerCoordinates(),
-          voxblox::Color::Blue(), "odom",
+          voxblox::Color::Blue(), visualization_mission_frame_,
           "surface_abb" + std::to_string(first_submap_id), submap_pub_);
     }
 
@@ -131,7 +134,7 @@ void PoseGraphInterface::updateOverlappingSubmapList() {
     for (size_t j = i + 1; j < submap_ids.size(); j++) {
       // Get the second submap
       cblox::SubmapID second_submap_id = submap_ids[j];
-      const VoxgraphSubmap &second_submap =
+      const VoxgraphSubmap& second_submap =
           submap_collection_ptr_->getSubmap(second_submap_id);
 
       // Check whether the first and second submap overlap
@@ -151,7 +154,7 @@ void PoseGraphInterface::updateRegistrationConstraints() {
   updateOverlappingSubmapList();
 
   // Add the updated registration constraints
-  for (const SubmapIdPair &submap_pair : overlapping_submap_list_) {
+  for (const SubmapIdPair& submap_pair : overlapping_submap_list_) {
     // Configure the registration constraint
     RegistrationConstraint::Config constraint_config =
         measurement_templates_.registration;
@@ -189,24 +192,24 @@ void PoseGraphInterface::optimize() {
 
   // Publish debug visuals
   if (pose_graph_pub_.getNumSubscribers() > 0) {
-    pose_graph_vis_.publishPoseGraph(pose_graph_, "odom", "optimized",
-                                     pose_graph_pub_);
+    pose_graph_vis_.publishPoseGraph(pose_graph_, visualization_mission_frame_,
+                                     "optimized", pose_graph_pub_);
   }
 }
 
 void PoseGraphInterface::updateSubmapCollectionPoses() {
-  for (const auto &submap_pose_kv : pose_graph_.getSubmapPoses()) {
+  for (const auto& submap_pose_kv : pose_graph_.getSubmapPoses()) {
     submap_collection_ptr_->setSubmapPose(submap_pose_kv.first,
                                           submap_pose_kv.second);
   }
 }
 
 bool PoseGraphInterface::getEdgeCovarianceMap(
-    PoseGraph::EdgeCovarianceMap *edge_covariance_map_ptr) const {
+    PoseGraph::EdgeCovarianceMap* edge_covariance_map_ptr) const {
   CHECK_NOTNULL(edge_covariance_map_ptr);
 
   // Request covariance estimates for all overlapping submap pairs
-  for (const SubmapIdPair &overlapping_submap_pair : overlapping_submap_list_) {
+  for (const SubmapIdPair& overlapping_submap_pair : overlapping_submap_list_) {
     edge_covariance_map_ptr->emplace(overlapping_submap_pair,
                                      PoseGraph::EdgeCovarianceMatrix::Zero());
   }

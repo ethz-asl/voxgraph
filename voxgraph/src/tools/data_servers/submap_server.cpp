@@ -1,4 +1,5 @@
 #include "voxgraph/tools/data_servers/submap_server.h"
+
 #include <minkindr_conversions/kindr_msg.h>
 #include <pcl/common/transforms.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -20,8 +21,8 @@ SubmapServer::SubmapServer(ros::NodeHandle nh_private) {
 }
 
 cblox_msgs::MapLayer SubmapServer::serializeActiveSubmap(
-    const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-    const ros::Time &current_timestamp) {
+    const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
+    const ros::Time& current_timestamp) {
   // Publish the current (actively mapping) submap
   cblox_msgs::MapLayer submap_tsdf_msg;
   if (!submap_collection_ptr->empty()) {
@@ -54,8 +55,8 @@ void SubmapServer::publishActiveSubmap(
   }
 }
 
-void SubmapServer::publishSubmap(const VoxgraphSubmap &submap,
-                                 const ros::Time &timestamp) {
+void SubmapServer::publishSubmap(const VoxgraphSubmap& submap,
+                                 const ros::Time& timestamp) {
   // Only publish if there are subscribers
   if (submap_tsdf_pub_.getNumSubscribers() > 0) {
     publishSubmapTsdf(submap, timestamp, submap_tsdf_pub_);
@@ -69,16 +70,16 @@ void SubmapServer::publishSubmap(const VoxgraphSubmap &submap,
   }
 }
 
-void SubmapServer::publishSubmapTsdf(const voxgraph::VoxgraphSubmap &submap,
-                                     const ros::Time &timestamp) {
+void SubmapServer::publishSubmapTsdf(const voxgraph::VoxgraphSubmap& submap,
+                                     const ros::Time& timestamp) {
   // Only publish if there are subscribers
   if (submap_tsdf_pub_.getNumSubscribers() > 0) {
     publishSubmapTsdf(submap, timestamp, submap_tsdf_pub_);
   }
 }
 
-void SubmapServer::publishSubmapEsdf(const voxgraph::VoxgraphSubmap &submap,
-                                     const ros::Time &timestamp) {
+void SubmapServer::publishSubmapEsdf(const voxgraph::VoxgraphSubmap& submap,
+                                     const ros::Time& timestamp) {
   // Only publish if there are subscribers
   if (submap_esdf_pub_.getNumSubscribers() > 0) {
     publishSubmapEsdf(submap, timestamp, submap_esdf_pub_);
@@ -86,7 +87,7 @@ void SubmapServer::publishSubmapEsdf(const voxgraph::VoxgraphSubmap &submap,
 }
 
 void SubmapServer::publishSubmapSurfacePointcloud(
-    const voxgraph::VoxgraphSubmap &submap, const ros::Time &timestamp) {
+    const voxgraph::VoxgraphSubmap& submap, const ros::Time& timestamp) {
   // Only publish if there are subscribers
   if (submap_surface_pointcloud_pub_.getNumSubscribers() > 0) {
     publishSubmapSurfacePointcloud(submap, timestamp,
@@ -95,8 +96,8 @@ void SubmapServer::publishSubmapSurfacePointcloud(
 }
 
 void SubmapServer::publishSubmapTsdf(
-    const VoxgraphSubmap &submap, const ros::Time &timestamp,
-    const ros::Publisher &submap_tsdf_publisher) {
+    const VoxgraphSubmap& submap, const ros::Time& timestamp,
+    const ros::Publisher& submap_tsdf_publisher) {
   // Create the message and set its headers
   cblox_msgs::MapLayer submap_tsdf_msg;
   submap_tsdf_msg.header = generateHeaderMsg(submap, timestamp);
@@ -113,8 +114,8 @@ void SubmapServer::publishSubmapTsdf(
 }
 
 void SubmapServer::publishSubmapEsdf(
-    const VoxgraphSubmap &submap, const ros::Time &timestamp,
-    const ros::Publisher &submap_esdf_publisher) {
+    const VoxgraphSubmap& submap, const ros::Time& timestamp,
+    const ros::Publisher& submap_esdf_publisher) {
   // Create the message and set its headers
   cblox_msgs::MapLayer submap_esdf_msg;
   submap_esdf_msg.header = generateHeaderMsg(submap, timestamp);
@@ -137,15 +138,15 @@ void SubmapServer::publishSubmapEsdf(
 }
 
 void SubmapServer::publishSubmapSurfacePointcloud(
-    const VoxgraphSubmap &submap, const ros::Time &timestamp,
-    const ros::Publisher &submap_surface_pointcloud_publisher) {
+    const VoxgraphSubmap& submap, const ros::Time& timestamp,
+    const ros::Publisher& submap_surface_pointcloud_publisher) {
   // Create the message and set its headers
   voxgraph_msgs::MapSurface submap_surface_pointcloud_msg;
   submap_surface_pointcloud_msg.header = generateHeaderMsg(submap, timestamp);
   submap_surface_pointcloud_msg.map_header = generateSubmapHeaderMsg(submap);
 
   // Get the isosurfaces vertices
-  const WeightedSampler<RegistrationPoint> &isosurface_points =
+  const WeightedSampler<RegistrationPoint>& isosurface_points =
       submap.getRegistrationPoints(
           VoxgraphSubmap::RegistrationPointType::kIsosurfacePoints);
 
@@ -190,8 +191,8 @@ void SubmapServer::publishSubmapSurfacePointcloud(
   submap_surface_pointcloud_publisher.publish(submap_surface_pointcloud_msg);
 }
 
-std_msgs::Header SubmapServer::generateHeaderMsg(const VoxgraphSubmap &submap,
-                                                 const ros::Time &timestamp) {
+std_msgs::Header SubmapServer::generateHeaderMsg(const VoxgraphSubmap& submap,
+                                                 const ros::Time& timestamp) {
   std_msgs::Header msg_header;
   msg_header.frame_id = "submap_" + std::to_string(submap.getID());
   msg_header.stamp = timestamp;
@@ -199,14 +200,14 @@ std_msgs::Header SubmapServer::generateHeaderMsg(const VoxgraphSubmap &submap,
 }
 
 cblox_msgs::MapHeader SubmapServer::generateSubmapHeaderMsg(
-    const VoxgraphSubmap &submap) {
+    const VoxgraphSubmap& submap) {
   // Set the submap ID and type
   cblox_msgs::MapHeader submap_header;
   submap_header.id = submap.getID();
   submap_header.is_submap = true;
 
   // Set the submap's start and end time
-  const VoxgraphSubmap::PoseHistoryMap &pose_history = submap.getPoseHistory();
+  const VoxgraphSubmap::PoseHistoryMap& pose_history = submap.getPoseHistory();
   if (!pose_history.empty()) {
     submap_header.start_time = pose_history.begin()->first;
     submap_header.end_time = (--pose_history.end())->first;

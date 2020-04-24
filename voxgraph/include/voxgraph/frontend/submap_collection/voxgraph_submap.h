@@ -1,11 +1,13 @@
 #ifndef VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_VOXGRAPH_SUBMAP_H_
 #define VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_VOXGRAPH_SUBMAP_H_
 
-#include <cblox/core/tsdf_esdf_submap.h>
-#include <ros/ros.h>
 #include <map>
 #include <memory>
 #include <vector>
+
+#include <cblox/core/tsdf_esdf_submap.h>
+#include <ros/ros.h>
+
 #include "voxgraph/frontend/submap_collection/bounding_box.h"
 #include "voxgraph/frontend/submap_collection/registration_point.h"
 #include "voxgraph/frontend/submap_collection/weighted_sampler.h"
@@ -17,7 +19,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   typedef std::shared_ptr<VoxgraphSubmap> Ptr;
   typedef std::shared_ptr<const VoxgraphSubmap> ConstPtr;
-  //TODO(victorr): Use Eigen aligned map
+  // TODO(victorr): Use Eigen aligned map
   typedef std::map<ros::Time, voxblox::Transformation> PoseHistoryMap;
 
   struct Config : cblox::TsdfEsdfSubmap::Config {
@@ -28,42 +30,42 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
     } registration_filter;
   };
 
-  VoxgraphSubmap(const voxblox::Transformation &T_M_S,
-                 const cblox::SubmapID &submap_id, const Config &config);
+  VoxgraphSubmap(const voxblox::Transformation& T_M_S,
+                 const cblox::SubmapID& submap_id, const Config& config);
 
   // Create a VoxgraphSubmap based on a COPY of a TsdfLayer
-  VoxgraphSubmap(const voxblox::Transformation &T_M_S,
-                 const cblox::SubmapID &submap_id,
-                 const voxblox::Layer<voxblox::TsdfVoxel> &tsdf_layer);
+  VoxgraphSubmap(const voxblox::Transformation& T_M_S,
+                 const cblox::SubmapID& submap_id,
+                 const voxblox::Layer<voxblox::TsdfVoxel>& tsdf_layer);
 
   // Setter method for the registration filter config
   // NOTE: This method is mainly useful for copy or proto constructed submaps
   void setRegistrationFilterConfig(
-      const Config::RegistrationFilter &registration_filter_config);
+      const Config::RegistrationFilter& registration_filter_config);
 
   const ros::Time getStartTime() const;
   const ros::Time getEndTime() const;
 
-  void addPoseToHistory(const ros::Time &timestamp,
-                        const voxblox::Transformation &T_submap_base);
-  const PoseHistoryMap &getPoseHistory() const { return pose_history_; }
-  bool lookupPoseByTime(const ros::Time &timestamp,
-                        voxblox::Transformation *T_submap_robot) const;
+  void addPoseToHistory(const ros::Time& timestamp,
+                        const voxblox::Transformation& T_submap_base);
+  const PoseHistoryMap& getPoseHistory() const { return pose_history_; }
+  bool lookupPoseByTime(const ros::Time& timestamp,
+                        voxblox::Transformation* T_submap_robot) const;
 
   // Indicate that the submap is finished and generate all cached members
   // NOTE: These cached members are mainly used in the registration cost funcs
   void finishSubmap();
 
-  void transformSubmap(const voxblox::Transformation &T_new_old);
+  void transformSubmap(const voxblox::Transformation& T_new_old);
 
   // The type of registration points supported by this submap
   enum class RegistrationPointType { kIsosurfacePoints = 0, kVoxels };
   // Getter to get the registration points of a certain type
-  const WeightedSampler<RegistrationPoint> &getRegistrationPoints(
+  const WeightedSampler<RegistrationPoint>& getRegistrationPoints(
       RegistrationPointType registration_point_type) const;
 
   // Overlap and Bounding Box related methods
-  bool overlapsWith(const VoxgraphSubmap &other_submap) const;
+  bool overlapsWith(const VoxgraphSubmap& other_submap) const;
   const BoundingBox getSubmapFrameSurfaceObb() const;
   const BoundingBox getSubmapFrameSubmapObb() const;
   const BoundingBox getMissionFrameSurfaceAabb() const;
@@ -102,6 +104,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   // Object containing all isosurface vertices stored as [x, y, z, weight]
   WeightedSampler<RegistrationPoint> isosurface_vertices_;
+  voxblox::IndexSet isosurface_blocks_;
   void findIsosurfaceVertices();
 
   // History of how the robot moved through the submap

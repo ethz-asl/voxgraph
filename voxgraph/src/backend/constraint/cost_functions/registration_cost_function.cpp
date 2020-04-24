@@ -1,7 +1,10 @@
 #include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
+
+#include <utility>
+
 #include <minkindr_conversions/kindr_tf.h>
 #include <voxblox/interpolator/interpolator.h>
-#include <utility>
+
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/tools/tf_helper.h"
 
@@ -9,7 +12,7 @@ namespace voxgraph {
 RegistrationCostFunction::RegistrationCostFunction(
     VoxgraphSubmap::ConstPtr reference_submap_ptr,
     VoxgraphSubmap::ConstPtr reading_submap_ptr,
-    const RegistrationCostFunction::Config &config)
+    const RegistrationCostFunction::Config& config)
     : reading_submap_ptr_(reading_submap_ptr),
       reading_tsdf_layer_(reading_submap_ptr->getTsdfMap().getTsdfLayer()),
       reading_esdf_layer_(reading_submap_ptr->getEsdfMap().getEsdfLayer()),
@@ -52,9 +55,9 @@ RegistrationCostFunction::RegistrationCostFunction(
   set_num_residuals(num_registration_residuals);
 }
 
-bool RegistrationCostFunction::Evaluate(double const *const *parameters,
-                                        double *residuals,
-                                        double **jacobians) const {
+bool RegistrationCostFunction::Evaluate(double const* const* parameters,
+                                        double* residuals,
+                                        double** jacobians) const {
   unsigned int residual_idx = 0;
   double summed_reference_weight = 0;
 
@@ -128,7 +131,7 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
     voxblox::InterpVector distances;
     voxblox::InterpVector q_vector;
     if (config_.use_esdf_distance) {
-      const voxblox::EsdfVoxel *neighboring_voxels[8];
+      const voxblox::EsdfVoxel* neighboring_voxels[8];
       interp_possible = esdf_interpolator_.getVoxelsAndQVector(
           reading_coordinate, neighboring_voxels, &q_vector);
       if (interp_possible) {
@@ -138,7 +141,7 @@ bool RegistrationCostFunction::Evaluate(double const *const *parameters,
         }
       }
     } else {
-      const voxblox::TsdfVoxel *neighboring_voxels[8];
+      const voxblox::TsdfVoxel* neighboring_voxels[8];
       interp_possible = tsdf_interpolator_.getVoxelsAndQVector(
           reading_coordinate, neighboring_voxels, &q_vector);
       if (interp_possible) {

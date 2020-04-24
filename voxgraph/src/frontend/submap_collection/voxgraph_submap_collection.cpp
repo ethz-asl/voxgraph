@@ -1,10 +1,12 @@
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+
 #include <utility>
+
 #include "voxgraph/tools/tf_helper.h"
 
 namespace voxgraph {
 bool VoxgraphSubmapCollection::shouldCreateNewSubmap(
-    const ros::Time &current_time) {
+    const ros::Time& current_time) {
   if (empty()) {
     ROS_INFO_COND(verbose_,
                   "Submap collection is empty."
@@ -24,7 +26,7 @@ bool VoxgraphSubmapCollection::shouldCreateNewSubmap(
 
 // Creates a gravity aligned new submap
 void VoxgraphSubmapCollection::createNewSubmap(
-    const Transformation &T_mission_base, const ros::Time &timestamp) {
+    const Transformation& T_mission_base, const ros::Time& timestamp) {
   // Define the new submap frame to be at the current robot pose
   // and have its Z-axis aligned with gravity
   Transformation T_mission__new_submap = gravityAlignPose(T_mission_base);
@@ -48,9 +50,9 @@ VoxgraphSubmapCollection::PoseStampedVector
 VoxgraphSubmapCollection::getPoseHistory() const {
   PoseStampedVector poses;
   // Iterate over all submaps
-  for (const VoxgraphSubmap::ConstPtr &submap_ptr : getSubmapConstPtrs()) {
+  for (const VoxgraphSubmap::ConstPtr& submap_ptr : getSubmapConstPtrs()) {
     // Iterate over all poses in the submap
-    for (const std::pair<const ros::Time, Transformation> &time_pose_pair :
+    for (const std::pair<const ros::Time, Transformation>& time_pose_pair :
          submap_ptr->getPoseHistory()) {
       geometry_msgs::PoseStamped pose_stamped_msg;
       pose_stamped_msg.header.stamp = time_pose_pair.first;
@@ -64,12 +66,12 @@ VoxgraphSubmapCollection::getPoseHistory() const {
 }
 
 Transformation VoxgraphSubmapCollection::gravityAlignPose(
-    const Transformation &input_pose) {
+    const Transformation& input_pose) {
   // Use the logarithmic map to get the pose's [x, y, z, r, p, y] components
   Transformation::Vector6 T_vec = input_pose.log();
 
   // Print a warning if the original pitch & roll components were non-negligible
-  if (T_vec[3] > 0.05) {
+  if (std::abs(T_vec[3]) > 0.05) {
     ROS_WARN_STREAM_THROTTLE(
         1, "New submap creation called with proposed roll: "
                << T_vec[3]
@@ -77,7 +79,7 @@ Transformation VoxgraphSubmapCollection::gravityAlignPose(
                   " XYZ+Yaw only. Please provide submap poses whose Z-axis"
                   " is roughly gravity aligned.");
   }
-  if (T_vec[4] > 0.05) {
+  if (std::abs(T_vec[4]) > 0.05) {
     ROS_WARN_STREAM_THROTTLE(
         1, "New submap creation called with proposed pitch: "
                << T_vec[4]

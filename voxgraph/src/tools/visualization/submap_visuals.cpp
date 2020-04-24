@@ -1,12 +1,14 @@
 #include "voxgraph/tools/visualization/submap_visuals.h"
+
+#include <memory>
+#include <string>
+#include <utility>
+
 #include <cblox/mesh/submap_mesher.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <voxblox/io/mesh_ply.h>
 #include <voxblox_ros/mesh_vis.h>
 #include <voxblox_ros/ptcloud_vis.h>
-#include <memory>
-#include <string>
-#include <utility>
 
 namespace voxgraph {
 SubmapVisuals::SubmapVisuals(VoxgraphSubmap::Config submap_config,
@@ -23,11 +25,10 @@ SubmapVisuals::SubmapVisuals(VoxgraphSubmap::Config submap_config,
       new cblox::SubmapMesher(std::move(submap_config), mesh_config_));
 }
 
-void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
-                                const std::string &submap_frame,
-                                const ros::Publisher &publisher,
-                                const voxblox::ColorMode &color_mode) const {
-
+void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
+                                const std::string& submap_frame,
+                                const ros::Publisher& publisher,
+                                const voxblox::ColorMode& color_mode) const {
   // Create a marker containing the mesh
   visualization_msgs::Marker marker;
   voxblox::fillMarkerWithMesh(mesh_layer_ptr, color_mode, &marker);
@@ -43,9 +44,9 @@ void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
 }
 
 void SubmapVisuals::publishMesh(
-    const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-    const cblox::SubmapID &submap_id, const voxblox::Color &submap_color,
-    const std::string &submap_frame, const ros::Publisher &publisher) {
+    const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
+    const cblox::SubmapID& submap_id, const voxblox::Color& submap_color,
+    const std::string& submap_frame, const ros::Publisher& publisher) const {
   // Get a pointer to the submap
   VoxgraphSubmap::ConstPtr submap_ptr =
       submap_collection.getSubmapConstPtr(submap_id);
@@ -66,8 +67,8 @@ void SubmapVisuals::publishMesh(
 }
 
 void SubmapVisuals::publishSeparatedMesh(
-    const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-    const std::string &mission_frame, const ros::Publisher &publisher) {
+    const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
+    const std::string& mission_frame, const ros::Publisher& publisher) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
   separated_submap_mesher_->generateSeparatedMesh(submap_collection,
@@ -76,8 +77,8 @@ void SubmapVisuals::publishSeparatedMesh(
 }
 
 void SubmapVisuals::publishCombinedMesh(
-    const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
-    const std::string &mission_frame, const ros::Publisher &publisher) {
+    const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
+    const std::string& mission_frame, const ros::Publisher& publisher) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
   combined_submap_mesher_->generateCombinedMesh(submap_collection,
@@ -87,8 +88,8 @@ void SubmapVisuals::publishCombinedMesh(
 }
 
 void SubmapVisuals::saveSeparatedMesh(
-    const std::string &filepath,
-    const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection) {
+    const std::string& filepath,
+    const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
   separated_submap_mesher_->generateSeparatedMesh(submap_collection,
@@ -97,8 +98,8 @@ void SubmapVisuals::saveSeparatedMesh(
 }
 
 void SubmapVisuals::saveCombinedMesh(
-    const std::string &filepath,
-    const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection) {
+    const std::string& filepath,
+    const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
   combined_submap_mesher_->generateCombinedMesh(submap_collection,
@@ -106,11 +107,11 @@ void SubmapVisuals::saveCombinedMesh(
   voxblox::outputMeshLayerAsPly(filepath, *mesh_layer_ptr);
 }
 
-void SubmapVisuals::publishBox(const BoxCornerMatrix &box_corner_matrix,
-                               const voxblox::Color &box_color,
-                               const std::string &frame_id,
-                               const std::string &name_space,
-                               const ros::Publisher &publisher) const {
+void SubmapVisuals::publishBox(const BoxCornerMatrix& box_corner_matrix,
+                               const voxblox::Color& box_color,
+                               const std::string& frame_id,
+                               const std::string& name_space,
+                               const ros::Publisher& publisher) const {
   // Create and configure the marker
   visualization_msgs::Marker marker;
   marker.header.frame_id = frame_id;
@@ -148,8 +149,8 @@ void SubmapVisuals::publishBox(const BoxCornerMatrix &box_corner_matrix,
 }
 
 void SubmapVisuals::publishPoseHistory(
-    const VoxgraphSubmapCollection &submap_collection,
-    const std::string &mission_frame, const ros::Publisher &publisher) const {
+    const VoxgraphSubmapCollection& submap_collection,
+    const std::string& mission_frame, const ros::Publisher& publisher) const {
   // Create the pose history message
   nav_msgs::Path pose_history_msg;
   pose_history_msg.header.stamp = ros::Time::now();

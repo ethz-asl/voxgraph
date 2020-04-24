@@ -17,9 +17,9 @@ class NodeTemplates {
   ReferenceFrameNode::Config getReferenceFrameConfigById(
       ReferenceFrameNode::FrameId frame_id);
 
-  const ReferenceFrameNode::Config &mission_frame;
-  const ReferenceFrameNode::Config &gps_frame;
-  const SubmapNode::Config &submap;
+  const ReferenceFrameNode::Config& mission_frame;
+  const ReferenceFrameNode::Config& gps_frame;
+  const SubmapNode::Config& submap;
 
  private:
   ReferenceFrameNode::Config mission_frame_;
