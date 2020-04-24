@@ -28,9 +28,9 @@ class ProjectedMapServer {
   ros::Publisher projected_tsdf_map_pub_;
 
   // Convenience methods to generate the message and submap headers
-  static std_msgs::Header generateHeaderMsg(const ros::Time &timestamp);
+  static std_msgs::Header generateHeaderMsg(const ros::Time& timestamp);
   static cblox_msgs::MapHeader generateMapHeaderMsg(
-      const VoxgraphSubmapCollection &submap_collection);
+      const VoxgraphSubmapCollection& submap_collection);
 };
 }  // namespace voxgraph
 

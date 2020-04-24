@@ -44,8 +44,8 @@ cblox_msgs::MapLayer SubmapServer::serializeActiveSubmap(
 }
 
 void SubmapServer::publishActiveSubmap(
-    const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-    const ros::Time &current_timestamp) {
+    const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
+    const ros::Time& current_timestamp) {
   // Publish the current (actively mapping) submap
   if (!submap_collection_ptr->empty()) {
     // get active submap
@@ -226,7 +226,7 @@ cblox_msgs::MapHeader SubmapServer::generateSubmapHeaderMsg(
 }
 
 void SubmapServer::publishSubmapPoses(
-    const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
+    const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
     const ros::Time& timestamp) {
   // Only publish if there are subscribers
   if (submap_poses_pub_.getNumSubscribers() > 0) {
@@ -236,8 +236,8 @@ void SubmapServer::publishSubmapPoses(
 }
 
 void SubmapServer::publishSubmapPoses(
-    const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-    const std::string &frame_id, const ros::Time &timestamp,
+    const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
+    const std::string& frame_id, const ros::Time& timestamp,
     const ros::Publisher &submap_poses_publisher) {
 
   if (submap_poses_publisher.getNumSubscribers() == 0) {
