@@ -389,4 +389,24 @@ const BoxCornerMatrix VoxgraphSubmap::getMissionFrameSubmapAabbCorners() const {
   // of the full submap's AABB
   return getMissionFrameSubmapAabb().getCornerCoordinates();
 }
+
+VoxgraphSubmap::Ptr VoxgraphSubmap::LoadFromStream(
+    const Config& config, std::fstream* proto_file_ptr,
+    uint64_t* tmp_byte_offset_ptr) {
+  // Note(alexmillane): There is no difference (for now) between the information
+  // loaded in a VoxgraphSubmap and a TsdfEsdfSubmap. Therefore we just load the
+  // later and copy over the data.
+  TsdfEsdfSubmap::Ptr tsdf_esdf_submap = TsdfEsdfSubmap::LoadFromStream(
+      config, proto_file_ptr, tmp_byte_offset_ptr);
+  if (tsdf_esdf_submap == nullptr) {
+    return nullptr;
+  }
+  // Copying over
+  auto submap_ptr = std::make_shared<VoxgraphSubmap>(
+      tsdf_esdf_submap->getPose(), tsdf_esdf_submap->getID(), config);
+  submap_ptr->esdf_map_ = tsdf_esdf_submap->getEsdfMapPtr();
+  submap_ptr->tsdf_map_ = tsdf_esdf_submap->getTsdfMapPtr();
+  return submap_ptr;
+}
+
 }  // namespace voxgraph

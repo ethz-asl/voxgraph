@@ -1,5 +1,7 @@
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 
+#include <math.h>
+
 #include <utility>
 
 #include "voxgraph/tools/tf_helper.h"
@@ -9,8 +11,8 @@ bool VoxgraphSubmapCollection::shouldCreateNewSubmap(
     const ros::Time& current_time) {
   if (empty()) {
     ROS_INFO_COND(verbose_,
-                  "Submap collection is empty."
-                  "Should create first submap");
+                  "Submap collection is empty. "
+                  "Should create first submap.");
     return true;
   } else {
     // TODO(victorr): Add options to also consider distance traveled etc
@@ -70,22 +72,25 @@ Transformation VoxgraphSubmapCollection::gravityAlignPose(
   // Use the logarithmic map to get the pose's [x, y, z, r, p, y] components
   Transformation::Vector6 T_vec = input_pose.log();
 
-  // Print a warning if the original pitch & roll components were non-negligible
-  if (std::abs(T_vec[3]) > 0.05) {
+  // Print a warning if the original pitch & roll components were large
+  constexpr float angle_threshold_rad = 30.f /* deg */ / 180.f * M_PI;
+  if (std::abs(T_vec[3]) > angle_threshold_rad) {
     ROS_WARN_STREAM_THROTTLE(
         1, "New submap creation called with proposed roll: "
                << T_vec[3]
-               << "[rad]. Note that this angle is ignored since we work in"
-                  " XYZ+Yaw only. Please provide submap poses whose Z-axis"
-                  " is roughly gravity aligned.");
+               << "[rad]. This most likely isn't problematic, but keep in mind "
+                  "that voxgraph only optimizes over XYZ and Yaw. So please "
+                  "make sure that voxgraph's odometry input is in a coordinate "
+                  "system whose Z-axis is roughly gravity aligned.");
   }
-  if (std::abs(T_vec[4]) > 0.05) {
+  if (std::abs(T_vec[4]) > angle_threshold_rad) {
     ROS_WARN_STREAM_THROTTLE(
         1, "New submap creation called with proposed pitch: "
                << T_vec[4]
-               << "[rad]. Note that this angle is ignored since we work in"
-                  " XYZ+Yaw only. Please provide submap poses whose Z-axis"
-                  " is roughly gravity aligned.");
+               << "[rad]. This most likely isn't problematic, but keep in mind "
+                  "that voxgraph only optimizes over XYZ and Yaw. So please "
+                  "make sure that voxgraph's odometry input is in a coordinate "
+                  "system whose Z-axis is roughly gravity aligned.");
   }
 
   // Set the roll and pitch to zero
