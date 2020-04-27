@@ -38,7 +38,10 @@ git clone git@github.com:ethz-asl/voxgraph.git
 wstool merge ./voxgraph/voxgraph_ssh.rosinstall
 wstool update
 ```
-Otherwise:
+<details>
+<summary>No ssh keys?</summary>
+<br>
+
 ```shell script
 cd ~/catkin_ws/src/
 git clone https://github.com/ethz-asl/voxgraph.git
@@ -46,7 +49,7 @@ git clone https://github.com/ethz-asl/voxgraph.git
 wstool merge ./voxgraph/voxgraph_https.rosinstall
 wstool update
 ```
-
+</details>
 
 Then compile voxgraph and its dependencies with:
 ```shell script
