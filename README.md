@@ -106,14 +106,14 @@ The basic requirements for running voxgraph are:
  2. a source of dense (depth) data.
 
 The system is agnostic as to where the odometry comes from. In the demo [above](#demo) we used visual odometry provided by [rovio](https://github.com/ethz-asl/rovio). However, we have also obtained good results using other odometry sources such as LOAM.
-The requirement is that there is a link on the tf tree between the odometry frame and the robot's base_link frame. The names for the frames can be configured using the `input_odom_frame` and `input_base_link_frame` rosparams. In the demo, we for example set them [here](https://github.com/ethz-asl/voxgraph/blob/feature/release/voxgraph/config/voxgraph_mapper.yaml#L9).
+The requirement is that there is a link on the tf tree between the odometry frame and the robot's base_link frame. The names for the frames can be configured using the `input_odom_frame` and `input_base_link_frame` rosparams. In the demo, we for example set them [here](https://github.com/ethz-asl/voxgraph/blob/aee04b740d4b764f9386af3aa84438bd3ff3be82/voxgraph/config/voxgraph_mapper.yaml#L8).
 
-For depth data we have tried RGB-D and 3D LiDAR sensors. The input datastream is provided to the system as rostopic, whose name can be configured through the `pointcloud_topic` rosparam. See [here](https://github.com/ethz-asl/voxgraph/blob/feature/document_example/voxgraph/launch/arche_demo.launch#L6) for the topic used in the above example.
+For depth data we have tried RGB-D and 3D LiDAR sensors. The input datastream is provided to the system as rostopic, whose name can be configured through the `pointcloud_topic` rosparam. See [here](https://github.com/ethz-asl/voxgraph/blob/aee04b740d4b764f9386af3aa84438bd3ff3be82/voxgraph/launch/arche_demo.launch#L6) for the topic used in the above example.
 
 #### Frame names
 <img alt="Voxgraph coordinate frames" src="https://user-images.githubusercontent.com/6238939/80409887-eb8e5880-88c9-11ea-9b8a-cfa03d9c111e.png" align="right">
 
-The frame convention used by voxgraph is shown on the right. The orange arrow corresponds to the odometry input. The black arrows correspond to the transforms that are being published by voxgraph. The names of all these frames can be configured using [these rosparams](https://github.com/ethz-asl/voxgraph/blob/feature/release/voxgraph/config/voxgraph_mapper.yaml#L8).
+The frame convention used by voxgraph is shown on the right. The orange arrow corresponds to the odometry input. The black arrows correspond to the transforms that are being published by voxgraph. The names of all these frames can be configured using [these rosparams](https://github.com/ethz-asl/voxgraph/blob/aee04b740d4b764f9386af3aa84438bd3ff3be82/voxgraph/config/voxgraph_mapper.yaml#L8).
 
 Setting the `output_odom_frame` to the same name as the `input_odom_frame`, and the `output_base_link_frame` to the same name as the `input_base_link_frame`, would give you a single connected tf tree as shown in the diagram.
 If you would rather keep the input and output tf trees disjoint, you could set different names for the `output_odom_frame` and/or `output_base_link_frame`. In this case voxgraph would automatically republish the odometry, using the new frame names you chose, each time it receives a pointcloud.
