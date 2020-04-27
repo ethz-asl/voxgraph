@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <cblox/core/submap_collection.h>
-#include <cblox/io/tsdf_submap_io.h>
+#include <cblox/io/submap_io.h>
 #include <cblox/utils/quat_transformation_protobuf_utils.h>
 #include <glog/logging.h>
 #include <ros/ros.h>

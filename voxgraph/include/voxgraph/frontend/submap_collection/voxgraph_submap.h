@@ -75,6 +75,12 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   const BoxCornerMatrix getMissionFrameSurfaceAabbCorners() const;
   const BoxCornerMatrix getMissionFrameSubmapAabbCorners() const;
 
+  // Load a submap from stream.
+  // Note: Returns a nullptr if load is unsuccessful.
+  static VoxgraphSubmap::Ptr LoadFromStream(const Config& config,
+                                            std::fstream* proto_file_ptr,
+                                            uint64_t* tmp_byte_offset_ptr);
+
  private:
   typedef Eigen::Matrix<voxblox::FloatingPoint, 4, 8> HomogBoxCornerMatrix;
   using TsdfVoxel = voxblox::TsdfVoxel;
