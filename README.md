@@ -93,7 +93,11 @@ If everything has worked correctly this should open rviz and within a few second
 
 Note that visualizing the whole mesh can be heavy, particularly as the map grows. If you are on a weak computer, consider disabling the mesh visualization once you have confirmed voxgraph is running correctly (uncheck the box next to "Merged Map" in rviz). The current state of the map can be saved at any time using a service call:
 ```shell script
-rosservice call /voxgraph_mapper/save_combined_mesh "file_path: '$HOME/test.ply'"
+rosservice call /voxgraph_mapper/save_combined_mesh "file_path: '$HOME/mesh.ply'"
+```
+This mesh is viewable through a number of programs. One simple example is [meshlab](http://www.meshlab.net/) such that the mesh is viewed
+```shell script
+meshlab ~/mesh.ply
 ```
 
 ##### Your own dataset
