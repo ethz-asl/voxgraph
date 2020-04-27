@@ -40,8 +40,8 @@ CostFunctionVisuals::CostFunctionVisuals() {
   jacobian_origins_.frame_locked = false;
 }
 
-void CostFunctionVisuals::addResidual(const voxblox::Point &coordinate,
-                                      const double &residual) {
+void CostFunctionVisuals::addResidual(const voxblox::Point& coordinate,
+                                      const double& residual) {
   pcl::PointXYZI point;
   point.x = coordinate.x();
   point.y = coordinate.y();
@@ -50,8 +50,8 @@ void CostFunctionVisuals::addResidual(const voxblox::Point &coordinate,
   residual_ptcloud_.push_back(point);
 }
 
-void CostFunctionVisuals::addJacobian(const voxblox::Point &coordinate,
-                                      const voxblox::Point &jacobian) {
+void CostFunctionVisuals::addJacobian(const voxblox::Point& coordinate,
+                                      const voxblox::Point& jacobian) {
   // Add the current point to the Jacobian origin and arrow vectors
   geometry_msgs::Point coordinate_msg;
   tf::pointEigenToMsg(coordinate.cast<double>(), coordinate_msg);
@@ -66,7 +66,7 @@ void CostFunctionVisuals::addJacobian(const voxblox::Point &coordinate,
   jacobian_arrows_.points.push_back(jacobian_vector_msg);
 }
 
-void CostFunctionVisuals::scaleAndPublish(const double &factor) {
+void CostFunctionVisuals::scaleAndPublish(const double factor) {
   size_t num_residuals = residual_ptcloud_.size();
   size_t num_jacobians = jacobian_origins_.points.size();
   // Scale the residuals

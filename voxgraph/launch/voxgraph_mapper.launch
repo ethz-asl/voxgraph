@@ -1,0 +1,41 @@
+<launch>
+  <!-- User supplied arguments -->
+  <arg name="pointcloud_topic"
+       doc="ROS topic for pointcloud input"/>
+  <arg name="rosbag_path"
+       default=""
+       doc="Replay the rosbag at the specified path. Can be left blank." />
+  <arg name="rosbag_skip_first_n_sec"
+       default="0"
+       doc="Skip the first n seconds of the rosbag." />
+  <arg name="debug_mode"
+       default="false"
+       doc="Run the mapper in debug mode." />
+  <arg name="show_rviz"
+       default="false"
+       doc="Automatically launch Rviz." />
+
+  <!-- Play the rosbag, unless no path is specified -->
+  <node unless="$(eval arg('rosbag_path') is '')"
+        name="player" pkg="rosbag" type="play" output="screen"
+        args="-r 1.0 -s $(arg rosbag_skip_first_n_sec) -q --clock $(arg rosbag_path)" />
+
+  <!-- Run voxgraph -->
+  <group>
+    <arg unless="$(arg debug_mode)" name="launch_prefix" value="" />
+    <arg if="$(arg debug_mode)" name="launch_prefix" value="gdb -ex run --args" />
+
+    <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node"
+          output="screen" launch-prefix="$(arg launch_prefix)">
+      <rosparam file="$(find voxgraph)/config/voxgraph_mapper.yaml" />
+      <param name="pointcloud_topic" value="$(arg pointcloud_topic)" />
+    </node>
+  </group>
+
+  <!-- Show Rviz -->
+  <group if="$(arg show_rviz)">
+    <arg name="rviz_file" default="$(find voxgraph)/config/voxgraph_mapper.rviz" />
+    <node pkg="rviz" type="rviz" name="$(anon rviz)" output="screen"
+          args="-d $(arg rviz_file)" />
+  </group>
+</launch>

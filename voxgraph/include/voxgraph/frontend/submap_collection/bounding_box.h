@@ -18,7 +18,7 @@ class BoundingBox {
   const BoxCornerMatrix getCornerCoordinates() const;
 
   static const BoundingBox getAabbFromObbAndPose(
-      const BoundingBox &obb, const voxblox::Transformation &pose);
+      const BoundingBox& obb, const voxblox::Transformation& pose);
 };
 }  // namespace voxgraph
 

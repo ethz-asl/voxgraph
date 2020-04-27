@@ -1,4 +1,5 @@
 #include "voxgraph/frontend/pose_graph_interface/measurement_templates.h"
+
 #include <string>
 
 namespace voxgraph {
@@ -32,7 +33,7 @@ MeasurementTemplates::MeasurementTemplates(bool verbose)
 }
 
 void MeasurementTemplates::setFromRosParams(
-    const ros::NodeHandle &node_handle) {
+    const ros::NodeHandle& node_handle) {
   if (node_handle.hasParam("odometry")) {
     // Set the information matrix
     setInformationMatrixFromRosParams(
@@ -104,8 +105,9 @@ void MeasurementTemplates::setFromRosParams(
             "Param \"submap_registration/registration_method\" must be "
             "\"implicit_to_implicit\" (default) or \"explicit_to_implicit\", "
             "but received \""
-            << registration_method_str << "\". "
-                                          "Will use default instead.");
+            << registration_method_str
+            << "\". "
+               "Will use default instead.");
       }
       ROS_INFO_STREAM_COND(verbose_, "Setting submap registration method to: "
                                          << registration_method_str);
@@ -122,10 +124,10 @@ void MeasurementTemplates::setFromRosParams(
 }
 
 void MeasurementTemplates::setInformationMatrixFromRosParams(
-    const ros::NodeHandle &node_handle,
-    Constraint::InformationMatrix *information_matrix) {
+    const ros::NodeHandle& node_handle,
+    Constraint::InformationMatrix* information_matrix) {
   CHECK_NOTNULL(information_matrix);
-  Constraint::InformationMatrix &information_matrix_ref = *information_matrix;
+  Constraint::InformationMatrix& information_matrix_ref = *information_matrix;
 
   // Set the upper triangular part of the information matrix from ROS params
   node_handle.param("x_x", information_matrix_ref(0, 0), 0.0);

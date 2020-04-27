@@ -4,6 +4,7 @@
 #define VOXGRAPH_BACKEND_LOCAL_PARAMETERIZATION_ANGLE_LOCAL_PARAMETERIZATION_H_
 
 #include <ceres/ceres.h>
+
 #include "voxgraph/backend/local_parameterization/normalize_angle.h"
 
 namespace voxgraph {

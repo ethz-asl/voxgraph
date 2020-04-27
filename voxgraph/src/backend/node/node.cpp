@@ -1,8 +1,8 @@
 #include "voxgraph/backend/node/node.h"
 
 namespace voxgraph {
-void Node::addToProblem(ceres::Problem *problem,
-                        ceres::LocalParameterization *local_parameterization) {
+void Node::addToProblem(ceres::Problem* problem,
+                        ceres::LocalParameterization* local_parameterization) {
   CHECK_NOTNULL(problem);
   CHECK_NOTNULL(local_parameterization);
 

@@ -38,7 +38,6 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/frontend/submap_collection/voxgraph_submap.cpp
     src/frontend/submap_collection/voxgraph_submap_collection.cpp
     src/frontend/map_tracker/map_tracker.cpp
-    src/frontend/map_tracker/scan_to_map_registerer.cpp
     src/frontend/map_tracker/transformers/tf_transformer.cpp
     src/frontend/map_tracker/transformers/odometry_transformer.cpp
     src/backend/pose_graph.cpp
@@ -80,14 +79,6 @@ target_link_libraries(odometry_simulator ${PROJECT_NAME} ${PROTO_LIBRARIES})
 cs_add_executable(registration_test_bench
     src/tools/test_benches/registration_test_bench.cpp)
 target_link_libraries(registration_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES})
-
-cs_add_executable(pose_graph_test_bench
-    src/tools/test_benches/pose_graph_test_bench.cpp)
-target_link_libraries(pose_graph_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES})
-
-cs_add_executable(mapper_test_bench
-    src/tools/test_benches/mapper_test_bench.cpp)
-target_link_libraries(mapper_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES})
 
 ##########
 # EXPORT #

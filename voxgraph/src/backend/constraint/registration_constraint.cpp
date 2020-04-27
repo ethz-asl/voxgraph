@@ -1,12 +1,13 @@
 #include "voxgraph/backend/constraint/registration_constraint.h"
+
 #include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 
 namespace voxgraph {
-void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
-                                          ceres::Problem *problem) {
+void RegistrationConstraint::addToProblem(const NodeCollection& node_collection,
+                                          ceres::Problem* problem) {
   CHECK_NOTNULL(problem);
 
-  ceres::LossFunction *loss_function = nullptr;
+  ceres::LossFunction* loss_function = kNoRobustLossFunction;
 
   // Get pointers to both submap nodes
   SubmapNode::Ptr first_submap_node_ptr =
@@ -23,7 +24,7 @@ void RegistrationConstraint::addToProblem(const NodeCollection &node_collection,
       problem, node_collection.getLocalParameterization());
 
   // Create submap registration cost function
-  ceres::CostFunction *cost_function;
+  ceres::CostFunction* cost_function;
   if (config_.registration.jacobian_evaluation_method ==
       RegistrationCostFunction::JacobianEvaluationMethod::kNumeric) {
     cost_function = nullptr;

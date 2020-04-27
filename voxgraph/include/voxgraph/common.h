@@ -1,8 +1,10 @@
 #ifndef VOXGRAPH_COMMON_H_
 #define VOXGRAPH_COMMON_H_
 
-#include <cblox/core/submap_collection.h>
 #include <utility>
+
+#include <cblox/core/submap_collection.h>
+
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 
 namespace voxgraph {

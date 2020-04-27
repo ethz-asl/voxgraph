@@ -1,9 +1,11 @@
 #include "voxgraph/tools/visualization/loop_closure_visuals.h"
+
+#include <string>
+
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/PoseArray.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <string>
 
 namespace voxgraph {
 void LoopClosureVisuals::publishLoopClosure(

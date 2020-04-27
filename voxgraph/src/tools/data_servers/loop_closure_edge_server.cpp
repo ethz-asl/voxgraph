@@ -1,5 +1,7 @@
 #include "voxgraph/tools/data_servers/loop_closure_edge_server.h"
+
 #include <limits>
+
 #include "voxgraph/common.h"
 
 namespace voxgraph {
@@ -12,9 +14,9 @@ LoopClosureEdgeServer::LoopClosureEdgeServer(ros::NodeHandle nh_private,
 }
 
 void LoopClosureEdgeServer::publishLoopClosureEdges(
-    const PoseGraphInterface &pose_graph_interface,
-    const VoxgraphSubmapCollection &submap_collection,
-    const ros::Time &timestamp) {
+    const PoseGraphInterface& pose_graph_interface,
+    const VoxgraphSubmapCollection& submap_collection,
+    const ros::Time& timestamp) {
   // Only publish if there are subscribers
   if (loop_closure_edge_list_pub_.getNumSubscribers() > 0) {
     publishLoopClosureEdges(pose_graph_interface, submap_collection, timestamp,
@@ -23,10 +25,10 @@ void LoopClosureEdgeServer::publishLoopClosureEdges(
 }
 
 void LoopClosureEdgeServer::publishLoopClosureEdges(
-    const PoseGraphInterface &pose_graph_interface,
-    const VoxgraphSubmapCollection &submap_collection,
-    const ros::Time &timestamp,
-    const ros::Publisher &loop_closure_edge_list_publisher, bool verbose) {
+    const PoseGraphInterface& pose_graph_interface,
+    const VoxgraphSubmapCollection& submap_collection,
+    const ros::Time& timestamp,
+    const ros::Publisher& loop_closure_edge_list_publisher, bool verbose) {
   voxgraph_msgs::LoopClosureEdgeList loop_closure_edge_list_msg;
   loop_closure_edge_list_msg.header = generateHeaderMsg(timestamp);
 
@@ -39,11 +41,11 @@ void LoopClosureEdgeServer::publishLoopClosureEdges(
   bool edge_covariances_useable =
       pose_graph_interface.getEdgeCovarianceMap(&edge_covariance_map);
 
-  for (const SubmapIdPair &overlapping_submap_pair : overlapping_submap_list) {
+  for (const SubmapIdPair& overlapping_submap_pair : overlapping_submap_list) {
     // Get const refs to the submap at each endpoint of the edge
-    const VoxgraphSubmap &first_submap =
+    const VoxgraphSubmap& first_submap =
         submap_collection.getSubmap(overlapping_submap_pair.first);
-    const VoxgraphSubmap &second_submap =
+    const VoxgraphSubmap& second_submap =
         submap_collection.getSubmap(overlapping_submap_pair.second);
 
     // Create the loop closure edge msg
@@ -132,7 +134,7 @@ void LoopClosureEdgeServer::publishLoopClosureEdges(
 }
 
 std_msgs::Header LoopClosureEdgeServer::generateHeaderMsg(
-    const ros::Time &timestamp) {
+    const ros::Time& timestamp) {
   std_msgs::Header msg_header;
   msg_header.frame_id = "";
   msg_header.stamp = timestamp;

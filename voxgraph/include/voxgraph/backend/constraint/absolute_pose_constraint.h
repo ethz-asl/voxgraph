@@ -2,6 +2,7 @@
 #define VOXGRAPH_BACKEND_CONSTRAINT_ABSOLUTE_POSE_CONSTRAINT_H_
 
 #include <memory>
+
 #include "voxgraph/backend/constraint/constraint.h"
 
 namespace voxgraph {
