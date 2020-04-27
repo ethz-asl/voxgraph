@@ -63,5 +63,22 @@ We provide a demo dataset [here](http://robotics.ethz.ch/~asl-datasets/2020_voxg
 
 _[Further steps coming soon]_
 
+Running this example requires a couple more packages for performing lidar undistortion. These are aquired and built using:
+```shell script
+cd ~/catkin_ws/src/
+wstool merge NEED_INSTALL_FILE
+```
+
+
+Download and unzip the dataset
+```shell script
+wget -P ~/Downloads http://robotics.ethz.ch/~asl-datasets/2020_voxgraph_arche/arche_flight1_2ms_indoor-outdoor-figure-8.zip
+unzip ~/Downloads/arche_flight1_2ms_indoor-outdoor-figure-8.zip
+```
+Launch voxgraph
+```shell script
+
+```
+
 ##### Your own dataset
 _[Coming soon]_
