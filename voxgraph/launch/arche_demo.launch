@@ -1,8 +1,9 @@
 <launch>
   <param name="use_sim_time" value="true" />
 
+  <arg name="rosbag_path" />
+
   <arg name="pointcloud_topic" value="lidar_undistortion/pointcloud_corrected" />
-  <arg name="rosbag_path" value="/home/victor/data/arche_week/arche_day_2/flight1_2ms.bag" />
   <arg name="rosbag_skip_first_n_sec" value="5" />
   <arg name="debug_mode" value="false" />
   <arg name="show_rviz" value="true" />
