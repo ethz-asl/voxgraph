@@ -4,7 +4,6 @@
 #include <string>
 #include <utility>
 
-#include <maplab_msgs/OdometryWithImuBiases.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <voxblox_ros/transformer.h>
@@ -22,9 +21,7 @@ class MapTracker {
                       FrameNames frame_names, bool verbose = false);
 
   void subscribeToTopics(ros::NodeHandle nh,
-                         const std::string& odometry_input_topic,
-                         const std::string& imu_biases_topic);
-  void imuBiasesCallback(const sensor_msgs::Imu::ConstPtr& imu_biases);
+                         const std::string& odometry_input_topic);
   void advertiseTopics(ros::NodeHandle nh_private,
                        const std::string& odometry_output_topic);
 
@@ -88,14 +85,6 @@ class MapTracker {
   //       false if a calibration is provided through method set_T_B_C()
   TfTransformer tf_transformer_;
   OdometryTransformer odom_transformer_;
-
-  // Odometry input
-  ros::Subscriber imu_biases_subscriber_;
-  BiasVectorType forwarded_accel_bias_ = BiasVectorType::Zero();
-  BiasVectorType forwarded_gyro_bias_ = BiasVectorType::Zero();
-
-  // Odometry output
-  ros::Publisher odom_with_imu_biases_pub_;
 };
 }  // namespace voxgraph
 

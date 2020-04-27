@@ -139,8 +139,7 @@ void VoxgraphMapper::subscribeToTopics() {
       nh_.subscribe(loop_closure_topic_, loop_closure_subscriber_queue_length_,
                     &VoxgraphMapper::loopClosureCallback, this);
   map_tracker_.subscribeToTopics(
-      nh_, nh_private_.param<std::string>("odometry_input_topic", ""),
-      nh_private_.param<std::string>("imu_biases_topic", ""));
+      nh_, nh_private_.param<std::string>("odometry_input_topic", ""));
 }
 
 void VoxgraphMapper::advertiseTopics() {
