@@ -101,4 +101,12 @@ meshlab ~/mesh.ply
 ```
 
 ##### Your own dataset
-_[Coming soon]_
+The basic requirements for running voxgraph are:
+ 1. an odometry source, and
+ 2. a source of dense (depth) data.
+
+The system is agnostic as to where the odometry comes from. In the demo [above](#demo) we used visual odometry provided by [rovio](https://github.com/ethz-asl/rovio), however, we have also run voxgraph using diverse odometry sources, for example leg odometry. The requirement is that there a link on the tf tree between the `input_odom_frame` and `input_base_link_frame`. These frame names are configurable as rosparams. They are set, for example, for the demo in the parameter file [here](https://github.com/ethz-asl/voxgraph/blob/feature/release/voxgraph/config/voxgraph_mapper.yaml#L9). 
+
+For depth data we have tried RGB-D and 3D LiDAR sensors. The input datastream is provided to the system as rostopic with a configurable name through the rosparam `pointcloud_topic`. See [here](https://github.com/ethz-asl/voxgraph/blob/feature/document_example/voxgraph/launch/arche_demo.launch#L6) for the topic used in the above example.
+
+Providing these two topics should be enough to get you started. 
