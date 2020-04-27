@@ -85,9 +85,15 @@ Download and unzip the dataset
 wget -P ~/Downloads http://robotics.ethz.ch/~asl-datasets/2020_voxgraph_arche/arche_flight1_2ms_indoor-outdoor-figure-8.zip
 unzip ~/Downloads/arche_flight1_2ms_indoor-outdoor-figure-8.zip
 ```
-Launch voxgraph
+Launch the example
 ```shell script
+roslaunch voxgraph arche_demo.launch rosbag_path:=${HOME}/Downloads/arche_flight1_2ms_indoor-outdoor-figure-8.bag
+```
+If everything has worked correctly this should open rviz and within a few seconds the first fragment of the map should appear.
 
+Note that visualizing the whole mesh can be heavy, particularly as the map grows. If you are on a weak computer, consider disabling the mesh visualization once you have confirmed voxgraph is running correctly (uncheck the box next to "Merged Map" in rviz). The current state of the map can be saved at any time using a service call:
+```shell script
+rosservice call /voxgraph_mapper/save_combined_mesh "file_path: '$HOME/test.ply'"
 ```
 
 ##### Your own dataset
