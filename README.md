@@ -1,7 +1,7 @@
 # Voxgraph
 ![voxgraph_logo_github](https://user-images.githubusercontent.com/6238939/79927519-434b4080-8440-11ea-9187-92e28466035b.png)
 
-Voxgraph is a globally consistent volumetric mapping framework. It represents the world as a collection of Signed Distance Function submaps, each based on [voxblox](https://github.com/ethz-asl/voxblox). These are then aligned through pose graph optimization.
+Voxgraph is a globally consistent volumetric mapping framework. It represents the world as a collection of Signed Distance Function submaps, which it aligns through pose graph optimization. Each submap is based on [voxblox](https://github.com/ethz-asl/voxblox) and the collection itself is managed using [c-blox](https://github.com/ethz-asl/cblox).
 
 Local consistency is maintained through registration constraints between overlapping submap pairs. The computational cost of these constraints is significantly reduced by directly exploiting the underlying Signed Distance Function representation of the submaps. This makes it possible to globally optimize maps with hundreds of overlapping submap pair constraints, in a matter of seconds even on computationally constrained platforms.
 
@@ -62,6 +62,3 @@ _[Further steps coming soon]_
 
 ##### Your own dataset
 _[Coming soon]_
-
-## TODOs
-- [ ] Remove dependency on maplab_msgs
