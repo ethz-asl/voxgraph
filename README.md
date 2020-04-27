@@ -61,14 +61,24 @@ catkin build voxgraph
 ##### Demo
 We provide a demo dataset [here](http://robotics.ethz.ch/~asl-datasets/2020_voxgraph_arche/arche_flight1_2ms_indoor-outdoor-figure-8.zip), which features a hexacopter flying through an indoor-outdoor search and rescue training site. The rosbag includes the robot's visual, inertial and LiDAR sensor data, and the GPS RTK measurements used for the evaluations in the paper.
 
-_[Further steps coming soon]_
-
-Running this example requires a couple more packages for performing lidar undistortion. These are aquired and built using:
+Running this example requires a couple more packages than the basic install for performing lidar undistortion. These are clone and build these using:
 ```shell script
 cd ~/catkin_ws/src/
-wstool merge NEED_INSTALL_FILE
+wstool merge ./voxgraph/arche_ssh.rosinstall
+wstool update
+catkin build lidar_undistortion
 ```
+<details>
+<summary>No ssh keys?</summary>
+<br>
 
+```shell script
+cd ~/catkin_ws/src/
+wstool merge ./voxgraph/arche_https.rosinstall
+wstool update
+catkin build lidar_undistortion
+```
+</details>
 
 Download and unzip the dataset
 ```shell script
