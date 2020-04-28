@@ -5,9 +5,9 @@
 
 namespace voxgraph {
 template <typename T>
-bool RelativePoseCostFunction::operator()(const T *const pose_A,
-                                          const T *const pose_B,
-                                          T *residuals) const {
+bool RelativePoseCostFunction::operator()(const T* const pose_A,
+                                          const T* const pose_B,
+                                          T* residuals) const {
   const Eigen::Matrix<T, 3, 1> t_mission_A(pose_A[0], pose_A[1], pose_A[2]);
   const Eigen::Matrix<T, 3, 1> t_mission_B(pose_B[0], pose_B[1], pose_B[2]);
   const T yaw_mission_A(pose_A[3]);

@@ -1,10 +1,11 @@
 #include "voxgraph/frontend/map_tracker/transformers/tf_transformer.h"
+
 #include <string>
 
 namespace voxgraph {
-bool TfTransformer::waitForTransform(const std::string &to_frame_id,
-                                     const std::string &from_frame_id,
-                                     const ros::Time &frame_timestamp) {
+bool TfTransformer::waitForTransform(const std::string& to_frame_id,
+                                     const std::string& from_frame_id,
+                                     const ros::Time& frame_timestamp) {
   // Total time spent waiting for the updated pose
   ros::WallDuration t_waited(0.0);
   while (t_waited < transform_lookup_max_time_) {
@@ -19,10 +20,10 @@ bool TfTransformer::waitForTransform(const std::string &to_frame_id,
   return false;
 }
 
-bool TfTransformer::lookupTransform(const std::string &to_frame_id,
-                                    const std::string &from_frame_id,
-                                    const ros::Time &frame_timestamp,
-                                    Transformation *transform) {
+bool TfTransformer::lookupTransform(const std::string& to_frame_id,
+                                    const std::string& from_frame_id,
+                                    const ros::Time& frame_timestamp,
+                                    Transformation* transform) {
   CHECK_NOTNULL(transform);
   if (!waitForTransform(to_frame_id, from_frame_id, frame_timestamp)) {
     return false;

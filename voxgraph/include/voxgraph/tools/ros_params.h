@@ -3,6 +3,7 @@
 
 #include <ros/node_handle.h>
 #include <voxblox_ros/ros_params.h>
+
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 
 namespace voxgraph {

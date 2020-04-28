@@ -2,7 +2,7 @@
 
 namespace voxgraph {
 Constraint::Constraint(Constraint::ConstraintId constraint_id,
-                       const Constraint::Config &config)
+                       const Constraint::Config& config)
     : constraint_id_(constraint_id) {
   if (!config.allow_semi_definite_information_matrix) {
     // Compute the square root of the information matrix

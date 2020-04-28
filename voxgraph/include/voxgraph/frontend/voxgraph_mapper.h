@@ -1,18 +1,19 @@
 #ifndef VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 #define VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 
+#include <future>
+#include <memory>
+#include <string>
+
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
-#include <future>
 #include <voxgraph_msgs/LoopClosure.h>
-#include <memory>
-#include <string>
+
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/frame_names.h"
 #include "voxgraph/frontend/map_tracker/map_tracker.h"
-#include "voxgraph/frontend/map_tracker/scan_to_map_registerer.h"
 #include "voxgraph/frontend/measurement_processors/gps_processor.h"
 #include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
@@ -21,58 +22,58 @@
 #include "voxgraph/tools/data_servers/projected_map_server.h"
 #include "voxgraph/tools/data_servers/submap_server.h"
 #include "voxgraph/tools/rosbag_helper.h"
-#include "voxgraph/tools/visualization/submap_visuals.h"
 #include "voxgraph/tools/visualization/loop_closure_visuals.h"
+#include "voxgraph/tools/visualization/submap_visuals.h"
 
 namespace voxgraph {
 class VoxgraphMapper {
  public:
   // Constructor & Destructor
-  VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
-  VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private,
+  VoxgraphMapper(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
+  VoxgraphMapper(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
                  VoxgraphSubmap::Config submap_config,
                  voxblox::MeshIntegratorConfig mesh_config);
   ~VoxgraphMapper() = default;
 
   // ROS topic callbacks
-  void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
-  void loopClosureCallback(const voxgraph_msgs::LoopClosure &loop_closure_msg);
+  void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr& pointcloud_msg);
+  void loopClosureCallback(const voxgraph_msgs::LoopClosure& loop_closure_msg);
 
   // ROS timer callbacks
   void publishActiveSubmapMeshCallback(const ros::TimerEvent& event);
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
-      std_srvs::Empty::Request &request,     // NOLINT
-      std_srvs::Empty::Response &response);  // NOLINT
+      std_srvs::Empty::Request& request,     // NOLINT
+      std_srvs::Empty::Response& response);  // NOLINT
   bool publishCombinedMeshCallback(
-      std_srvs::Empty::Request &request,     // NOLINT
-      std_srvs::Empty::Response &response);  // NOLINT
-  bool optimizeGraphCallback(std_srvs::Empty::Request &request,     // NOLINT
-                             std_srvs::Empty::Response &response);  // NOLINT
-  bool finishMapCallback(std_srvs::Empty::Request &request,         // NOLINT
-                         std_srvs::Empty::Response &response);      // NOLINT
+      std_srvs::Empty::Request& request,                            // NOLINT
+      std_srvs::Empty::Response& response);                         // NOLINT
+  bool optimizeGraphCallback(std_srvs::Empty::Request& request,     // NOLINT
+                             std_srvs::Empty::Response& response);  // NOLINT
+  bool finishMapCallback(std_srvs::Empty::Request& request,         // NOLINT
+                         std_srvs::Empty::Response& response);      // NOLINT
   bool saveToFileCallback(
-      voxblox_msgs::FilePath::Request &request,     // NOLINT
-      voxblox_msgs::FilePath::Response &response);  // NOLINT
+      voxblox_msgs::FilePath::Request& request,     // NOLINT
+      voxblox_msgs::FilePath::Response& response);  // NOLINT
   bool savePoseHistoryToFileCallback(
-      voxblox_msgs::FilePath::Request &request,     // NOLINT
-      voxblox_msgs::FilePath::Response &response);  // NOLINT
+      voxblox_msgs::FilePath::Request& request,     // NOLINT
+      voxblox_msgs::FilePath::Response& response);  // NOLINT
   bool saveSeparatedMeshCallback(
-      voxblox_msgs::FilePath::Request &request,     // NOLINT
-      voxblox_msgs::FilePath::Response &response);  // NOLINT
+      voxblox_msgs::FilePath::Request& request,     // NOLINT
+      voxblox_msgs::FilePath::Response& response);  // NOLINT
   bool saveCombinedMeshCallback(
-      voxblox_msgs::FilePath::Request &request,     // NOLINT
-      voxblox_msgs::FilePath::Response &response);  // NOLINT
+      voxblox_msgs::FilePath::Request& request,     // NOLINT
+      voxblox_msgs::FilePath::Response& response);  // NOLINT
   bool saveOptimizationTimesCallback(
-      voxblox_msgs::FilePath::Request &request,     // NOLINT
-      voxblox_msgs::FilePath::Response &response);  // NOLINT
+      voxblox_msgs::FilePath::Request& request,     // NOLINT
+      voxblox_msgs::FilePath::Response& response);  // NOLINT
 
-  const VoxgraphSubmapCollection &getSubmapCollection() {
+  const VoxgraphSubmapCollection& getSubmapCollection() {
     return *submap_collection_ptr_;
   }
 
-  const PoseGraph::SolverSummaryList &getSolverSummaries() {
+  const PoseGraph::SolverSummaryList& getSolverSummaries() {
     return pose_graph_interface_.getSolverSummaries();
   }
 
@@ -97,9 +98,9 @@ class VoxgraphMapper {
   void getParametersFromRos();
 
   // New submap creation, pose graph optimization and map publishing
-  void switchToNewSubmap(const ros::Time &current_timestamp);
+  void switchToNewSubmap(const ros::Time& current_timestamp);
   int optimizePoseGraph();
-  void publishMaps(const ros::Time &current_timestamp);
+  void publishMaps(const ros::Time& current_timestamp);
 
   // Asynchronous handle for the pose graph optimization thread
   std::future<int> optimization_async_handle_;
@@ -161,7 +162,6 @@ class VoxgraphMapper {
   LoopClosureEdgeServer loop_closure_edge_server_;
 
   // Map tracker handles the odometry input and refines it using scan-to-map ICP
-  bool use_icp_refinement_;
   MapTracker map_tracker_;
 };
 }  // namespace voxgraph

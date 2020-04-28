@@ -1,10 +1,12 @@
-#include "voxgraph/tools/odometry_simulator/odometry_simulator.h"
 #include <glog/logging.h>
 #include <ros/ros.h>
+
+#include "voxgraph/tools/odometry_simulator/odometry_simulator.h"
 
 int main(int argc, char** argv) {
   // Start logging
   google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
 
   // Register with ROS master
   ros::init(argc, argv, "voxgraph_odometry_simulator");

@@ -1,27 +1,30 @@
+#include <time.h>
+
+#include <string>
+#include <vector>
+
 #include <cblox/core/submap_collection.h>
-#include <cblox/io/tsdf_submap_io.h>
+#include <cblox/io/submap_io.h>
 #include <cblox/utils/quat_transformation_protobuf_utils.h>
 #include <glog/logging.h>
 #include <ros/ros.h>
-#include <time.h>
 #include <voxblox/io/layer_io.h>
 #include <voxblox_ros/ptcloud_vis.h>
 #include <voxblox_ros/ros_params.h>
 #include <boost/filesystem.hpp>
-#include <string>
-#include <vector>
+
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   enum SolverReportStyle { kBrief, kFull, kNone };
   using voxblox::Transformation;
-  using voxgraph::VoxgraphSubmap;
   using voxgraph::RegistrationCostFunction;
   using voxgraph::SubmapRegistrationHelper;
   using voxgraph::TfHelper;
+  using voxgraph::VoxgraphSubmap;
 
   // Start logging
   google::InitGoogleLogging(argv[0]);
@@ -198,7 +201,7 @@ int main(int argc, char **argv) {
   CHECK(submap_collection_ptr->getSubmapPose(reading_submap_id,
                                              &transform_getter));
   const Transformation T_mission__reading_original = transform_getter;
-  const Eigen::Vector3f &ground_truth_position =
+  const Eigen::Vector3f& ground_truth_position =
       T_mission__reading_original.getPosition();
 
   // Publish TFs for the reference and reading submap
@@ -275,8 +278,9 @@ int main(int argc, char **argv) {
   } else {
     log_file << reading_submap_id;
   }
-  log_file << "," << (registerer_options.registration.visualize_residuals ||
-                      registerer_options.registration.visualize_gradients)
+  log_file << ","
+           << (registerer_options.registration.visualize_residuals ||
+               registerer_options.registration.visualize_gradients)
            << "," << registerer_options.registration.use_esdf_distance << ","
            << GIT_BRANCH << "," << GIT_COMMIT_HASH << "\n"
            << "x_true, y_true, z_true, yaw_true, pitch_true, roll_true\n"
@@ -291,12 +295,12 @@ int main(int argc, char **argv) {
   // Loop over all ranges
   int counter(0);
   ROS_INFO("Looping over all starting positions:");
-  for (const float &x : range_x) {
-    for (const float &y : range_y)
-      for (const float &z : range_z)
-        for (const float &yaw : range_yaw)
-          for (const float &pitch : range_pitch)
-            for (const float &roll : range_roll) {
+  for (const float& x : range_x) {
+    for (const float& y : range_y)
+      for (const float& z : range_z)
+        for (const float& yaw : range_yaw)
+          for (const float& pitch : range_pitch)
+            for (const float& roll : range_roll) {
               // Append test to log file
               log_file << x << "," << y << "," << z << "," << yaw << ","
                        << pitch << "," << roll << ",";
@@ -315,7 +319,7 @@ int main(int argc, char **argv) {
                   reading_submap_id, T_mission__reading_perturbed);
 
               // Announce progress
-              const Eigen::Vector3f &perturbed_position =
+              const Eigen::Vector3f& perturbed_position =
                   T_mission__reading_perturbed.getPosition();
               printf(
                   "-- % 2i disturbance:        "
@@ -353,7 +357,7 @@ int main(int argc, char **argv) {
                     reading_submap_id, T_mission__reading_optimized);
 
                 // Announce results
-                const Eigen::Vector3f &optimized_position =
+                const Eigen::Vector3f& optimized_position =
                     T_mission__reading_optimized.getPosition();
                 printf(
                     "-- % 2i remaining error:    "

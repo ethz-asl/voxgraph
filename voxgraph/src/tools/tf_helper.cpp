@@ -1,13 +1,15 @@
 #include "voxgraph/tools/tf_helper.h"
-#include <tf2_ros/static_transform_broadcaster.h>
-#include <tf2_ros/transform_broadcaster.h>
+
 #include <string>
 
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.h>
+
 namespace voxgraph {
-void TfHelper::publishTransform(const voxblox::Transformation &transform,
-                                const std::string &base_frame,
-                                const std::string &target_frame,
-                                bool tf_is_static, const ros::Time &timestamp) {
+void TfHelper::publishTransform(const voxblox::Transformation& transform,
+                                const std::string& base_frame,
+                                const std::string& target_frame,
+                                bool tf_is_static, const ros::Time& timestamp) {
   static tf2_ros::TransformBroadcaster transform_broadcaster;
   static tf2_ros::StaticTransformBroadcaster static_transform_broadcaster;
 

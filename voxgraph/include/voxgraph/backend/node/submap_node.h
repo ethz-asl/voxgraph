@@ -1,8 +1,10 @@
 #ifndef VOXGRAPH_BACKEND_NODE_SUBMAP_NODE_H_
 #define VOXGRAPH_BACKEND_NODE_SUBMAP_NODE_H_
 
-#include <cblox/core/common.h>
 #include <memory>
+
+#include <cblox/core/common.h>
+
 #include "voxgraph/backend/node/node.h"
 
 namespace voxgraph {
@@ -15,7 +17,7 @@ class SubmapNode : public Node {
     SubmapId submap_id;
   };
 
-  SubmapNode(const NodeId &node_id, const Config &config)
+  SubmapNode(const NodeId& node_id, const Config& config)
       : Node(node_id, config), config_(config) {}
 
   const cblox::SubmapID getSubmapId() const { return config_.submap_id; }

@@ -1,19 +1,22 @@
 #include "voxgraph/tools/submap_registration_helper.h"
-#include <voxblox/interpolator/interpolator.h>
+
 #include <utility>
+
+#include <voxblox/interpolator/interpolator.h>
+
 #include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 
 namespace voxgraph {
 SubmapRegistrationHelper::SubmapRegistrationHelper(
     cblox::SubmapCollection<VoxgraphSubmap>::ConstPtr submap_collection_ptr,
-    const Options &options)
+    const Options& options)
     : submap_collection_ptr_(std::move(submap_collection_ptr)),
       options_(options) {}
 
 bool SubmapRegistrationHelper::testRegistration(
-    const cblox::SubmapID &reference_submap_id,
-    const cblox::SubmapID &reading_submap_id, double *mission_pose_reading,
-    ceres::Solver::Summary *summary) {
+    const cblox::SubmapID& reference_submap_id,
+    const cblox::SubmapID& reading_submap_id, double* mission_pose_reading,
+    ceres::Solver::Summary* summary) {
   // Get shared pointers to the reference and reading submaps
   VoxgraphSubmap::ConstPtr reference_submap_ptr =
       submap_collection_ptr_->getSubmapConstPtr(reference_submap_id);
@@ -24,7 +27,7 @@ bool SubmapRegistrationHelper::testRegistration(
 
   // Create problem and initial conditions
   ceres::Problem problem;
-  ceres::LossFunction *loss_function = nullptr;
+  ceres::LossFunction* loss_function = nullptr;  // No robust loss function
 
   // Get initial pose of reference submap (not touched by the optimization)
   voxblox::Transformation::Vector6 T_vec_ref =
@@ -38,12 +41,12 @@ bool SubmapRegistrationHelper::testRegistration(
   problem.AddParameterBlock(mission_pose_reading, 4);
 
   // Create the submap registration cost function
-  RegistrationCostFunction *registration_cost_function =
+  RegistrationCostFunction* registration_cost_function =
       new RegistrationCostFunction(reference_submap_ptr, reading_submap_ptr,
                                    options_.registration);
 
   // Toggle between analytic and numeric Jacobians
-  ceres::CostFunction *ceres_cost_function;
+  ceres::CostFunction* ceres_cost_function;
   if (options_.registration.jacobian_evaluation_method ==
       RegistrationCostFunction::JacobianEvaluationMethod::kNumeric) {
     // Wrap the registration cost function in a numeric diff cost function,

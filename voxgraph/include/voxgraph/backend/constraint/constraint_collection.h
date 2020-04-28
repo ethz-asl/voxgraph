@@ -2,6 +2,7 @@
 #define VOXGRAPH_BACKEND_CONSTRAINT_CONSTRAINT_COLLECTION_H_
 
 #include <list>
+
 #include "voxgraph/backend/constraint/absolute_pose_constraint.h"
 #include "voxgraph/backend/constraint/registration_constraint.h"
 #include "voxgraph/backend/constraint/relative_pose_constraint.h"
@@ -9,20 +10,20 @@
 namespace voxgraph {
 class ConstraintCollection {
  public:
-  void addAbsolutePoseConstraint(const AbsolutePoseConstraint::Config &config) {
+  void addAbsolutePoseConstraint(const AbsolutePoseConstraint::Config& config) {
     absolute_pose_constraints_.emplace_back(newConstraintId(), config);
   }
-  void addRelativePoseConstraint(const RelativePoseConstraint::Config &config) {
+  void addRelativePoseConstraint(const RelativePoseConstraint::Config& config) {
     relative_pose_constraints_.emplace_back(newConstraintId(), config);
   }
-  void addRegistrationConstraint(const RegistrationConstraint::Config &config) {
+  void addRegistrationConstraint(const RegistrationConstraint::Config& config) {
     registration_constraints_.emplace_back(newConstraintId(), config);
   }
 
   void resetRegistrationConstraints() { registration_constraints_.clear(); }
 
-  void addConstraintsToProblem(const NodeCollection &node_collection,
-                               ceres::Problem *problem_ptr,
+  void addConstraintsToProblem(const NodeCollection& node_collection,
+                               ceres::Problem* problem_ptr,
                                bool exclude_registration_constraints = false);
 
  private:

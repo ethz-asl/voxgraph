@@ -1,10 +1,12 @@
 #ifndef VOXGRAPH_FRONTEND_MEASUREMENT_PROCESSORS_POINTCLOUD_INTEGRATOR_H_
 #define VOXGRAPH_FRONTEND_MEASUREMENT_PROCESSORS_POINTCLOUD_INTEGRATOR_H_
 
+#include <memory>
+
 #include <sensor_msgs/PointCloud2.h>
 #include <voxblox/integrator/tsdf_integrator.h>
 #include <voxblox/utils/color_maps.h>
-#include <memory>
+
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 
@@ -13,11 +15,11 @@ class PointcloudIntegrator {
  public:
   explicit PointcloudIntegrator(bool verbose = false);
 
-  void setTsdfIntegratorConfigFromRosParam(const ros::NodeHandle &node_handle);
+  void setTsdfIntegratorConfigFromRosParam(const ros::NodeHandle& node_handle);
 
-  void integratePointcloud(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg,
-                           const voxblox::Transformation &T_submap_sensor,
-                           VoxgraphSubmap *submap_ptr);
+  void integratePointcloud(const sensor_msgs::PointCloud2::Ptr& pointcloud_msg,
+                           const voxblox::Transformation& T_submap_sensor,
+                           VoxgraphSubmap* submap_ptr);
 
  private:
   bool verbose_;

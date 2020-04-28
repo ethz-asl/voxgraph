@@ -1,0 +1,6 @@
+- git:
+    local-name: ouster_lidar
+    uri: https://github.com/ethz-asl/ouster_lidar.git    
+- git:
+    local-name: lidar_undistortion
+    uri: https://github.com/ethz-asl/lidar_undistortion.git
