@@ -216,7 +216,6 @@ void SubmapServer::publishSubmapPoses(
     const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
     const std::string &frame_id, const ros::Time &timestamp,
     const ros::Publisher &submap_poses_publisher) {
-
   // prep map header
   voxgraph_msgs::MapPoseList pose_msg;
   pose_msg.header.frame_id = frame_id;
