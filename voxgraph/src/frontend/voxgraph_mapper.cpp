@@ -19,6 +19,7 @@
 #include "voxgraph/tools/submap_registration_helper.h"
 #include "voxgraph/tools/tf_helper.h"
 #include "voxgraph/tools/threading_helper.h"
+#include <voxgraph/tools/data_servers/submap_conversions.h>
 
 namespace voxgraph {
 
@@ -568,13 +569,19 @@ bool VoxgraphMapper::publishActiveSubmapCallback(
   if (verbose_) {
     ROS_INFO("[VoxgraphMapper] Request for Active Submap Received, Processing.");
   }
-  if (!submap_collection_ptr_->empty()) {
-    cblox_msgs::MapLayer msg = submap_server_.serializeActiveSubmap(
-        submap_collection_ptr_, ros::Time::now());
-    response.submap_msg = msg;
-    return true;
-  } else {
+  if (submap_collection_ptr_->empty()) {
+    ROS_WARN("[VoxgraphMapper] Active submap does not exist!");
     return false;
   }
+
+  cblox_msgs::MapLayer active_submap_msg;
+  const VoxgraphSubmap::Ptr& active_submap_ptr =
+      submap_collection_ptr_->getActiveSubmapPtr();
+  cblox::serializeSubmapToMsg<cblox::TsdfEsdfSubmap>(active_submap_ptr,
+                                                     &active_submap_msg);
+  active_submap_msg.map_header =
+      cblox::generateSubmapHeaderMsg<VoxgraphSubmap>(active_submap_ptr);
+  response.submap_msg = active_submap_msg;
+  return true;
 }
 }  // namespace voxgraph

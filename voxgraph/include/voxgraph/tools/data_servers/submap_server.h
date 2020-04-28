@@ -27,9 +27,6 @@ class SubmapServer {
   void publishActiveSubmap(
       const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
       const ros::Time& current_timestamp);
-  cblox_msgs::MapLayer serializeActiveSubmap(
-      const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
-      const ros::Time& current_timestamp);
 
   // "Bring your own publisher" methods
   // NOTE: These methods are provided s.t. they can be called using publishers
