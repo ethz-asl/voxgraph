@@ -20,7 +20,7 @@ class SubmapVisuals {
   explicit SubmapVisuals(VoxgraphSubmap::Config submap_config,
                          voxblox::MeshIntegratorConfig mesh_config);
 
-  void setOpacity(const float mesh_opacity) { mesh_opacity_ = mesh_opacity; }
+  void setMeshOpacity(float mesh_opacity) { mesh_opacity_ = mesh_opacity; }
 
   void publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
                    const std::string& submap_frame,

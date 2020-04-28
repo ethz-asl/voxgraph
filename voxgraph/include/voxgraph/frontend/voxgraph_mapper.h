@@ -40,7 +40,7 @@ class VoxgraphMapper {
   void loopClosureCallback(const voxgraph_msgs::LoopClosure& loop_closure_msg);
 
   // ROS timer callbacks
-  void publishActiveMeshCallback(const ros::TimerEvent& /*event*/);
+  void publishActiveSubmapMeshCallback();
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
@@ -139,7 +139,6 @@ class VoxgraphMapper {
   ros::ServiceServer save_combined_mesh_srv_;
   ros::ServiceServer save_optimization_times_srv_;
   // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
-  ros::ServiceServer publish_active_submap_srv_;
 
   // Constraints to be used
   bool registration_constraints_enabled_;

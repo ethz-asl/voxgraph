@@ -95,7 +95,6 @@ void PoseGraph::optimize(bool exclude_registration_constraints) {
   ceres_options.max_solver_time_in_seconds = 4;
   ceres_options.num_threads = 4;
   ceres_options.linear_solver_type = ceres::LinearSolverType::SPARSE_SCHUR;
-  ceres_options.linear_solver_type = ceres::LinearSolverType::DENSE_SCHUR;
   // NOTE: For small problems DENSE_SCHUR is much faster
 
   ceres::Solver::Summary summary;

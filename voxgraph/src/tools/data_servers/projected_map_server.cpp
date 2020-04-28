@@ -46,7 +46,7 @@ std_msgs::Header ProjectedMapServer::generateHeaderMsg(
   return msg_header;
 }
 
-cblox_msgs::MapHeader ProjectedMapServer::generateMapHeaderMsg(
+ cblox_msgs::MapHeader ProjectedMapServer::generateMapHeaderMsg(
     const VoxgraphSubmapCollection& submap_collection) {
   // Set the map ID and type
   cblox_msgs::MapHeader map_header;

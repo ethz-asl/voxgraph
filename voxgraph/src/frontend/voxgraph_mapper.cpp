@@ -89,11 +89,11 @@ void VoxgraphMapper::getParametersFromRos() {
   if (update_mesh_every_n_sec > 0.0) {
     update_mesh_timer_ =
         nh_private_.createTimer(ros::Duration(update_mesh_every_n_sec),
-            &VoxgraphMapper::publishActiveMeshCallback, this);
+            std::bind(&VoxgraphMapper::publishActiveSubmapMeshCallback, this));
   }
   float mesh_opacity = 1.0;
   nh_private_.param("mesh_opacity", mesh_opacity, mesh_opacity);
-  submap_vis_.setOpacity(mesh_opacity);
+  submap_vis_.setMeshOpacity(mesh_opacity);
 
   // Read whether or not to auto pause the rosbag during graph optimization
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
@@ -198,11 +198,6 @@ void VoxgraphMapper::advertiseServices() {
   save_optimization_times_srv_ = nh_private_.advertiseService(
       "save_optimization_times", &VoxgraphMapper::saveOptimizationTimesCallback,
       this);
-
-  // Service for submaps
-  publish_active_submap_srv_ = nh_private_.advertiseService(
-      "publish_active_submap",
-      &VoxgraphMapper::publishActiveSubmapCallback, this);
 }
 
 void VoxgraphMapper::pointcloudCallback(
@@ -237,7 +232,7 @@ void VoxgraphMapper::pointcloudCallback(
     switchToNewSubmap(current_timestamp);
 
     // Visualize new submap mesh
-    publishActiveMeshCallback(ros::TimerEvent());
+    publishActiveSubmapMeshCallback();
 
     // Optimize the pose graph in a separate thread
     optimization_async_handle_ = std::async(
@@ -290,8 +285,6 @@ void VoxgraphMapper::loopClosureCallback(
   if (!success_A || !success_B) {
     ROS_WARN_STREAM(warning_msg_prefix.str() << ": timestamp A or B has no "
                                                 "corresponding submap");
-    ROS_INFO("[VoxgraphMapper] timestamp A: %d, timestamp B: %d",
-        submap_id_A, submap_id_B);
     return;
   }
   if (submap_id_A == submap_id_B) {
@@ -347,15 +340,17 @@ void VoxgraphMapper::loopClosureCallback(
       loop_closure_axes_pub_);
 }
 
-void VoxgraphMapper::publishActiveMeshCallback(const ros::TimerEvent& /*event*/) {
+void VoxgraphMapper::publishActiveSubmapMeshCallback() {
   if (!submap_collection_ptr_->exists(submap_collection_ptr_->getActiveSubmapID())) {
+    ROS_WARN("[VoxgraphMapper] Active submap does not exist!");
     return;
   }
   // publish active mesh
   if (active_mesh_pub_.getNumSubscribers() > 0) {
     cblox::SubmapID active_submap_id =
         submap_collection_ptr_->getActiveSubmapID();
-    submap_vis_.publishMesh(*submap_collection_ptr_, active_submap_id,
+    submap_vis_.publishMesh(
+        *submap_collection_ptr_, active_submap_id,
         voxblox::rainbowColorMap(static_cast<double>(active_submap_id) /
             static_cast<double>(cblox::kDefaultColorCycleLength)),
         map_tracker_.getFrameNames().output_active_submap_frame, active_mesh_pub_);
@@ -399,7 +394,6 @@ bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request& request,
   optimizePoseGraph();
 
   // Publishing the finished submap
-  // todo: fix double publishing
   submap_server_.publishActiveSubmap(submap_collection_ptr_, ros::Time::now());
   publishMaps(ros::Time::now());
 
@@ -410,7 +404,6 @@ bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request& request,
 bool VoxgraphMapper::optimizeGraphCallback(
     std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
   optimizePoseGraph();
-  publishMaps(ros::Time::now());
   return true;
 }
 
@@ -552,7 +545,7 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
   if (submap_collection_ptr_->size() > 1) {
     SubmapID previous_submap_id = submap_collection_ptr_->getPreviousSubmapId();
     submap_server_.publishSubmap(
-        submap_collection_ptr_->getSubmap(previous_submap_id),
+        submap_collection_ptr_->getSubmapPtr(previous_submap_id),
         current_timestamp);
   }
 

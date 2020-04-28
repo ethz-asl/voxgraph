@@ -38,8 +38,13 @@ void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
   }
 
   marker.header.frame_id = submap_frame;
+  // Adapt mesh opacity
+  marker.color.a = mesh_opacity_;
+  for (std_msgs::ColorRGBA& color : marker.colors) {
+    color.a = mesh_opacity_;
+  }
   // Update the marker's transform each time its TF frame is updated:
-  marker.frame_locked = false;
+  marker.frame_locked = true;
   publisher.publish(marker);
 }
 
