@@ -4,20 +4,20 @@
 #include <pcl/common/transforms.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <voxblox_ros/conversions.h>
-#include <voxgraph_msgs/MapPoseList.h>
-#include <voxgraph_msgs/MapLayer.h>
+#include <cblox_msgs/MapPoseUpdates.h>
+#include <cblox_msgs/MapLayer.h>
 #include <voxgraph_msgs/MapSurface.h>
 
 namespace voxgraph {
 SubmapServer::SubmapServer(ros::NodeHandle nh_private) {
   submap_tsdf_pub_ =
-      nh_private.advertise<voxgraph_msgs::MapLayer>("submap_tsdfs", 3, false);
+      nh_private.advertise<cblox_msgs::MapLayer>("submap_tsdfs", 3, false);
   submap_esdf_pub_ =
-      nh_private.advertise<voxgraph_msgs::MapLayer>("submap_esdfs", 3, false);
+      nh_private.advertise<cblox_msgs::MapLayer>("submap_esdfs", 3, false);
   submap_surface_pointcloud_pub_ =
       nh_private.advertise<voxgraph_msgs::MapSurface>(
           "submap_surface_pointclouds", 3, false);
-  submap_poses_pub_ = nh_private.advertise<voxgraph_msgs::MapPoseList>(
+  submap_poses_pub_ = nh_private.advertise<cblox_msgs::MapPoseUpdates>(
           "submap_poses", 3, false);
 }
 
@@ -77,7 +77,7 @@ void SubmapServer::publishSubmapTsdf(
     const VoxgraphSubmap& submap, const ros::Time& timestamp,
     const ros::Publisher& submap_tsdf_publisher) {
   // Create the message and set its headers
-  voxgraph_msgs::MapLayer submap_tsdf_msg;
+  cblox_msgs::MapLayer submap_tsdf_msg;
   submap_tsdf_msg.header = generateHeaderMsg(submap, timestamp);
   submap_tsdf_msg.map_header = generateSubmapHeaderMsg(submap);
 
@@ -95,7 +95,7 @@ void SubmapServer::publishSubmapTsdfAndEsdf(
     const VoxgraphSubmap& submap, const ros::Time& timestamp,
     const ros::Publisher& submap_esdf_publisher) {
   // Create the message and set its headers
-  voxgraph_msgs::MapLayer submap_esdf_msg;
+  cblox_msgs::MapLayer submap_esdf_msg;
   submap_esdf_msg.header = generateHeaderMsg(submap, timestamp);
   submap_esdf_msg.map_header = generateSubmapHeaderMsg(submap);
 
@@ -177,10 +177,10 @@ std_msgs::Header SubmapServer::generateHeaderMsg(const VoxgraphSubmap& submap,
   return msg_header;
 }
 
-voxgraph_msgs::MapHeader SubmapServer::generateSubmapHeaderMsg(
+cblox_msgs::MapHeader SubmapServer::generateSubmapHeaderMsg(
     const VoxgraphSubmap& submap) {
   // Set the submap ID and type
-  voxgraph_msgs::MapHeader submap_header;
+  cblox_msgs::MapHeader submap_header;
   submap_header.id = submap.getID();
   submap_header.is_submap = true;
 
@@ -204,7 +204,7 @@ voxgraph_msgs::MapHeader SubmapServer::generateSubmapHeaderMsg(
 }
 
 void SubmapServer::publishSubmapPoses(
-    const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
+    const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
     const ros::Time& timestamp) {
   if (submap_poses_pub_.getNumSubscribers() > 0) {
     publishSubmapPoses(submap_collection_ptr, "mission", timestamp,
@@ -213,16 +213,16 @@ void SubmapServer::publishSubmapPoses(
 }
 
 void SubmapServer::publishSubmapPoses(
-    const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-    const std::string &frame_id, const ros::Time &timestamp,
-    const ros::Publisher &submap_poses_publisher) {
+    const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
+    const std::string& frame_id, const ros::Time& timestamp,
+    const ros::Publisher& submap_poses_publisher) {
   // prep map header
-  voxgraph_msgs::MapPoseList pose_msg;
+  cblox_msgs::MapPoseUpdates pose_msg;
   pose_msg.header.frame_id = frame_id;
   pose_msg.header.stamp = ros::Time::now();
   // fill pose array
-  for (const SubmapID& submap_id : submap_collection_ptr->getIDs()) {
-    const VoxgraphSubmap &submap =
+  for (const SubmapID submap_id : submap_collection_ptr->getIDs()) {
+    const VoxgraphSubmap& submap =
         submap_collection_ptr->getSubmap(submap_id);
     pose_msg.map_headers.emplace_back(
         SubmapServer::generateSubmapHeaderMsg(submap));

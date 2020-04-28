@@ -2,7 +2,7 @@
 #define VOXGRAPH_TOOLS_DATA_SERVERS_SUBMAP_SERVER_H_
 
 #include <std_msgs/Header.h>
-#include <voxgraph_msgs/MapHeader.h>
+#include <cblox_msgs/MapHeader.h>
 
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
@@ -57,7 +57,7 @@ class SubmapServer {
   // Convenience methods to generate the message and submap headers
   static std_msgs::Header generateHeaderMsg(const VoxgraphSubmap& submap,
                                             const ros::Time& timestamp);
-  static voxgraph_msgs::MapHeader generateSubmapHeaderMsg(
+  static cblox_msgs::MapHeader generateSubmapHeaderMsg(
       const VoxgraphSubmap& submap);
 
   // Conversion method from Kindr transforms to Eigen Affine3f transforms

@@ -352,7 +352,7 @@ void VoxgraphMapper::publishActiveSubmapMeshCallback() {
     submap_vis_.publishMesh(
         *submap_collection_ptr_, active_submap_id,
         voxblox::rainbowColorMap(static_cast<double>(active_submap_id) /
-            static_cast<double>(submap_collection_ptr_->size())),
+            static_cast<double>(cblox::kDefaultColorCycleLength)),
         map_tracker_.getFrameNames().output_active_submap_frame, active_mesh_pub_);
   }
 }
