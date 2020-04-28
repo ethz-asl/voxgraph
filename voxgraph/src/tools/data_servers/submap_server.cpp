@@ -77,8 +77,7 @@ void SubmapServer::publishSubmapSurfacePointcloud(
 void SubmapServer::publishSubmapTsdf(
     const VoxgraphSubmap::Ptr& submap_ptr, const ros::Time& timestamp,
     const ros::Publisher& submap_tsdf_publisher) {
-
-  // Create the message and set its headers
+  // Create and fill the message
   cblox_msgs::MapLayer submap_tsdf_msg;
   cblox::serializeSubmapToMsg<cblox::TsdfSubmap>(submap_ptr, &submap_tsdf_msg);
   submap_tsdf_msg.map_header =
@@ -91,6 +90,7 @@ void SubmapServer::publishSubmapTsdf(
 void SubmapServer::publishSubmapTsdfAndEsdf(
     const VoxgraphSubmap::Ptr& submap_ptr, const ros::Time& timestamp,
     const ros::Publisher& submap_esdf_publisher) {
+  // Create and fill the message
   cblox_msgs::MapLayer submap_esdf_msg;
   cblox::serializeSubmapToMsg<cblox::TsdfEsdfSubmap>(submap_ptr, &submap_esdf_msg);
   submap_esdf_msg.map_header =
