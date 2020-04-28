@@ -4,7 +4,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <voxblox_ros/conversions.h>
-#include <voxgraph_msgs/MapPoseList.h>
+#include <voxgraph_msgs/MapPoseUpdates.h>
 #include <voxgraph_msgs/MapLayer.h>
 #include <voxgraph_msgs/MapSurface.h>
 
@@ -17,7 +17,7 @@ SubmapServer::SubmapServer(ros::NodeHandle nh_private) {
   submap_surface_pointcloud_pub_ =
       nh_private.advertise<voxgraph_msgs::MapSurface>(
           "submap_surface_pointclouds", 3, false);
-  submap_poses_pub_ = nh_private.advertise<voxgraph_msgs::MapPoseList>(
+  submap_poses_pub_ = nh_private.advertise<voxgraph_msgs::MapPoseUpdates>(
           "submap_poses", 3, false);
 }
 
@@ -217,7 +217,7 @@ void SubmapServer::publishSubmapPoses(
     const std::string &frame_id, const ros::Time &timestamp,
     const ros::Publisher &submap_poses_publisher) {
   // prep map header
-  voxgraph_msgs::MapPoseList pose_msg;
+  voxgraph_msgs::MapPoseUpdates pose_msg;
   pose_msg.header.frame_id = frame_id;
   pose_msg.header.stamp = ros::Time::now();
   // fill pose array
