@@ -7,6 +7,7 @@
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+#include "voxgraph/frontend/frame_names.h"
 
 namespace voxgraph {
 class SubmapServer {
@@ -33,13 +34,16 @@ class SubmapServer {
   //       to custom topics and without requiring a SubmapServer instance.
   //       They are therefore static.
   static void publishSubmapTsdf(const VoxgraphSubmap::Ptr& submap_ptr,
+                                const std::string& frame_id,
                                 const ros::Time& timestamp,
                                 const ros::Publisher& submap_tsdf_publisher);
   static void publishSubmapTsdfAndEsdf(const VoxgraphSubmap::Ptr& submap_ptr,
+                                       const std::string& frame_id,
                                        const ros::Time& timestamp,
                                        const ros::Publisher& submap_esdf_publisher);
   static void publishSubmapSurfacePointcloud(
-      const VoxgraphSubmap::Ptr& submap_ptr, const ros::Time& timestamp,
+      const VoxgraphSubmap::Ptr& submap_ptr,
+      const std::string& frame_id, const ros::Time& timestamp,
       const ros::Publisher& submap_surface_pointcloud_publisher);
   static void publishSubmapPoses(const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
                                  const std::string& frame_id,
@@ -53,6 +57,8 @@ class SubmapServer {
   ros::Publisher submap_poses_pub_;
 
   static constexpr bool fake_6dof_transforms_ = true;
+
+  FrameNames frame_names_;
 
   // Conversion method from Kindr transforms to Eigen Affine3f transforms
   static void transformKindrToEigen(const Transformation& kindr,
