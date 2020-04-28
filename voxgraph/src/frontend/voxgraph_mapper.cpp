@@ -542,7 +542,7 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
   if (submap_collection_ptr_->size() > 1) {
     SubmapID previous_submap_id = submap_collection_ptr_->getPreviousSubmapId();
     submap_server_.publishSubmap(
-        submap_collection_ptr_->getSubmap(previous_submap_id),
+        submap_collection_ptr_->getSubmapPtr(previous_submap_id),
         current_timestamp);
   }
 
