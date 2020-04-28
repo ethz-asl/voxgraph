@@ -56,7 +56,6 @@ cs_add_library(${PROJECT_NAME} STATIC
     src/tools/submap_registration_helper.cpp
     src/tools/evaluation/map_evaluation.cpp
     src/tools/data_servers/projected_map_server.cpp
-    src/tools/data_servers/submap_conversions.cpp
     src/tools/data_servers/submap_server.cpp
     src/tools/data_servers/loop_closure_edge_server.cpp
     src/tools/odometry_simulator/odometry_simulator.cpp

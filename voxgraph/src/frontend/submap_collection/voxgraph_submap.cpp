@@ -98,6 +98,10 @@ void VoxgraphSubmap::finishSubmap() {
               << std::endl;
   }
 
+  // Set mapping times
+  mapping_interval_.first = getStartTime().toSec();
+  mapping_interval_.second = getEndTime().toSec();
+
   // Set the finished flag
   finished_ = true;
 }
