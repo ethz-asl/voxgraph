@@ -89,8 +89,6 @@ void SubmapServer::publishSubmapTsdf(
   // Create and fill the message
   cblox_msgs::MapLayer submap_tsdf_msg;
   cblox::serializeSubmapToMsg<cblox::TsdfSubmap>(submap, &submap_tsdf_msg);
-  submap_tsdf_msg.map_header =
-      cblox::generateSubmapHeaderMsg<VoxgraphSubmap>(submap);
   submap_tsdf_msg.map_header.pose_estimate.frame_id = frame_id;
 
   // Publish
@@ -104,8 +102,6 @@ void SubmapServer::publishSubmapTsdfAndEsdf(
   // Create and fill the message
   cblox_msgs::MapLayer submap_esdf_msg;
   cblox::serializeSubmapToMsg<cblox::TsdfEsdfSubmap>(submap, &submap_esdf_msg);
-  submap_esdf_msg.map_header =
-      cblox::generateSubmapHeaderMsg<cblox::TsdfEsdfSubmap>(submap);
   submap_esdf_msg.map_header.pose_estimate.frame_id = frame_id;
 
   // Publish
