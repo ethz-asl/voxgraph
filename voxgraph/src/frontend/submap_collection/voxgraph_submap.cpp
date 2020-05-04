@@ -99,8 +99,8 @@ void VoxgraphSubmap::finishSubmap() {
   }
 
   // Set mapping times
-  mapping_interval_.first = getStartTime().toSec();
-  mapping_interval_.second = getEndTime().toSec();
+  mapping_interval_.first = getStartTime().toNSec();
+  mapping_interval_.second = getEndTime().toNSec();
 
   // Set the finished flag
   finished_ = true;
