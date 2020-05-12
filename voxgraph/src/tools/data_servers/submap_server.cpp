@@ -1,16 +1,18 @@
 #include "voxgraph/tools/data_servers/submap_server.h"
 
+#include <cblox_msgs/MapLayer.h>
+#include <cblox_msgs/MapPoseUpdates.h>
+#include <cblox_ros/submap_conversions.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <pcl/common/transforms.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <voxblox_ros/conversions.h>
-#include <cblox_msgs/MapPoseUpdates.h>
-#include <cblox_msgs/MapLayer.h>
 #include <voxgraph_msgs/MapSurface.h>
-#include <cblox_ros/submap_conversions.h>
+#include <string>
 
 namespace voxgraph {
-SubmapServer::SubmapServer(ros::NodeHandle nh_private) {
+SubmapServer::SubmapServer(ros::NodeHandle nh_private)
+    : frame_names_(FrameNames::fromRosParams(nh_private)) {
   submap_tsdf_pub_ =
       nh_private.advertise<cblox_msgs::MapLayer>("submap_tsdfs", 3, false);
   submap_esdf_pub_ =
@@ -20,8 +22,6 @@ SubmapServer::SubmapServer(ros::NodeHandle nh_private) {
           "submap_surface_pointclouds", 3, false);
   submap_poses_pub_ = nh_private.advertise<cblox_msgs::MapPoseUpdates>(
           "submap_poses", 3, false);
-
-  frame_names_ = FrameNames::fromRosParams(nh_private);
 }
 
 void SubmapServer::publishActiveSubmap(
