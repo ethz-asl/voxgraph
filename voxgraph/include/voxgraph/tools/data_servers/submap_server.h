@@ -2,11 +2,12 @@
 #define VOXGRAPH_TOOLS_DATA_SERVERS_SUBMAP_SERVER_H_
 
 #include <std_msgs/Header.h>
-#include <voxgraph_msgs/MapHeader.h>
+#include <cblox_msgs/MapHeader.h>
 
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+#include "voxgraph/frontend/frame_names.h"
 
 namespace voxgraph {
 class SubmapServer {
@@ -33,13 +34,16 @@ class SubmapServer {
   //       to custom topics and without requiring a SubmapServer instance.
   //       They are therefore static.
   static void publishSubmapTsdf(const VoxgraphSubmap& submap,
+                                const std::string& frame_id,
                                 const ros::Time& timestamp,
                                 const ros::Publisher& submap_tsdf_publisher);
   static void publishSubmapTsdfAndEsdf(const VoxgraphSubmap& submap,
+                                       const std::string& frame_id,
                                        const ros::Time& timestamp,
                                        const ros::Publisher& submap_esdf_publisher);
   static void publishSubmapSurfacePointcloud(
-      const VoxgraphSubmap& submap, const ros::Time& timestamp,
+      const VoxgraphSubmap& submap,
+      const std::string& frame_id, const ros::Time& timestamp,
       const ros::Publisher& submap_surface_pointcloud_publisher);
   static void publishSubmapPoses(const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
                                  const std::string& frame_id,
@@ -54,11 +58,7 @@ class SubmapServer {
 
   static constexpr bool fake_6dof_transforms_ = true;
 
-  // Convenience methods to generate the message and submap headers
-  static std_msgs::Header generateHeaderMsg(const VoxgraphSubmap& submap,
-                                            const ros::Time& timestamp);
-  static voxgraph_msgs::MapHeader generateSubmapHeaderMsg(
-      const VoxgraphSubmap& submap);
+  FrameNames frame_names_;
 
   // Conversion method from Kindr transforms to Eigen Affine3f transforms
   static void transformKindrToEigen(const Transformation& kindr,

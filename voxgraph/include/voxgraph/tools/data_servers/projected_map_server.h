@@ -1,7 +1,7 @@
 #ifndef VOXGRAPH_TOOLS_DATA_SERVERS_PROJECTED_MAP_SERVER_H_
 #define VOXGRAPH_TOOLS_DATA_SERVERS_PROJECTED_MAP_SERVER_H_
 
-#include <voxgraph_msgs/MapHeader.h>
+#include <cblox_msgs/MapHeader.h>
 
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
@@ -29,7 +29,7 @@ class ProjectedMapServer {
 
   // Convenience methods to generate the message and submap headers
   static std_msgs::Header generateHeaderMsg(const ros::Time& timestamp);
-  static voxgraph_msgs::MapHeader generateMapHeaderMsg(
+  static cblox_msgs::MapHeader generateMapHeaderMsg(
       const VoxgraphSubmapCollection& submap_collection);
 };
 }  // namespace voxgraph
