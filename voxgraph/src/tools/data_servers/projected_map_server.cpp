@@ -1,12 +1,12 @@
 #include "voxgraph/tools/data_servers/projected_map_server.h"
 
-#include <voxblox_ros/conversions.h>
 #include <cblox_msgs/MapLayer.h>
+#include <voxblox_ros/conversions.h>
 
 namespace voxgraph {
 ProjectedMapServer::ProjectedMapServer(ros::NodeHandle nh_private) {
-  projected_tsdf_map_pub_ = nh_private.advertise<cblox_msgs::MapLayer>(
-      "projected_map_tsdf", 1, true);
+  projected_tsdf_map_pub_ =
+      nh_private.advertise<cblox_msgs::MapLayer>("projected_map_tsdf", 1, true);
 }
 
 void ProjectedMapServer::publishProjectedMap(
@@ -46,7 +46,7 @@ std_msgs::Header ProjectedMapServer::generateHeaderMsg(
   return msg_header;
 }
 
- cblox_msgs::MapHeader ProjectedMapServer::generateMapHeaderMsg(
+cblox_msgs::MapHeader ProjectedMapServer::generateMapHeaderMsg(
     const VoxgraphSubmapCollection& submap_collection) {
   // Set the map ID and type
   cblox_msgs::MapHeader map_header;

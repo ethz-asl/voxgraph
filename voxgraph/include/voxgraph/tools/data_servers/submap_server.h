@@ -1,13 +1,15 @@
 #ifndef VOXGRAPH_TOOLS_DATA_SERVERS_SUBMAP_SERVER_H_
 #define VOXGRAPH_TOOLS_DATA_SERVERS_SUBMAP_SERVER_H_
 
-#include <std_msgs/Header.h>
+#include <string>
+
 #include <cblox_msgs/MapHeader.h>
+#include <std_msgs/Header.h>
 
 #include "voxgraph/common.h"
+#include "voxgraph/frontend/frame_names.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
-#include "voxgraph/frontend/frame_names.h"
 
 namespace voxgraph {
 class SubmapServer {
@@ -37,18 +39,17 @@ class SubmapServer {
                                 const std::string& frame_id,
                                 const ros::Time& timestamp,
                                 const ros::Publisher& submap_tsdf_publisher);
-  static void publishSubmapTsdfAndEsdf(const VoxgraphSubmap& submap,
-                                       const std::string& frame_id,
-                                       const ros::Time& timestamp,
-                                       const ros::Publisher& submap_esdf_publisher);
+  static void publishSubmapTsdfAndEsdf(
+      const VoxgraphSubmap& submap, const std::string& frame_id,
+      const ros::Time& timestamp, const ros::Publisher& submap_esdf_publisher);
   static void publishSubmapSurfacePointcloud(
-      const VoxgraphSubmap& submap,
-      const std::string& frame_id, const ros::Time& timestamp,
+      const VoxgraphSubmap& submap, const std::string& frame_id,
+      const ros::Time& timestamp,
       const ros::Publisher& submap_surface_pointcloud_publisher);
-  static void publishSubmapPoses(const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
-                                 const std::string& frame_id,
-                                 const ros::Time& timestamp,
-                                 const ros::Publisher& submap_poses_publisher);
+  static void publishSubmapPoses(
+      const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
+      const std::string& frame_id, const ros::Time& timestamp,
+      const ros::Publisher& submap_poses_publisher);
 
  private:
   ros::Publisher submap_tsdf_pub_;
