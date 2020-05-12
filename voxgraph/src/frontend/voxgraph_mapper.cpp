@@ -45,7 +45,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
       registration_constraints_enabled_(false),
       odometry_constraints_enabled_(false),
       height_constraints_enabled_(false),
-      submap_config_(std::move(submap_config)),
+      submap_config_(submap_config),
       submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
       submap_vis_(submap_config_, mesh_config),
