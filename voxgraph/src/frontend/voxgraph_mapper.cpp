@@ -240,6 +240,7 @@ void VoxgraphMapper::pointcloudCallback(
 
     // Publish the map in its different representations
     publishMaps(current_timestamp);
+    map_tracker_.publishSubmapTFs();
 
     // Resume playing the rosbag
     if (auto_pause_rosbag_) rosbag_helper_.playRosbag();

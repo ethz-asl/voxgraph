@@ -116,6 +116,15 @@ void MapTracker::publishTFs() {
                              current_timestamp_);
 }
 
+void MapTracker::publishSubmapTFs() {
+  for (const cblox::SubmapID id : submap_collection_ptr_->getIDs()) {
+    TfHelper::publishTransform(
+        submap_collection_ptr_->getSubmapConstPtr(id)->getPose(),
+        frame_names_.output_mission_frame,
+        "submap_" + std::to_string(id), false, current_timestamp_);
+  }
+}
+
 Transformation MapTracker::get_T_M_B() {
   if (submap_collection_ptr_->empty()) {
     // If no submap has been created yet, return the odometry pose
