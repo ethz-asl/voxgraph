@@ -13,7 +13,7 @@
 namespace voxgraph {
 SubmapVisuals::SubmapVisuals(VoxgraphSubmap::Config submap_config,
                              voxblox::MeshIntegratorConfig mesh_config)
-    : mesh_config_(std::move(mesh_config)) {
+    : mesh_config_(std::move(mesh_config)), mesh_opacity_(1.0) {
   // Meshing params from ROS params server
   // NOTE(alexmillane): The separated mesher *requires* color, so this is
   //                    hard-coded.
@@ -32,6 +32,11 @@ void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
   visualization_msgs::Marker marker;
   voxblox::fillMarkerWithMesh(mesh_layer_ptr, color_mode, &marker);
   marker.header.frame_id = submap_frame;
+  // Adapt mesh opacity
+  marker.color.a = mesh_opacity_;
+  for (std_msgs::ColorRGBA& color : marker.colors) {
+    color.a = mesh_opacity_;
+  }
   // Update the marker's transform each time its TF frame is updated:
   marker.frame_locked = true;
   publisher.publish(marker);

@@ -3,7 +3,7 @@
 #include <chrono>
 #include <memory>
 #include <string>
-#include <thread>
+#include <utility>
 #include <vector>
 
 #include <geometry_msgs/PoseArray.h>
@@ -45,7 +45,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
       registration_constraints_enabled_(false),
       odometry_constraints_enabled_(false),
       height_constraints_enabled_(false),
-      submap_config_(std::move(submap_config)),
+      submap_config_(submap_config),
       submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
       submap_vis_(submap_config_, mesh_config),
@@ -81,6 +81,19 @@ void VoxgraphMapper::getParametersFromRos() {
     submap_collection_ptr_->setSubmapCreationInterval(
         ros::Duration(interval_temp));
   }
+
+  // Get the mesh visualization interval
+  double update_mesh_every_n_sec = 0.0;
+  nh_private_.param("update_mesh_every_n_sec", update_mesh_every_n_sec,
+                    update_mesh_every_n_sec);
+  if (update_mesh_every_n_sec > 0.0) {
+    update_mesh_timer_ = nh_private_.createTimer(
+        ros::Duration(update_mesh_every_n_sec),
+        std::bind(&VoxgraphMapper::publishActiveSubmapMeshCallback, this));
+  }
+  float mesh_opacity = 1.0;
+  nh_private_.param("mesh_opacity", mesh_opacity, mesh_opacity);
+  submap_vis_.setMeshOpacity(mesh_opacity);
 
   // Read whether or not to auto pause the rosbag during graph optimization
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
@@ -145,6 +158,8 @@ void VoxgraphMapper::subscribeToTopics() {
 void VoxgraphMapper::advertiseTopics() {
   separated_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
       "separated_mesh", subscriber_queue_length_, true);
+  active_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
+      "active_mesh", subscriber_queue_length_, true);
   combined_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
       "combined_mesh", subscriber_queue_length_, true);
   pose_history_pub_ =
@@ -214,6 +229,9 @@ void VoxgraphMapper::pointcloudCallback(
 
     // Add the finished submap to the pose graph
     switchToNewSubmap(current_timestamp);
+
+    // Visualize new submap mesh
+    publishActiveSubmapMeshCallback();
 
     // Optimize the pose graph in a separate thread
     optimization_async_handle_ = std::async(
@@ -321,6 +339,26 @@ void VoxgraphMapper::loopClosureCallback(
       loop_closure_axes_pub_);
 }
 
+void VoxgraphMapper::publishActiveSubmapMeshCallback() {
+  if (!submap_collection_ptr_->exists(
+          submap_collection_ptr_->getActiveSubmapID())) {
+    ROS_WARN("[VoxgraphMapper] Active submap does not exist!");
+    return;
+  }
+  // publish active mesh
+  if (active_mesh_pub_.getNumSubscribers() > 0) {
+    cblox::SubmapID active_submap_id =
+        submap_collection_ptr_->getActiveSubmapID();
+    submap_vis_.publishMesh(
+        *submap_collection_ptr_, active_submap_id,
+        voxblox::rainbowColorMap(
+            static_cast<double>(active_submap_id) /
+            static_cast<double>(cblox::kDefaultColorCycleLength)),
+        map_tracker_.getFrameNames().output_active_submap_frame,
+        active_mesh_pub_);
+  }
+}
+
 bool VoxgraphMapper::publishSeparatedMeshCallback(
     std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
   submap_vis_.publishSeparatedMesh(
@@ -356,6 +394,10 @@ bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request& request,
 
   // Optimize the pose graph
   optimizePoseGraph();
+
+  // Publishing the finished submap
+  submap_server_.publishActiveSubmap(submap_collection_ptr_, ros::Time::now());
+  publishMaps(ros::Time::now());
 
   ROS_INFO("The map is now finished and ready to be saved");
   return true;
@@ -474,6 +516,9 @@ int VoxgraphMapper::optimizePoseGraph() {
   // Update the submap poses
   pose_graph_interface_.updateSubmapCollectionPoses();
 
+  // Publish updated poses
+  submap_server_.publishSubmapPoses(submap_collection_ptr_, ros::Time::now());
+
   // Report successful completion
   return 1;
 }
@@ -506,6 +551,9 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
   // Publish the submap collection
   projected_map_server_.publishProjectedMap(*submap_collection_ptr_,
                                             current_timestamp);
+
+  // Publish the submap poses
+  submap_server_.publishSubmapPoses(submap_collection_ptr_, current_timestamp);
 
   // Publish the loop closure edges
   loop_closure_edge_server_.publishLoopClosureEdges(

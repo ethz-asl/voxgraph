@@ -39,6 +39,9 @@ class VoxgraphMapper {
   void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr& pointcloud_msg);
   void loopClosureCallback(const voxgraph_msgs::LoopClosure& loop_closure_msg);
 
+  // ROS timer callbacks
+  void publishActiveSubmapMeshCallback();
+
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
       std_srvs::Empty::Request& request,     // NOLINT
@@ -111,8 +114,12 @@ class VoxgraphMapper {
   ros::Subscriber loop_closure_subscriber_;
   // TODO(victorr): Add support for absolute pose measurements
 
+  // Timers.
+  ros::Timer update_mesh_timer_;
+
   // ROS topic publishers
   ros::Publisher separated_mesh_pub_;
+  ros::Publisher active_mesh_pub_;
   ros::Publisher combined_mesh_pub_;
   ros::Publisher pose_history_pub_;
   ros::Publisher loop_closure_links_pub_;

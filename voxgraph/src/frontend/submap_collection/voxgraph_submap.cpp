@@ -93,6 +93,10 @@ void VoxgraphSubmap::finishSubmap() {
   std::cout << "\n# isosurface vertices: " << isosurface_vertices_.size()
             << std::endl;
 
+  // Set mapping times
+  mapping_interval_.first = getStartTime().toNSec();
+  mapping_interval_.second = getEndTime().toNSec();
+
   // Set the finished flag
   finished_ = true;
 }

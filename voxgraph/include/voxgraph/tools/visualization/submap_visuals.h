@@ -20,6 +20,8 @@ class SubmapVisuals {
   explicit SubmapVisuals(VoxgraphSubmap::Config submap_config,
                          voxblox::MeshIntegratorConfig mesh_config);
 
+  void setMeshOpacity(float mesh_opacity) { mesh_opacity_ = mesh_opacity; }
+
   void publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
                    const std::string& submap_frame,
                    const ros::Publisher& publisher,
@@ -60,6 +62,8 @@ class SubmapVisuals {
   voxblox::MeshIntegratorConfig mesh_config_;
   std::unique_ptr<cblox::SubmapMesher> separated_submap_mesher_;
   std::unique_ptr<cblox::SubmapMesher> combined_submap_mesher_;
+
+  float mesh_opacity_;
 };
 }  // namespace voxgraph
 
