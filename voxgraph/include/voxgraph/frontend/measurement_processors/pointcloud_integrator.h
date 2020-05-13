@@ -2,6 +2,7 @@
 #define VOXGRAPH_FRONTEND_MEASUREMENT_PROCESSORS_POINTCLOUD_INTEGRATOR_H_
 
 #include <memory>
+#include <string>
 
 #include <sensor_msgs/PointCloud2.h>
 #include <voxblox/integrator/tsdf_integrator.h>
@@ -26,8 +27,9 @@ class PointcloudIntegrator {
 
   // Tools used when integrating the pointclouds into submaps
   std::shared_ptr<voxblox::ColorMap> color_map_;
+  std::string tsdf_integrator_method_;
   voxblox::TsdfIntegratorBase::Config tsdf_integrator_config_;
-  std::unique_ptr<voxblox::FastTsdfIntegrator> tsdf_integrator_;
+  voxblox::TsdfIntegratorBase::Ptr tsdf_integrator_;
 };
 }  // namespace voxgraph
 

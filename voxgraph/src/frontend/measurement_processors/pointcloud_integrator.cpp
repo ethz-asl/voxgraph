@@ -1,21 +1,24 @@
 #include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
 
 #include <string>
-#include <utility>
 
 #include <pcl_conversions/pcl_conversions.h>
+#include <voxblox/integrator/projective_tsdf_integrator.h>
 #include <voxblox_ros/conversions.h>
 #include <voxblox_ros/ros_params.h>
 
 namespace voxgraph {
 PointcloudIntegrator::PointcloudIntegrator(bool verbose)
-    : verbose_(verbose), color_map_(new voxblox::GrayscaleColorMap()) {
+    : verbose_(verbose),
+      color_map_(new voxblox::GrayscaleColorMap()),
+      tsdf_integrator_method_("fast") {
   // Configure the color map
   color_map_->setMaxValue(10000.0);
 }
 
 void PointcloudIntegrator::setTsdfIntegratorConfigFromRosParam(
     const ros::NodeHandle& node_handle) {
+  node_handle.param("method", tsdf_integrator_method_, tsdf_integrator_method_);
   tsdf_integrator_config_ =
       voxblox::getTsdfIntegratorConfigFromRosParam(node_handle);
 }
@@ -64,10 +67,13 @@ void PointcloudIntegrator::integratePointcloud(
 
   // Initialize the TSDF integrator if this has not yet been done
   if (!tsdf_integrator_) {
-    tsdf_integrator_.reset(new voxblox::FastTsdfIntegrator(
-        tsdf_integrator_config_,
-        submap_ptr->getTsdfMapPtr()->getTsdfLayerPtr()));
-    ROS_INFO("Initialized TSDF Integrator");
+    tsdf_integrator_ = voxblox::TsdfIntegratorFactory::create(
+        tsdf_integrator_method_, tsdf_integrator_config_,
+        submap_ptr->getTsdfMapPtr()->getTsdfLayerPtr());
+
+    ROS_INFO_STREAM(
+        "Initialized TSDF Integrator of type: " << tsdf_integrator_method_);
+    ROS_INFO_STREAM(tsdf_integrator_config_.print());
   }
 
   // TODO(victorr): Implement optional Cartographer style simultaneous
@@ -80,12 +86,13 @@ void PointcloudIntegrator::integratePointcloud(
   ROS_INFO_COND(verbose_, "Integrating a pointcloud with %lu points.",
                 pointcloud.size());
   ros::WallTime start = ros::WallTime::now();
-  tsdf_integrator_->integratePointCloud(T_submap_sensor, pointcloud, colors);
+  tsdf_integrator_->integratePointCloud(T_submap_sensor, pointcloud, colors,
+                                        /* freespace_points */ false);
   ros::WallTime end = ros::WallTime::now();
   ROS_INFO_COND(
       verbose_,
       "Finished integrating in %f seconds, submap %u now has %lu blocks.",
       (end - start).toSec(), submap_ptr->getID(),
       submap_ptr->getTsdfMap().getTsdfLayer().getNumberOfAllocatedBlocks());
-}
+}  // namespace voxgraph
 }  // namespace voxgraph
