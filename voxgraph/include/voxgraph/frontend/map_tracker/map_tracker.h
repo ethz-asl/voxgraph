@@ -30,6 +30,7 @@ class MapTracker {
   void switchToNewSubmap(const Transformation& T_M_S_new);
 
   void publishTFs();
+  void publishSubmapTFs();
 
   // Transform getter methods
   // NOTE: For more info on the frame naming conventions,
