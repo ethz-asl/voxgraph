@@ -26,6 +26,7 @@ class OdometrySimulator {
 
   // Internal pose = integrate(odom + noise on X_vel, Y_vel, Z_vel and Yaw_rate)
   geometry_msgs::PoseStamped internal_pose_;
+  geometry_msgs::Twist internal_twist_;
   // Published pose = internal_pose_ + noise on X, Y, Z, Yaw, Pitch and Roll
   geometry_msgs::TransformStamped published_pose_;
 
@@ -43,6 +44,7 @@ class OdometrySimulator {
   std::string published_mission_frame_;
   std::string published_simulated_base_frame_;
   std::string published_original_base_frame_;
+  std::string published_original_mission_frame_;
 
   // Noise distributions
   struct NoiseDistributions {
@@ -52,10 +54,15 @@ class OdometrySimulator {
     NormalDistribution yaw_rate;
   } noise_;
 
+  // Odometry publisher as a message
+  ros::Publisher odometry_drifted_publisher_;
+
   // Transform publisher for the simulated noisy pose
   void publishSimulatedPoseTf();
+  void publishSimulatedPoseMsg();
   // Transform publisher for the true, noise-free pose
   void publishOriginalPoseTf(const nav_msgs::Odometry::ConstPtr& odometry_msg);
+  void publishOriginalMissionTf(const nav_msgs::Odometry::ConstPtr& odometry_msg);
 };
 }  // namespace voxgraph
 
