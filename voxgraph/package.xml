@@ -24,6 +24,5 @@
   <depend>voxblox_msgs</depend>
   <depend>cblox_msgs</depend>
   <depend>voxgraph_msgs</depend>
-  <depend>maplab_msgs</depend>
 </package>
 

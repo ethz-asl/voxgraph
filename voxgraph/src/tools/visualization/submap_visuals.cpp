@@ -13,8 +13,7 @@
 namespace voxgraph {
 SubmapVisuals::SubmapVisuals(VoxgraphSubmap::Config submap_config,
                              voxblox::MeshIntegratorConfig mesh_config)
-    : mesh_config_(std::move(mesh_config)),
-      mesh_opacity_(1.0) {
+    : mesh_config_(std::move(mesh_config)), mesh_opacity_(1.0) {
   // Meshing params from ROS params server
   // NOTE(alexmillane): The separated mesher *requires* color, so this is
   //                    hard-coded.

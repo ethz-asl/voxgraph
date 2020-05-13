@@ -16,31 +16,16 @@ MapTracker::MapTracker(VoxgraphSubmapCollection::ConstPtr submap_collection_ptr,
       odom_transformer_() {}
 
 void MapTracker::subscribeToTopics(ros::NodeHandle nh,
-                                   const std::string& odometry_input_topic,
-                                   const std::string& imu_biases_topic) {
+                                   const std::string& odometry_input_topic) {
   if (!odometry_input_topic.empty()) {
     ROS_INFO_STREAM("Using odometry from ROS topic: " << odometry_input_topic);
     use_odom_from_tfs_ = false;
     odom_transformer_.subscribeToTopic(nh, odometry_input_topic);
   }
-  if (!imu_biases_topic.empty()) {
-    imu_biases_subscriber_ =
-        nh.subscribe(imu_biases_topic, 1, &MapTracker::imuBiasesCallback, this);
-  }
 }
 
 void MapTracker::advertiseTopics(ros::NodeHandle nh_private,
-                                 const std::string& odometry_output_topic) {
-  odom_with_imu_biases_pub_ =
-      nh_private.advertise<maplab_msgs::OdometryWithImuBiases>(
-          odometry_output_topic, 3, false);
-}
-
-void MapTracker::imuBiasesCallback(
-    const sensor_msgs::Imu::ConstPtr& imu_biases) {
-  tf::vectorMsgToKindr(imu_biases->linear_acceleration, &forwarded_accel_bias_);
-  tf::vectorMsgToKindr(imu_biases->angular_velocity, &forwarded_gyro_bias_);
-}
+                                 const std::string& odometry_output_topic) {}
 
 bool MapTracker::updateToTime(const ros::Time& timestamp,
                               const std::string& sensor_frame_id) {

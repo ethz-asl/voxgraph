@@ -7,6 +7,3 @@
 - git:
     local-name: cblox
     uri: https://github.com/ethz-asl/cblox.git
-- git:
-    local-name: maplab_msgs
-    uri: https://github.com/ethz-asl/maplab_msgs.git
