@@ -3,6 +3,7 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <voxgraph/common.h>
 
 namespace voxgraph {
 OdometrySimulator::OdometrySimulator(const ros::NodeHandle& nh,
@@ -29,6 +30,15 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle& nh,
   nh_private_.param("published_original_base_frame",
                     published_original_base_frame_,
                     published_original_base_frame_);
+  nh_private_.param("published_original_mission_frame",
+                    published_original_mission_frame_,
+                    published_original_mission_frame_);
+  std::string published_odom_topic = "odometry_drifted";
+  nh_private_.param("published_odom_topic", published_odom_topic,
+                    published_odom_topic);
+  int publisher_queue_length = 1;
+  nh_private_.param("publisher_queue_length", publisher_queue_length,
+                    publisher_queue_length);
 
   ros::NodeHandle nh_velocity_noise_(nh_private_, "odometry_noise/velocity");
   nh_velocity_noise_.param<double>("x/mean", noise_.x_vel.mean(), 0);
@@ -59,6 +69,12 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle& nh,
       nh_.subscribe(subscribe_to_odom_topic_,
                     static_cast<unsigned int>(subscriber_queue_length_),
                     &OdometrySimulator::odometryCallback, this);
+
+  // Advertise the drifted odometry ROS topic
+  odometry_drifted_publisher_ =
+      nh_.advertise<nav_msgs::Odometry>(
+          published_odom_topic,
+          static_cast<unsigned int>(publisher_queue_length));
 }
 
 void OdometrySimulator::odometryCallback(
@@ -71,6 +87,7 @@ void OdometrySimulator::odometryCallback(
     // Initialize the published pose
     ROS_INFO("Initialized drifting odometry simulator");
     publishSimulatedPoseTf();
+    publishSimulatedPoseMsg();
     return;
   }
   // Calculate time delta since last message
@@ -114,6 +131,9 @@ void OdometrySimulator::odometryCallback(
   // Simulate noise on yaw rate
   // NOTE: This is done in mission frame to avoid affecting pitch and roll
   W_angular_velocity.z() += noise_.yaw_rate();
+  // Transform angular velocity back into body frame
+  B_angular_velocity =
+      Rotation_WB.inverse().getRotationMatrix() * W_angular_velocity;
   // Integrate angular velocity
   Vector3 rotation_vector = W_angular_velocity * Dt;
   Rotation Rotation_WB_Delta(rotation_vector);
@@ -124,9 +144,17 @@ void OdometrySimulator::odometryCallback(
   internal_pose_.header = odometry_msg->header;
   tf::quaternionKindrToMsg(Rotation_WB, &internal_pose_.pose.orientation);
   tf::pointKindrToMsg(W_translation_WB, &internal_pose_.pose.position);
+  tf::vectorKindrToMsg(B_linear_velocity, &internal_twist_.linear);
+  tf::vectorKindrToMsg(B_angular_velocity, &internal_twist_.angular);
 
   // Publish simulated pose TF
   publishSimulatedPoseTf();
+
+  // Publish simulated pose msg
+  publishSimulatedPoseMsg();
+
+  // Publish original mission TF
+  publishOriginalMissionTf(odometry_msg);
 
   // Publish true pose TF if requested
   if (debug_) {
@@ -169,6 +197,37 @@ void OdometrySimulator::publishSimulatedPoseTf() {
   transform_broadcaster.sendTransform(published_pose_);  // Simulated pose
 }
 
+void OdometrySimulator::publishSimulatedPoseMsg() {
+  // Write transform to an odometry message
+  nav_msgs::Odometry drifted_odometry_msg;
+  // Copy header
+  drifted_odometry_msg.header = published_pose_.header;
+  drifted_odometry_msg.header.frame_id = published_mission_frame_;
+  drifted_odometry_msg.child_frame_id = published_simulated_base_frame_;
+  // Copy position
+  drifted_odometry_msg.pose.pose.position.x =
+      published_pose_.transform.translation.x;
+  drifted_odometry_msg.pose.pose.position.y =
+      published_pose_.transform.translation.y;
+  drifted_odometry_msg.pose.pose.position.z =
+      published_pose_.transform.translation.z;
+  // Copy orientation
+  drifted_odometry_msg.pose.pose.orientation.w =
+      published_pose_.transform.rotation.w;
+  drifted_odometry_msg.pose.pose.orientation.x =
+      published_pose_.transform.rotation.x;
+  drifted_odometry_msg.pose.pose.orientation.y =
+      published_pose_.transform.rotation.y;
+  drifted_odometry_msg.pose.pose.orientation.z =
+      published_pose_.transform.rotation.z;
+  // Copy linear and angular velocities
+  drifted_odometry_msg.twist.twist.linear = internal_twist_.linear;
+  drifted_odometry_msg.twist.twist.angular = internal_twist_.angular;
+
+  // Publish
+  odometry_drifted_publisher_.publish(drifted_odometry_msg);
+}
+
 void OdometrySimulator::publishOriginalPoseTf(
     const nav_msgs::Odometry::ConstPtr& odometry_msg) {
   // Declare the TF broadcaster
@@ -188,5 +247,31 @@ void OdometrySimulator::publishOriginalPoseTf(
 
   // Publish
   transform_broadcaster.sendTransform(true_pose);
+}
+
+void OdometrySimulator::publishOriginalMissionTf(
+    const nav_msgs::Odometry::ConstPtr& odometry_msg) {
+  // Declare the TF broadcaster
+  static tf2_ros::TransformBroadcaster transform_broadcaster;
+
+  // Create the transform msg
+  geometry_msgs::TransformStamped transform_msg;
+  transform_msg.header = odometry_msg->header;
+  transform_msg.header.frame_id = published_mission_frame_;
+  transform_msg.child_frame_id = published_original_mission_frame_;
+
+  // Ground truth world frame to robot frame (from odometry message)
+  kindr::minimal::QuatTransformationTemplate<double> T_W_R;
+  tf::poseMsgToKindr(odometry_msg->pose.pose, &T_W_R);
+  // Simulated mission frame to robot frame (from simulated transform)
+  kindr::minimal::QuatTransformationTemplate<double> T_O_R;
+  tf::transformMsgToKindr(published_pose_.transform, &T_O_R);
+  // Robot frame to Ground truth world frame
+  kindr::minimal::QuatTransformationTemplate<double> T_O_W =
+      T_O_R * T_W_R.inverse();
+  tf::transformKindrToMsg(T_O_W, &transform_msg.transform);
+
+  // Publish
+  transform_broadcaster.sendTransform(transform_msg);
 }
 }  // namespace voxgraph
