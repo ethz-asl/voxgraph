@@ -18,8 +18,8 @@ output_sensor_frame: "sensor_voxgraph"
 # - [ 0.1336122,  0.0053288, 0.9910194, -0.131]
 # - [ 0.0,        0.0,       0.0,        1.0]
 
+tsdf_voxel_size: 0.20
 tsdf_integrator:
-  tsdf_voxel_size: 0.20
   truncation_distance: 0.60
   max_ray_length_m: 16.0
   use_const_weight: true
@@ -49,4 +49,5 @@ measurements:
     enabled: false
     information_zz: 2500.0
 
+mesh_min_weight: 2.0
 mesh_use_color: false
