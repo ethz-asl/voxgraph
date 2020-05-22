@@ -15,43 +15,44 @@ SubmapServer::SubmapServer(ros::NodeHandle nh_private) {
   submap_surface_pointcloud_pub_ =
       nh_private.advertise<voxgraph_msgs::MapSurface>(
           "submap_surface_pointclouds", 3, false);
+
   submap_poses_pub_ = nh_private.advertise<cblox_msgs::MapPoseUpdate>(
-          "submap_poses", 3, false);
+            "submap_poses", 3, false);
 }
 
 cblox_msgs::MapLayer SubmapServer::serializeActiveSubmap(
-    const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-    const ros::Time &current_timestamp) {
-  // Publish the current (actively mapping) submap
-  cblox_msgs::MapLayer submap_tsdf_msg;
-  if (!submap_collection_ptr->empty()) {
-    // get active submap
-    const voxgraph::VoxgraphSubmap &submap =
-        submap_collection_ptr->getActiveSubmap();
+        const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
+        const ros::Time &current_timestamp) {
+    // Publish the current (actively mapping) submap
+    cblox_msgs::MapLayer submap_tsdf_msg;
+    if (!submap_collection_ptr->empty()) {
+        // get active submap
+        const voxgraph::VoxgraphSubmap &submap =
+                submap_collection_ptr->getActiveSubmap();
 
-    // Create the message and set its headers
-    submap_tsdf_msg.header = generateHeaderMsg(submap, current_timestamp);
-    submap_tsdf_msg.map_header = generateSubmapHeaderMsg(submap);
+        // Create the message and set its headers
+        submap_tsdf_msg.header = generateHeaderMsg(submap, current_timestamp);
+        submap_tsdf_msg.map_header = generateSubmapHeaderMsg(submap);
 
-    // Set the message's TSDF
-    voxblox::serializeLayerAsMsg<voxblox::TsdfVoxel>(
-        submap.getTsdfMap().getTsdfLayer(), false, &submap_tsdf_msg.tsdf_layer);
-    submap_tsdf_msg.tsdf_layer.action =
-        static_cast<uint8_t>(voxblox::MapDerializationAction::kReset);
-  }
-  return submap_tsdf_msg;
+        // Set the message's TSDF
+        voxblox::serializeLayerAsMsg<voxblox::TsdfVoxel>(
+                submap.getTsdfMap().getTsdfLayer(), false, &submap_tsdf_msg.tsdf_layer);
+        submap_tsdf_msg.tsdf_layer.action =
+                static_cast<uint8_t>(voxblox::MapDerializationAction::kReset);
+    }
+    return submap_tsdf_msg;
 }
 
 void SubmapServer::publishActiveSubmap(
-    const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-    const ros::Time &current_timestamp) {
-  // Publish the current (actively mapping) submap
-  if (!submap_collection_ptr->empty()) {
-    // get active submap
-    const voxgraph::VoxgraphSubmap& submap =
-        submap_collection_ptr->getActiveSubmap();
-    publishSubmap(submap, current_timestamp);
-  }
+        const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
+        const ros::Time &current_timestamp) {
+    // Publish the current (actively mapping) submap
+    if (!submap_collection_ptr->empty()) {
+        // get active submap
+        const voxgraph::VoxgraphSubmap &submap =
+                submap_collection_ptr->getActiveSubmap();
+        publishSubmap(submap, current_timestamp);
+    }
 }
 
 void SubmapServer::publishSubmap(const VoxgraphSubmap &submap,
@@ -122,9 +123,9 @@ void SubmapServer::publishSubmapEsdf(
 
   // Set the message's TSDF
   voxblox::serializeLayerAsMsg<voxblox::TsdfVoxel>(
-      submap.getTsdfMap().getTsdfLayer(), false, &submap_esdf_msg.tsdf_layer);
+        submap.getTsdfMap().getTsdfLayer(), false, &submap_esdf_msg.tsdf_layer);
   submap_esdf_msg.tsdf_layer.action =
-      static_cast<uint8_t>(voxblox::MapDerializationAction::kReset);
+        static_cast<uint8_t>(voxblox::MapDerializationAction::kReset);
 
   // Set the message's ESDF
   voxblox::serializeLayerAsMsg<voxblox::EsdfVoxel>(
@@ -225,38 +226,38 @@ cblox_msgs::MapHeader SubmapServer::generateSubmapHeaderMsg(
 }
 
 void SubmapServer::publishSubmapPoses(
-    const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-    const ros::Time& timestamp) {
-  // Only publish if there are subscribers
-  if (submap_poses_pub_.getNumSubscribers() > 0) {
-    publishSubmapPoses(submap_collection_ptr, "mission", timestamp,
-        submap_poses_pub_);
-  }
+        const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
+        const ros::Time& timestamp) {
+    // Only publish if there are subscribers
+    if (submap_poses_pub_.getNumSubscribers() > 0) {
+        publishSubmapPoses(submap_collection_ptr, "mission", timestamp,
+                           submap_poses_pub_);
+    }
 }
 
 void SubmapServer::publishSubmapPoses(
-    const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-    const std::string &frame_id, const ros::Time &timestamp,
-    const ros::Publisher &submap_poses_publisher) {
+        const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
+        const std::string &frame_id, const ros::Time &timestamp,
+        const ros::Publisher &submap_poses_publisher) {
 
-  if (submap_poses_publisher.getNumSubscribers() == 0) {
-    return;
-  }
+    if (submap_poses_publisher.getNumSubscribers() == 0) {
+        return;
+    }
 
-  // prep map header
-  cblox_msgs::MapPoseUpdate pose_msg;
-  pose_msg.header.frame_id = frame_id;
-  pose_msg.header.stamp = ros::Time::now();
-  // fill pose array
-  for (SubmapID submap_id : submap_collection_ptr->getIDs()) {
-    const VoxgraphSubmap &submap =
-        submap_collection_ptr->getSubmap(submap_id);
-    pose_msg.map_headers.emplace_back(
-        SubmapServer::generateSubmapHeaderMsg(submap));
-  }
+    // prep map header
+    cblox_msgs::MapPoseUpdate pose_msg;
+    pose_msg.header.frame_id = frame_id;
+    pose_msg.header.stamp = ros::Time::now();
+    // fill pose array
+    for (SubmapID submap_id : submap_collection_ptr->getIDs()) {
+        const VoxgraphSubmap &submap =
+                submap_collection_ptr->getSubmap(submap_id);
+        pose_msg.map_headers.emplace_back(
+                SubmapServer::generateSubmapHeaderMsg(submap));
+    }
 
-  // Publish message
-  submap_poses_publisher.publish(pose_msg);
+    // Publish message
+    submap_poses_publisher.publish(pose_msg);
 }
 
 }  // namespace voxgraph

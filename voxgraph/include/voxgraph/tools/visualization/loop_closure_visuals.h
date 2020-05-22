@@ -1,8 +1,8 @@
 #ifndef VOXGRAPH_TOOLS_VISUALIZATION_LOOP_CLOSURE_VISUALS_H_
 #define VOXGRAPH_TOOLS_VISUALIZATION_LOOP_CLOSURE_VISUALS_H_
 
-#include <string>
 #include <visualization_msgs/Marker.h>
+#include <string>
 #include "voxgraph/backend/pose_graph.h"
 
 namespace voxgraph {
@@ -35,8 +35,7 @@ class LoopClosureVisuals {
                                            const std::string& ns) const;
 
   void publishAxes(const Transformation& T_W_1, const Transformation& T_W_2,
-                   const Transformation& T_1_2_est,
-                   const std::string& frame_id,
+                   const Transformation& T_1_2_est, const std::string& frame_id,
                    const ros::Publisher& publisher) const;
 };
 }  // namespace voxgraph

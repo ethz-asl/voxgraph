@@ -1,8 +1,0 @@
----
-Language: Cpp
-BasedOnStyle: Google
-ColumnLimit: 80
----
-Language: Proto
-BasedOnStyle: Google
-...

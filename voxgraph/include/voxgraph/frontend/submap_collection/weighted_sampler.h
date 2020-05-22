@@ -1,9 +1,9 @@
 #ifndef VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_WEIGHTED_SAMPLER_H_
 #define VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_WEIGHTED_SAMPLER_H_
 
+#include <algorithm>
 #include <random>
 #include <vector>
-#include <algorithm>
 
 namespace voxgraph {
 template <typename ItemType>

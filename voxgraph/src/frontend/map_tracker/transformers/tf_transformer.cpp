@@ -30,6 +30,5 @@ bool TfTransformer::lookupTransform(const std::string &to_frame_id,
   geometry_msgs::TransformStamped transform_msg =
       tf_buffer_.lookupTransform(to_frame_id, from_frame_id, frame_timestamp);
   tf::transformMsgToKindr(transform_msg.transform, transform);
-  return true;
 }
 }  // namespace voxgraph

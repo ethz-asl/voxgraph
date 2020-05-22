@@ -17,7 +17,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   typedef std::shared_ptr<VoxgraphSubmap> Ptr;
   typedef std::shared_ptr<const VoxgraphSubmap> ConstPtr;
-  //TODO(victorr): Use Eigen aligned map
+  // TODO(victorr): Use Eigen aligned map
   typedef std::map<ros::Time, voxblox::Transformation> PoseHistoryMap;
 
   struct Config : cblox::TsdfEsdfSubmap::Config {
@@ -100,6 +100,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   // Object containing all isosurface vertices stored as [x, y, z, weight]
   WeightedSampler<RegistrationPoint> isosurface_vertices_;
+  voxblox::IndexSet isosurface_blocks_;
   void findIsosurfaceVertices();
 
   // History of how the robot moved through the submap

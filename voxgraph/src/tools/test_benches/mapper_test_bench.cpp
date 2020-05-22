@@ -32,22 +32,22 @@ std::string vectorToString(std::vector<T> vector) {
 // TODO(victorr): Use MessageInstance::getTopic() instead of directly trying to
 //                instanciate. This would also ensure that the right topic is
 //                used, instead of only filtering by msg type.
-int main(int argc, char** argv) {
-  using voxgraph::VoxgraphMapper;
-  using voxgraph::OdometrySimulator;
-  using voxgraph::VoxgraphSubmap;
-  using voxgraph::VoxgraphSubmapCollection;
-  using voxgraph::MapEvaluation;
-  using voxgraph::PoseGraph;
+int main(int argc, char **argv) {
   using cblox::SubmapID;
   using voxblox::Transformation;
+  using voxgraph::MapEvaluation;
+  using voxgraph::OdometrySimulator;
+  using voxgraph::PoseGraph;
+  using voxgraph::VoxgraphMapper;
+  using voxgraph::VoxgraphSubmap;
+  using voxgraph::VoxgraphSubmapCollection;
   using TransformationDouble =
       kindr::minimal::QuatTransformationTemplate<double>;
-  using std::future_status;
-  using std::chrono::milliseconds;
-  using std::chrono::duration_cast;
   using geometry_msgs::PoseStamped;
   using geometry_msgs::PoseWithCovarianceStamped;
+  using std::future_status;
+  using std::chrono::duration_cast;
+  using std::chrono::milliseconds;
   enum class GroundTruthPoseMsgType { Odometry, PoseWithCovarianceStamped };
 
   // Start logging
@@ -83,7 +83,8 @@ int main(int argc, char** argv) {
       "- number of sampling ratios: " << vectorToString(sampling_ratios));
   // TF frame names
   std::string mission_frame;
-  nh_private.param<std::string>("mission_frame", mission_frame, "mission");
+  nh_private.param<std::string>("output_mission_frame", mission_frame,
+                                "mission");
   ROS_INFO_STREAM("- mission frame: " << mission_frame);
   std::string uncorrected_base_frame;
   nh_private.param<std::string>("uncorrected_base_frame",

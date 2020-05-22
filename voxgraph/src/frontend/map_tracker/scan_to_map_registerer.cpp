@@ -1,5 +1,5 @@
-#include <thread>
 #include "voxgraph/frontend/map_tracker/scan_to_map_registerer.h"
+#include <thread>
 #include "voxgraph/frontend/map_tracker/cost_functions/odometry_cost_function.h"
 
 namespace voxgraph {
@@ -43,8 +43,7 @@ bool ScanToMapRegisterer::refineSensorPose(
   ceres::Solver::Summary solver_summary;
 
   // Initialize and add the translation parameter block
-  Eigen::Vector3d t_S_C_refined =
-      T_S_C_prior.getPosition().cast<double>();
+  Eigen::Vector3d t_S_C_refined = T_S_C_prior.getPosition().cast<double>();
   problem.AddParameterBlock(t_S_C_refined.data(), 3);
 
   // Initialize and add the rotation parameter block
@@ -78,17 +77,14 @@ bool ScanToMapRegisterer::refineSensorPose(
   //  odom_sqrt_information(3, 3) *= 1e7;  // roll
   //  odom_sqrt_information(4, 4) *= 1e7;  // pitch
   //  odom_sqrt_information(5, 5) *= 1e5;  // yaw
-  ceres::CostFunction* odom_cost_function = OdometryCostFunction::Create(
+  ceres::CostFunction *odom_cost_function = OdometryCostFunction::Create(
       T_S_C_prior.getPosition().cast<double>(),
-      T_S_C_prior.getEigenQuaternion().cast<double>(),
-      odom_sqrt_information);
-  problem.AddResidualBlock(odom_cost_function,
-                           nullptr,
-                           t_S_C_refined.data(),
+      T_S_C_prior.getEigenQuaternion().cast<double>(), odom_sqrt_information);
+  problem.AddResidualBlock(odom_cost_function, nullptr, t_S_C_refined.data(),
                            q_S_C_refined.coeffs().data());
 
   // Create and add the scan-to-map registration cost function
-  ceres::CostFunction* registration_cost_function =
+  ceres::CostFunction *registration_cost_function =
       ScanRegistrationCostFunction::Create(pointcloud_msg, tracked_submap_ptr);
   problem.AddResidualBlock(registration_cost_function, nullptr,
                            t_S_C_refined.data(), q_S_C_refined.coeffs().data());

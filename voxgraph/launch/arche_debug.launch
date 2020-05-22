@@ -2,9 +2,9 @@
   <param name="use_sim_time" value="true"/>
 
   <node if="1" name="player" pkg="rosbag" type="play" output="screen"
-        args="-r 1.0 -s 5 -q --clock /home/davide/data/long_loop_ready_to_use.bag"/>
+        args="-r 1.0 -s 5 -q --clock /home/victor/data/arche_week/arche_day_2/flight1_2ms.bag"/>
   <node if="0" name="player" pkg="rosbag" type="play" output="screen"
-        args="-r 1.0 -s 5 -q --clock /home/victorr/data/arche_week/arche_day_3/2019-07-03-14-24-45.bag"/>
+        args="-r 1.0 -s 5 -q --clock /home/victor/data/arche_week/arche_day_3/2019-07-03-14-24-45.bag"/>
 
   <node pkg="tf" type="static_transform_publisher" name="odom_to_mission" args="0 0 0 0 0 0 1 odom mission 100"/>
   <node pkg="tf" type="static_transform_publisher" name="os1_stuff" args="0 0 0 0 0 1 0 os1_sensor os1_lidar 100"/>
@@ -19,12 +19,11 @@
       pointcloud_topic: "lidar_undistortion/pointcloud_corrected"
       subscriber_queue_length: 10
       use_icp_refinement: false
-      mission_frame: "mission"
-      odom_frame: "odom"
-      base_link_frame: "imu"
-      odom_frame_corrected: "odom_corrected"
-      base_frame_corrected: "base_corrected"
-      sensor_frame_corrected: "sensor_corrected"
+      input_odom_frame: "odom"
+      input_base_link_frame: "imu"
+      output_mission_frame: "mission"
+      output_base_link_frame: "imu_voxgraph"
+      output_sensor_frame: "sensor_voxgraph"
       # For calibration according to TFs, see STIX launch file
       # T_base_sensor:
       # - [-0.9908275, -0.0196803, 0.1336922, -0.024]

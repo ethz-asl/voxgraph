@@ -1,0 +1,8 @@
+prefix=/home/davide/catkin_ws/src/voxgraph/voxgraph/cmake-build-debug/devel
+
+Name: voxgraph
+Description: Description of voxgraph
+Version: 1.0.0
+Cflags: -I/home/davide/catkin_ws/src/voxgraph/voxgraph/include
+Libs: -L${prefix}/lib -lvoxgraph
+Requires: roscpp voxblox voxblox_ros cblox ceres_catkin eigen_catkin voxblox_msgs voxgraph_msgs maplab_msgs

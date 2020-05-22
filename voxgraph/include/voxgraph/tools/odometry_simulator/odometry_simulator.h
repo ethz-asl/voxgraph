@@ -34,13 +34,20 @@ class OdometrySimulator {
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
 
-  // Odometry subscriber and related settings
+  // Odometry subscriber, publilsher and related settings
   ros::Subscriber odometry_subscriber_;
+  ros::Publisher simulated_odometry_publisher_;
   int subscriber_queue_length_;
+  int publisher_queue_length_;
   std::string subscribe_to_odom_topic_;
+  std::string advertise_to_odom_topic_;
   std::string published_mission_frame_;
   std::string published_simulated_base_frame_;
   std::string published_original_base_frame_;
+
+  // Time
+  ros::Time time_counter_;
+  double time_rate_;
 
   // Noise distributions
   struct NoiseDistributions {

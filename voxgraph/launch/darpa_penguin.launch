@@ -4,7 +4,7 @@
 <!--    <arg name="bag_file" default="/home/victorr/data/2019-08-08-00-12-54.bag"/>-->
 <!--    <arg name="bag_file" default="/home/victorr/data/2019-08-09-00-17-34.bag"/>-->
 <!--    <arg name="bag_file" default="/home/victorr/data/outside_moog.bag"/>-->
-    <arg name="bag_file" default="/home/davide/data/long_loop_ready_to_use.bag"/>
+    <arg name="bag_file" default="/home/victorr/data/outside_moog_2.bag"/>
 
     <node pkg="tf" type="static_transform_publisher" name="odom_to_mission" args="0 0 0 0 0 0 1 odom mission 100"/>
 
@@ -40,13 +40,11 @@
                 submap_creation_interval: 10
                 pointcloud_topic: "lidar_undistortion/pointcloud_corrected"
                 subscriber_queue_length: 1000
-                world_frame: "world"
-                odom_frame: "odom"
-                base_frame: "imu"
-                odom_frame_corrected: "odom_voxgraph"
-                robot_frame_corrected: "robot_voxgraph"
-                sensor_frame_corrected: "sensor_voxgraph"
-                use_tf_transforms: True
+                input_odom_frame: "odom"
+                input_base_link_frame: "imu"
+                output_mission_frame: "world"
+                output_base_link_frame: "imu_voxgraph"
+                output_sensor_frame: "sensor_voxgraph"
                 tsdf_integrator:
                     tsdf_voxel_size: 0.20
                     truncation_distance: 0.60

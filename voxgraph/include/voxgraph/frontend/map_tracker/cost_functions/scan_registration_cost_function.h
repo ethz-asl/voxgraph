@@ -20,8 +20,7 @@ class ScanRegistrationCostFunction {
 
   template <typename T>
   bool operator()(const T* const t_S_C_estimate_ptr,
-                  const T* const q_S_C_estimate_ptr,
-                  T* residuals_ptr) const;
+                  const T* const q_S_C_estimate_ptr, T* residuals_ptr) const;
 
   static ceres::CostFunction* Create(
       sensor_msgs::PointCloud2::Ptr pointcloud_msg_ptr,
@@ -36,14 +35,14 @@ class ScanRegistrationCostFunction {
 
  protected:
   voxblox::Point getScalarPart(
-      const Eigen::Matrix<ceres::Jet<double, 7>, 3, 1> &vector) const {
+      const Eigen::Matrix<ceres::Jet<double, 7>, 3, 1>& vector) const {
     // Extract the scalar parts of the Jets, stored in the Jet::a struct member
     voxblox::Point scalar_vector(vector.x().a, vector.y().a, vector.z().a);
     return scalar_vector;
   }
 
   voxblox::Point getScalarPart(
-      const Eigen::Matrix<double, 3, 1> &vector) const {
+      const Eigen::Matrix<double, 3, 1>& vector) const {
     return vector.cast<float>();
   }
 

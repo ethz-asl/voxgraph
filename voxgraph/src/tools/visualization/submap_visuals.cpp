@@ -19,42 +19,41 @@ void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
                                 const std::string &submap_frame,
                                 const ros::Publisher &publisher,
                                 const voxblox::ColorMode &color_mode) const {
-
-  // de-roof mesh
-  bool cut_roof = false;
-  if (cut_roof) {
-    voxblox::BlockIndexList block_indices;
-    mesh_layer_ptr->getAllAllocatedMeshes(&block_indices);
-    for (const voxblox::BlockIndex& block_idx : block_indices) {
-      voxblox::Mesh::Ptr mesh_ptr = mesh_layer_ptr->getMeshPtrByIndex(block_idx);
-      if (!mesh_ptr) continue;
-      if (!mesh_ptr->hasNormals()) {
-        continue;
-      }
-      size_t i = 0u;
-      while (i < mesh_ptr->normals.size()) {
-        if (mesh_ptr->normals[i].dot(voxblox::Point(0, 0, -1))
-            > cos(M_PI_2/3)) {
-          if (mesh_ptr->hasNormals() and mesh_ptr->normals.size() > i) {
-            mesh_ptr->normals.erase(mesh_ptr->normals.begin() + i);
-          }
-          if (mesh_ptr->hasColors() and mesh_ptr->colors.size() > i) {
-            mesh_ptr->colors.erase(mesh_ptr->colors.begin() + i);
-          }
-          if (mesh_ptr->hasTriangles() and mesh_ptr->indices.size() > i) {
-            mesh_ptr->indices.erase(mesh_ptr->indices.begin() + i);
-          }
-          if (mesh_ptr->hasVertices() and mesh_ptr->vertices.size() > i) {
-            mesh_ptr->vertices.erase(mesh_ptr->vertices.begin() + i);
-          }
-        } else {
-          i++;
+    // de-roof mesh
+    bool cut_roof = false;
+    if (cut_roof) {
+        voxblox::BlockIndexList block_indices;
+        mesh_layer_ptr->getAllAllocatedMeshes(&block_indices);
+        for (const voxblox::BlockIndex& block_idx : block_indices) {
+            voxblox::Mesh::Ptr mesh_ptr = mesh_layer_ptr->getMeshPtrByIndex(block_idx);
+            if (!mesh_ptr) continue;
+            if (!mesh_ptr->hasNormals()) {
+                continue;
+            }
+            size_t i = 0u;
+            while (i < mesh_ptr->normals.size()) {
+                if (mesh_ptr->normals[i].dot(voxblox::Point(0, 0, -1))
+                    > cos(M_PI_2/3)) {
+                    if (mesh_ptr->hasNormals() and mesh_ptr->normals.size() > i) {
+                        mesh_ptr->normals.erase(mesh_ptr->normals.begin() + i);
+                    }
+                    if (mesh_ptr->hasColors() and mesh_ptr->colors.size() > i) {
+                        mesh_ptr->colors.erase(mesh_ptr->colors.begin() + i);
+                    }
+                    if (mesh_ptr->hasTriangles() and mesh_ptr->indices.size() > i) {
+                        mesh_ptr->indices.erase(mesh_ptr->indices.begin() + i);
+                    }
+                    if (mesh_ptr->hasVertices() and mesh_ptr->vertices.size() > i) {
+                        mesh_ptr->vertices.erase(mesh_ptr->vertices.begin() + i);
+                    }
+                } else {
+                    i++;
+                }
+            }
         }
-      }
     }
-  }
 
-  // Create a marker containing the mesh
+    // Create a marker containing the mesh
   visualization_msgs::Marker marker;
   voxblox::fillMarkerWithMesh(mesh_layer_ptr, color_mode, &marker);
 
@@ -63,10 +62,10 @@ void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
   if (pastelize) {
     float brightness = 0.5;
     for (std_msgs::ColorRGBA& color : marker.colors) {
-      color.r = 1 - (1 - color.r) * brightness;
-      color.g = 1 - (1 - color.g) * brightness;
-      color.b = 1 - (1 - color.b) * brightness;
-    }
+        color.r = 1 - (1 - color.r) * brightness;
+        color.g = 1 - (1 - color.g) * brightness;
+        color.b = 1 - (1 - color.b) * brightness;
+     }
   }
 
   marker.header.frame_id = submap_frame;
@@ -78,7 +77,7 @@ void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr &mesh_layer_ptr,
 void SubmapVisuals::publishMesh(
     const cblox::SubmapCollection<VoxgraphSubmap> &submap_collection,
     const cblox::SubmapID &submap_id, const voxblox::Color &submap_color,
-    const std::string &submap_frame, const ros::Publisher &publisher) {
+    const std::string &submap_frame, const ros::Publisher &publisher) const {
   // Get a pointer to the submap
   VoxgraphSubmap::ConstPtr submap_ptr =
       submap_collection.getSubmapConstPtr(submap_id);
@@ -94,39 +93,39 @@ void SubmapVisuals::publishMesh(
   reference_mesh_integrator.generateMesh(false, false);
   submap_mesher_->colorMeshLayer(submap_color, mesh_layer_ptr.get());
 
-  // de-roof mesh
-  bool cut_roof = false;
-  if (cut_roof) {
-    voxblox::BlockIndexList block_indices;
-    mesh_layer_ptr->getAllAllocatedMeshes(&block_indices);
-    for (const voxblox::BlockIndex& block_idx : block_indices) {
-      voxblox::Mesh::Ptr mesh_ptr = mesh_layer_ptr->getMeshPtrByIndex(block_idx);
-      if (!mesh_ptr) continue;
-      if (!mesh_ptr->hasNormals()) {
-        continue;
-      }
-      size_t i = 0u;
-      while (i < mesh_ptr->normals.size()) {
-        if (mesh_ptr->normals[i].dot(voxblox::Point(0, 0, -1))
-            > cos(M_PI_4)) {
-          if (mesh_ptr->hasNormals() and mesh_ptr->normals.size() > i) {
-            mesh_ptr->normals.erase(mesh_ptr->normals.begin() + i);
-          }
-          if (mesh_ptr->hasColors() and mesh_ptr->colors.size() > i) {
-            mesh_ptr->colors.erase(mesh_ptr->colors.begin() + i);
-          }
-          if (mesh_ptr->hasTriangles() and mesh_ptr->indices.size() > i) {
-            mesh_ptr->indices.erase(mesh_ptr->indices.begin() + i);
-          }
-          if (mesh_ptr->hasVertices() and mesh_ptr->vertices.size() > i) {
-            mesh_ptr->vertices.erase(mesh_ptr->vertices.begin() + i);
-          }
-        } else {
-          i++;
+    // de-roof mesh
+    bool cut_roof = false;
+    if (cut_roof) {
+        voxblox::BlockIndexList block_indices;
+        mesh_layer_ptr->getAllAllocatedMeshes(&block_indices);
+        for (const voxblox::BlockIndex& block_idx : block_indices) {
+            voxblox::Mesh::Ptr mesh_ptr = mesh_layer_ptr->getMeshPtrByIndex(block_idx);
+            if (!mesh_ptr) continue;
+            if (!mesh_ptr->hasNormals()) {
+                continue;
+            }
+            size_t i = 0u;
+            while (i < mesh_ptr->normals.size()) {
+                if (mesh_ptr->normals[i].dot(voxblox::Point(0, 0, -1))
+                    > cos(M_PI_4)) {
+                    if (mesh_ptr->hasNormals() and mesh_ptr->normals.size() > i) {
+                        mesh_ptr->normals.erase(mesh_ptr->normals.begin() + i);
+                    }
+                    if (mesh_ptr->hasColors() and mesh_ptr->colors.size() > i) {
+                        mesh_ptr->colors.erase(mesh_ptr->colors.begin() + i);
+                    }
+                    if (mesh_ptr->hasTriangles() and mesh_ptr->indices.size() > i) {
+                        mesh_ptr->indices.erase(mesh_ptr->indices.begin() + i);
+                    }
+                    if (mesh_ptr->hasVertices() and mesh_ptr->vertices.size() > i) {
+                        mesh_ptr->vertices.erase(mesh_ptr->vertices.begin() + i);
+                    }
+                } else {
+                    i++;
+                }
+            }
         }
-      }
     }
-  }
 
   // Publish mesh
   publishMesh(mesh_layer_ptr, submap_frame, publisher);

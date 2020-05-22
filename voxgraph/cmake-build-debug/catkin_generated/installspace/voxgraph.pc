@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: voxgraph
+Description: Description of voxgraph
+Version: 1.0.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib -lvoxgraph
+Requires: roscpp voxblox voxblox_ros cblox ceres_catkin eigen_catkin voxblox_msgs voxgraph_msgs maplab_msgs

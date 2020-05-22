@@ -8,6 +8,7 @@
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
 
+
 namespace voxgraph {
 class SubmapServer {
  public:
@@ -22,14 +23,14 @@ class SubmapServer {
   void publishSubmapSurfacePointcloud(const VoxgraphSubmap &submap,
                                       const ros::Time &timestamp);
   void publishSubmapPoses(
-      const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-      const ros::Time &timestamp);
+            const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
+            const ros::Time &timestamp);
   cblox_msgs::MapLayer serializeActiveSubmap(
-      const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-      const ros::Time &current_timestamp);
+            const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
+            const ros::Time &current_timestamp);
   void publishActiveSubmap(
-      const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-      const ros::Time &current_timestamp);
+            const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
+            const ros::Time &current_timestamp);
 
   // "Bring your own publisher" methods
   // NOTE: These methods are provided s.t. they can be called using publishers
@@ -44,12 +45,13 @@ class SubmapServer {
   static void publishSubmapSurfacePointcloud(
       const VoxgraphSubmap &submap, const ros::Time &timestamp,
       const ros::Publisher &submap_surface_pointcloud_publisher);
-  static void publishSubmapPoses(const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
-                                 const std::string &frame_id,
-                                 const ros::Time &timestamp,
-                                 const ros::Publisher &submap_poses_publisher);
 
- private:
+  static void publishSubmapPoses(const VoxgraphSubmapCollection::Ptr &submap_collection_ptr,
+          const std::string &frame_id,
+          const ros::Time &timestamp,
+          const ros::Publisher &submap_poses_publisher);
+
+private:
   ros::Publisher submap_tsdf_pub_;
   ros::Publisher submap_esdf_pub_;
   ros::Publisher submap_surface_pointcloud_pub_;

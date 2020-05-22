@@ -5,9 +5,8 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
-#include <future>
 #include <voxgraph_msgs/LoopClosure.h>
-#include <cblox_msgs/SubmapSrv.h>
+#include <future>
 #include <memory>
 #include <string>
 #include "voxgraph/common.h"
@@ -22,8 +21,9 @@
 #include "voxgraph/tools/data_servers/projected_map_server.h"
 #include "voxgraph/tools/data_servers/submap_server.h"
 #include "voxgraph/tools/rosbag_helper.h"
-#include "voxgraph/tools/visualization/submap_visuals.h"
 #include "voxgraph/tools/visualization/loop_closure_visuals.h"
+#include "voxgraph/tools/visualization/submap_visuals.h"
+#include <cblox_msgs/SubmapSrv.h>
 
 namespace voxgraph {
 class VoxgraphMapper {
@@ -32,23 +32,23 @@ class VoxgraphMapper {
   VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private);
   VoxgraphMapper(const ros::NodeHandle &nh, const ros::NodeHandle &nh_private,
                  VoxgraphSubmap::Config submap_config);
-
   ~VoxgraphMapper() = default;
-
-  // ROS topic callbacks
-  virtual void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
-  void loopClosureCallback(const voxgraph_msgs::LoopClosure &loop_closure_msg);
 
   // ROS timer callbacks
   void publishActiveMeshCallback(const ros::TimerEvent& /*event*/);
+
+  // ROS topic callbacks
+  void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr &pointcloud_msg);
+  void loopClosureCallback(const voxgraph_msgs::LoopClosure &loop_closure_msg);
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
       std_srvs::Empty::Request &request,     // NOLINT
       std_srvs::Empty::Response &response);  // NOLINT
+
   bool publishCombinedMeshCallback(
-      std_srvs::Empty::Request &request,     // NOLINT
-      std_srvs::Empty::Response &response);  // NOLINT
+      std_srvs::Empty::Request &request,                            // NOLINT
+      std_srvs::Empty::Response &response);                         // NOLINT
   bool optimizeGraphCallback(std_srvs::Empty::Request &request,     // NOLINT
                              std_srvs::Empty::Response &response);  // NOLINT
   bool finishMapCallback(std_srvs::Empty::Request &request,         // NOLINT
@@ -69,34 +69,39 @@ class VoxgraphMapper {
       voxblox_msgs::FilePath::Request &request,     // NOLINT
       voxblox_msgs::FilePath::Response &response);  // NOLINT
   bool publishActiveSubmapCallback(
-      cblox_msgs::SubmapSrv::Request &request,
-      cblox_msgs::SubmapSrv::Response &response);
+        cblox_msgs::SubmapSrv::Request &request,
+        cblox_msgs::SubmapSrv::Response &response);
+
+  void publishActiveSubmap(){
+      submap_server_.publishActiveSubmap(submap_collection_ptr_, ros::Time::now());
+  }
 
   VoxgraphSubmapCollection &getSubmapCollection() {
     return *submap_collection_ptr_;
   }
 
   std::list<RegistrationConstraint>& getRegistrationConstraint(){
-      return getPoseGraphInterface().getPoseGraph().getConstraintCollection().getRegistrationConstraints();
+      return pose_graph_interface_.getPoseGraph().getConstraintCollection().getRegistrationConstraints();
   }
 
-  voxgraph::PoseGraphInterface& getPoseGraphInterface(){
-    return pose_graph_interface_;
-  }
-
-  const VoxgraphSubmap::Config& getSubmapConfig(){
-      return submap_config_;
+  MapTracker& getMapTracker(){
+      return map_tracker_;
   }
 
   const PoseGraph::SolverSummaryList &getSolverSummaries() {
     return pose_graph_interface_.getSolverSummaries();
   }
 
+  const VoxgraphSubmap::Config& getSubmapConfig(){
+      return submap_config_;
+  }
+
   const voxblox::Point& getRobotPosition(){
       return map_tracker_.get_T_M_B().getPosition();
   }
 
-protected:
+
+private:
   // Node handles
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -111,9 +116,9 @@ protected:
   RosbagHelper rosbag_helper_;
 
   // Interaction with ROS
-  virtual void subscribeToTopics();
-  virtual void advertiseTopics();
-  virtual void advertiseServices();
+  void subscribeToTopics();
+  void advertiseTopics();
+  void advertiseServices();
   void getParametersFromRos();
 
   // New submap creation, pose graph optimization and map publishing
@@ -124,6 +129,9 @@ protected:
   // Asynchronous handle for the pose graph optimization thread
   std::future<int> optimization_async_handle_;
 
+  // Timers.
+  ros::Timer update_mesh_timer_;
+
   // ROS topic subscribers
   std::string pointcloud_topic_;
   int subscriber_queue_length_;
@@ -133,16 +141,13 @@ protected:
   ros::Subscriber loop_closure_subscriber_;
   // TODO(victorr): Add support for absolute pose measurements
 
-  // Timers.
-  ros::Timer update_mesh_timer_;
-
   // ROS topic publishers
   ros::Publisher separated_mesh_pub_;
-  ros::Publisher active_mesh_pub_;
   ros::Publisher combined_mesh_pub_;
   ros::Publisher pose_history_pub_;
   ros::Publisher loop_closure_links_pub_;
   ros::Publisher loop_closure_axes_pub_;
+  ros::Publisher active_mesh_pub_;
 
   // ROS service servers
   ros::ServiceServer publish_separated_mesh_srv_;
@@ -154,8 +159,8 @@ protected:
   ros::ServiceServer save_separated_mesh_srv_;
   ros::ServiceServer save_combined_mesh_srv_;
   ros::ServiceServer save_optimization_times_srv_;
-  // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
   ros::ServiceServer publish_active_submap_srv_;
+  // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
 
   // Constraints to be used
   bool registration_constraints_enabled_;

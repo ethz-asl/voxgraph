@@ -104,8 +104,9 @@ void MeasurementTemplates::setFromRosParams(
             "Param \"submap_registration/registration_method\" must be "
             "\"implicit_to_implicit\" (default) or \"explicit_to_implicit\", "
             "but received \""
-            << registration_method_str << "\". "
-                                          "Will use default instead.");
+            << registration_method_str
+            << "\". "
+               "Will use default instead.");
       }
       ROS_INFO_STREAM_COND(verbose_, "Setting submap registration method to: "
                                          << registration_method_str);

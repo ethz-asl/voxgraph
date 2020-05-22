@@ -10,7 +10,10 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle &nh,
       nh_private_(nh_private),
       debug_(false),
       subscriber_queue_length_(100),
+      publisher_queue_length_(100),
+      time_rate_(0.01),
       subscribe_to_odom_topic_("odometry"),
+      advertise_to_odom_topic_("simulated_odometry"),
       published_mission_frame_("mission"),
       published_simulated_base_frame_("base"),
       published_original_base_frame_("base_ground_truth") {
@@ -18,8 +21,13 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle &nh,
   nh_private_.param("debug", debug_, debug_);
   nh_private_.param("subscriber_queue_length_", subscriber_queue_length_,
                     subscriber_queue_length_);
+  nh_private_.param("publisher_queue_length", publisher_queue_length_,
+                    publisher_queue_length_);
   nh_private_.param("subscribe_to_odom_topic", subscribe_to_odom_topic_,
                     subscribe_to_odom_topic_);
+  nh_private_.param("advertise_to_odom_topic",
+                      advertise_to_odom_topic_,
+                      advertise_to_odom_topic_);
   nh_private_.param("published_mission_frame", published_mission_frame_,
                     published_mission_frame_);
   nh_private_.param("published_simulated_base_frame",
@@ -28,8 +36,13 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle &nh,
   nh_private_.param("published_original_base_frame",
                     published_original_base_frame_,
                     published_original_base_frame_);
+  nh_private_.param("time_rate",
+                    time_rate_,
+                    time_rate_);
 
-  ros::NodeHandle nh_velocity_noise_(nh_private_, "odometry_noise/velocity");
+
+
+    ros::NodeHandle nh_velocity_noise_(nh_private_, "odometry_noise/velocity");
   nh_velocity_noise_.param<double>("x/mean", noise_.x_vel.mean(), 0);
   nh_velocity_noise_.param<double>("x/stddev", noise_.x_vel.stddev(), 0);
   nh_velocity_noise_.param<double>("y/mean", noise_.y_vel.mean(), 0);
@@ -58,10 +71,24 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle &nh,
       nh_.subscribe(subscribe_to_odom_topic_,
                     static_cast<unsigned int>(subscriber_queue_length_),
                     &OdometrySimulator::odometryCallback, this);
+  simulated_odometry_publisher_ =
+          nh_.advertise<nav_msgs::Odometry>(advertise_to_odom_topic_,
+                        static_cast<unsigned int>(publisher_queue_length_),
+                        true);
+
+  time_counter_ = ros::Time::now();
 }
 
 void OdometrySimulator::odometryCallback(
     const nav_msgs::Odometry::ConstPtr &odometry_msg) {
+
+  // Frequency check
+  if ((odometry_msg->header.stamp - time_counter_).toSec() < time_rate_) {
+    return;
+  } else {
+      time_counter_ = odometry_msg->header.stamp;
+  }
+
   // Check if this is the first odometry message
   if (internal_pose_.header.stamp.isZero()) {
     // Initialize the internal pose
@@ -126,6 +153,25 @@ void OdometrySimulator::odometryCallback(
 
   // Publish simulated pose TF
   publishSimulatedPoseTf();
+
+  // Publish simulated odometry
+  nav_msgs::Odometry simulated_odom;
+  simulated_odom.header.frame_id = published_mission_frame_;
+  simulated_odom.header.stamp = odometry_msg->header.stamp;
+  simulated_odom.child_frame_id = published_simulated_base_frame_;
+
+  // Set odometry pose
+  simulated_odom.pose.pose.position = internal_pose_.pose.position;
+  simulated_odom.pose.pose.orientation = internal_pose_.pose.orientation;
+
+  // Set linear velocity
+  tf::vectorEigenToMsg(B_linear_velocity, simulated_odom.twist.twist.linear);
+
+  // Set angular velocity
+  Vector3 B_simulated_angular_velocity = Rotation_WB.inverse().getRotationMatrix() * W_angular_velocity;
+  tf::vectorEigenToMsg(B_simulated_angular_velocity, simulated_odom.twist.twist.angular);
+
+  simulated_odometry_publisher_.publish(simulated_odom);
 
   // Publish true pose TF if requested
   if (debug_) {

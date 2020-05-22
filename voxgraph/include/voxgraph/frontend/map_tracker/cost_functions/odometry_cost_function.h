@@ -1,23 +1,22 @@
-#ifndef VOXGRAPH_FRONTEND_MAP_TRACKER_ODOMETRY_COST_FUNCTION_H_
-#define VOXGRAPH_FRONTEND_MAP_TRACKER_ODOMETRY_COST_FUNCTION_H_
+#ifndef VOXGRAPH_FRONTEND_MAP_TRACKER_COST_FUNCTIONS_ODOMETRY_COST_FUNCTION_H_
+#define VOXGRAPH_FRONTEND_MAP_TRACKER_COST_FUNCTIONS_ODOMETRY_COST_FUNCTION_H_
 
-#include <Eigen/Eigen>
 #include <ceres/ceres.h>
+#include <Eigen/Eigen>
 
 namespace voxgraph {
 class OdometryCostFunction {
  public:
   OdometryCostFunction(const Eigen::Vector3d& t_S_O_prior,
-                           const Eigen::Quaterniond& q_S_O_prior,
-                           const Eigen::Matrix<double, 6, 6>& sqrt_information)
+                       const Eigen::Quaterniond& q_S_O_prior,
+                       const Eigen::Matrix<double, 6, 6>& sqrt_information)
       : t_S_O_prior_(t_S_O_prior),
         q_S_O_prior_(q_S_O_prior),
         sqrt_information_(sqrt_information) {}
 
   template <typename T>
   bool operator()(const T* const t_S_O_estimate_ptr,
-                  const T* const q_S_O_estimate_ptr,
-                  T* residuals_ptr) const {
+                  const T* const q_S_O_estimate_ptr, T* residuals_ptr) const {
     // Wrap the data pointers with Eigen types
     Eigen::Map<Eigen::Matrix<T, 6, 1>> residuals(residuals_ptr);
     Eigen::Map<const Eigen::Matrix<T, 3, 1>> t_S_O_estimate(t_S_O_estimate_ptr);
@@ -40,8 +39,7 @@ class OdometryCostFunction {
   }
 
   static ceres::CostFunction* Create(
-      const Eigen::Vector3d& t_S_O_prior,
-      const Eigen::Quaterniond& q_S_O_prior,
+      const Eigen::Vector3d& t_S_O_prior, const Eigen::Quaterniond& q_S_O_prior,
       const Eigen::Matrix<double, 6, 6>& sqrt_information) {
     return new ceres::AutoDiffCostFunction<OdometryCostFunction, 6, 3, 4>(
         new OdometryCostFunction(t_S_O_prior, q_S_O_prior, sqrt_information));
@@ -57,4 +55,4 @@ class OdometryCostFunction {
 };
 }  // namespace voxgraph
 
-#endif  // VOXGRAPH_FRONTEND_MAP_TRACKER_ODOMETRY_COST_FUNCTION_H_
+#endif  // VOXGRAPH_FRONTEND_MAP_TRACKER_COST_FUNCTIONS_ODOMETRY_COST_FUNCTION_H_

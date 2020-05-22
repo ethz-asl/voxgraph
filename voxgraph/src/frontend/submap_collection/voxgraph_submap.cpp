@@ -9,9 +9,7 @@ namespace voxgraph {
 VoxgraphSubmap::VoxgraphSubmap(const voxblox::Transformation &T_M_S,
                                const cblox::SubmapID &submap_id,
                                const voxgraph::VoxgraphSubmap::Config &config)
-    : cblox::TsdfEsdfSubmap(T_M_S, submap_id, config), config_(config) {
-    T_S_M_ = T_M_S.inverse();
-}
+    : cblox::TsdfEsdfSubmap(T_M_S, submap_id, config), config_(config) {}
 
 VoxgraphSubmap::VoxgraphSubmap(
     const voxblox::Transformation &T_M_S, const cblox::SubmapID &submap_id,
@@ -28,8 +26,6 @@ VoxgraphSubmap::VoxgraphSubmap(
 
   // Reset the inherited TsdfMap to contain a copy of the provided tsdf_layer
   tsdf_map_ = std::make_shared<voxblox::TsdfMap>(tsdf_layer);
-
-  T_S_M_ = T_M_S.inverse();
 }
 
 void VoxgraphSubmap::transformSubmap(const voxblox::Transformation &T_new_old) {
@@ -226,12 +222,18 @@ void VoxgraphSubmap::findIsosurfaceVertices() {
       RegistrationPoint isosurface_vertex{mesh_vertex_coordinates,
                                           voxel.distance, voxel.weight};
       isosurface_vertices_.addItem(isosurface_vertex, voxel.weight);
+
+      // Store the isosurface block
+      isosurface_blocks_.emplace(
+          getTsdfMap().getTsdfLayer().computeBlockIndexFromCoordinates(
+              mesh_vertex_coordinates));
     }
   }
 }
 
 bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap &other_submap) const {
-  // TODO(victorr): Implement improved overlap test
+  // We start with a quick AABB overlap test, to discard submap pairs
+  // that definitely don't overlap
   const BoundingBox aabb = getMissionFrameSurfaceAabb();
   const BoundingBox other_aabb = other_submap.getMissionFrameSurfaceAabb();
   // If there's a separation along any of the 3 axes, the AABBs don't intersect
@@ -241,8 +243,27 @@ bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap &other_submap) const {
     return false;
   if (aabb.max[2] < other_aabb.min[2] || aabb.min[2] > other_aabb.max[2])
     return false;
-  // The AABBs overlap on all axes: therefore they must be intersecting
-  return true;
+  // Since the AABBs overlap on all axes, the submaps could be overlapping
+
+  // Next, we refine our overlap test by checking if at least one block on the
+  // current submap's surface has a correspondence in the other submap
+  voxblox::Transformation T_other_submap__current_submap =
+      other_submap.getPose().inverse() * getPose();
+  for (const voxblox::BlockIndex &block_index : isosurface_blocks_) {
+    const voxblox::Point t_current_submap__block =
+        voxblox::getCenterPointFromGridIndex(block_index, block_size());
+    const voxblox::Point t_other_submap__block =
+        T_other_submap__current_submap * t_current_submap__block;
+    const voxblox::BlockIndex other_block_index =
+        voxblox::getGridIndexFromPoint<voxblox::BlockIndex>(
+            t_other_submap__block,
+            other_submap.getTsdfMap().getTsdfLayer().block_size_inv());
+    if (other_submap.getTsdfMap().getTsdfLayer().hasBlock(other_block_index)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 const BoundingBox VoxgraphSubmap::getSubmapFrameSurfaceObb() const {

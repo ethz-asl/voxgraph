@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="bag_file" default="/home/davide/data/voxgraph_gonzen_demo/long_loop_ready_to_use.bag"/>
+
+    <arg name="mav_name" default="penguin"/>
+    <arg name="namespace" default="$(arg mav_name)" />
+
+    <param name="use_sim_time" value="true" />
+
+    <node name="player" pkg="rosbag" type="play" output="screen" args="-r 1.0 -s 0 $(arg bag_file)"/>
+
+
+    <group ns="$(arg namespace)">
+        <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node" output="screen">
+            <rosparam>
+                verbose: false
+                submap_creation_interval: 10
+                pointcloud_topic: "os1_node/points"
+                subscriber_queue_length: 1000
+                input_odom_frame: "odom"
+                odom_frame: "odom"
+                input_base_link_frame: "imu"
+                output_mission_frame: "mission"
+                output_base_link_frame: "imu_voxgraph"
+                output_sensor_frame: "sensor_voxgraph"
+                sensor_frame_corrected: "sensor_corrected"
+                tsdf_integrator:
+                    tsdf_voxel_size: 0.20
+                    truncation_distance: 0.60
+                    max_ray_length_m: 16.0
+                    use_const_weight: true
+                    use_weight_dropoff: true
+                    use_sparsity_compensation_factor: true
+                    sparsity_compensation_factor: 10.0
+                    integration_order_mode: "sorted"
+                measurements:
+                    submap_registration:
+                        enabled: true
+                        sampling_ratio: 0.05
+                        registration_method: "explicit_to_implicit"
+                        information_matrix:
+                            x_x:     1.0
+                            y_y:     1.0
+                            z_z:     1.0
+                            yaw_yaw: 1.0
+                    odometry:
+                        enabled: true
+                        information_matrix:
+                            x_x:     10.0
+                            y_y:     10.0
+                            z_z:     2500.0
+                            yaw_yaw: 2500.0
+                    height:
+                        enabled: false
+                        information_zz: 2500.0
+                    loop_closure:
+                        information_matrix:
+                            x_x:     1.0
+                            y_y:     1.0
+                            z_z:     0.1
+                            yaw_yaw: 0.0001
+            </rosparam>
+        </node>
+    </group>
+</launch>
