@@ -8,7 +8,7 @@ Panels:
         - /TF1/Tree1
         - /Voxgraph1
         - /Voxgraph1/Meshes1
-      Splitter Ratio: 0.6882352828979492
+      Splitter Ratio: 0.6735293865203857
     Tree Height: 1088
   - Class: rviz/Selection
     Name: Selection
@@ -83,19 +83,20 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        mission:
-          voxgraph_active_submap:
-            odom:
-              imu:
-                camera0:
-                  {}
-                os1_sensor:
-                  os1_lidar:
-                    {}
-                sensor_voxgraph:
-                  {}
-              penguin/current_reference:
+        odom:
+          imu:
+            camera0:
+              {}
+            os1_sensor:
+              os1_lidar:
                 {}
+            sensor_voxgraph:
+              {}
+          mission:
+            voxgraph_active_submap:
+              {}
+          penguin/current_reference:
+            {}
       Update Interval: 0
       Value: true
     - Class: rviz/Group
@@ -116,7 +117,7 @@ Visualization Manager:
             Y: 0
             Z: 0
           Pose Color: 255; 85; 255
-          Pose Style: None
+          Pose Style: Axes
           Radius: 0.029999999329447746
           Shaft Diameter: 0.10000000149011612
           Shaft Length: 0.10000000149011612
@@ -153,6 +154,16 @@ Visualization Manager:
           Name: Meshes
       Enabled: true
       Name: Voxgraph
+    - Class: rviz/Group
+      Displays:
+        - Class: voxblox_rviz_plugin/VoxbloxMesh
+          Enabled: true
+          Name: Mesh
+          Topic: /voxblox/mesh
+          Unreliable: false
+          Value: true
+      Enabled: true
+      Name: Voxblox
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -181,25 +192,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 83.7422866821289
+      Distance: 103.07327270507812
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 7.814975738525391
-        Y: 1.5188809633255005
-        Z: -4.198982238769531
+        X: -5.688131809234619
+        Y: 17.48892593383789
+        Z: -12.342564582824707
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.10000000149011612
-      Pitch: 0.4547974169254303
+      Pitch: 0.5847964882850647
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.588576793670654
+      Yaw: 5.726747035980225
     Saved: ~
 Window Geometry:
   Displays:
@@ -218,4 +229,4 @@ Window Geometry:
     collapsed: true
   Width: 2493
   X: 1987
-  Y: 43
+  Y: 27

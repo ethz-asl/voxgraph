@@ -9,6 +9,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
+#include <voxblox_msgs/LayerWithTrajectory.h>
 #include <voxgraph_msgs/LoopClosure.h>
 
 #include "voxgraph/common.h"
@@ -36,11 +37,8 @@ class VoxgraphMapper {
   ~VoxgraphMapper() = default;
 
   // ROS topic callbacks
-  void pointcloudCallback(const sensor_msgs::PointCloud2::Ptr& pointcloud_msg);
   void loopClosureCallback(const voxgraph_msgs::LoopClosure& loop_closure_msg);
-
-  // ROS timer callbacks
-  void publishActiveSubmapMeshCallback();
+  void submapCallback(const voxblox_msgs::LayerWithTrajectory& submap_msg);
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
@@ -98,7 +96,6 @@ class VoxgraphMapper {
   void getParametersFromRos();
 
   // New submap creation, pose graph optimization and map publishing
-  void switchToNewSubmap(const ros::Time& current_timestamp);
   int optimizePoseGraph();
   void publishMaps(const ros::Time& current_timestamp);
 
@@ -106,24 +103,21 @@ class VoxgraphMapper {
   std::future<int> optimization_async_handle_;
 
   // ROS topic subscribers
-  std::string pointcloud_topic_;
-  int subscriber_queue_length_;
-  ros::Subscriber pointcloud_subscriber_;
   std::string loop_closure_topic_;
-  int loop_closure_subscriber_queue_length_;
+  std::string submap_topic_;
+  int loop_closure_topic_queue_length_;
+  int submap_topic_queue_length_;
   ros::Subscriber loop_closure_subscriber_;
+  ros::Subscriber submap_subscriber_;
   // TODO(victorr): Add support for absolute pose measurements
-
-  // Timers.
-  ros::Timer update_mesh_timer_;
 
   // ROS topic publishers
   ros::Publisher separated_mesh_pub_;
-  ros::Publisher active_mesh_pub_;
   ros::Publisher combined_mesh_pub_;
   ros::Publisher pose_history_pub_;
   ros::Publisher loop_closure_links_pub_;
   ros::Publisher loop_closure_axes_pub_;
+  int publisher_queue_length_;
 
   // ROS service servers
   ros::ServiceServer publish_separated_mesh_srv_;
@@ -153,16 +147,15 @@ class VoxgraphMapper {
   // Interface to ease interaction with the pose graph
   PoseGraphInterface pose_graph_interface_;
 
-  // Measurement processors
-  PointcloudIntegrator pointcloud_integrator_;
-
   // Map servers, used to share the projected map and submaps with ROS nodes
   ProjectedMapServer projected_map_server_;
   SubmapServer submap_server_;
   LoopClosureEdgeServer loop_closure_edge_server_;
 
   // Map tracker handles the odometry input and refines it using scan-to-map ICP
+  // TODO(victorr): Deprecate the MapTracker
   MapTracker map_tracker_;
+  Transformation T_odom__previous_submap_;
 };
 }  // namespace voxgraph
 

@@ -20,7 +20,16 @@
         name="player" pkg="rosbag" type="play" output="screen"
         args="-r 1.0 -s $(arg rosbag_skip_first_n_sec) -q --clock $(arg rosbag_path)" />
 
-  <!-- Run voxgraph -->
+  <!-- Run voxblox in sliding window mode -->
+  <group>
+    <node name="voxblox" pkg="voxblox_ros" type="tsdf_server"
+          output="screen" args="-alsologtostderr" clear_params="true">
+      <remap from="pointcloud" to="$(arg pointcloud_topic)"/>
+      <rosparam file="$(find voxgraph)/config/voxblox_temporal_window.yaml"/>
+    </node>
+  </group>
+
+  <!-- Run voxgraph, subscribing to voxblox's sliding window -->
   <group>
     <arg unless="$(arg debug_mode)" name="launch_prefix" value="" />
     <arg if="$(arg debug_mode)" name="launch_prefix" value="gdb -ex run --args" />
@@ -28,7 +37,7 @@
     <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node"
           output="screen" launch-prefix="$(arg launch_prefix)">
       <rosparam file="$(find voxgraph)/config/voxgraph_mapper.yaml" />
-      <param name="pointcloud_topic" value="$(arg pointcloud_topic)" />
+      <param name="submap_topic" value="/voxblox/tsdf_map_out" />
     </node>
   </group>
 

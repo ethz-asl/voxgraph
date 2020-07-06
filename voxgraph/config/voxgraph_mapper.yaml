@@ -3,7 +3,9 @@ debug: true
 auto_pause_rosbag: false
 
 submap_creation_interval: 10
-subscriber_queue_length: 10
+loop_closure_topic_queue_length: 1000
+submap_topic_queue_length: 10
+publisher_queue_length: 10
 
 input_odom_frame: "odom"
 input_base_link_frame: "imu"
@@ -18,10 +20,10 @@ output_sensor_frame: "sensor_voxgraph"
 # - [ 0.1336122,  0.0053288, 0.9910194, -0.131]
 # - [ 0.0,        0.0,       0.0,        1.0]
 
-tsdf_voxel_size: 0.20
+tsdf_voxel_size: 0.10
 tsdf_integrator:
-  truncation_distance: 0.60
-  max_ray_length_m: 16.0
+  truncation_distance: 0.40
+  max_ray_length_m: 12.0
   use_const_weight: true
   use_weight_dropoff: true
   use_sparsity_compensation_factor: true
@@ -41,8 +43,8 @@ measurements:
   odometry:
     enabled: true
     information_matrix:
-      x_x:     1.0
-      y_y:     1.0
+      x_x:     1000.0
+      y_y:     1000.0
       z_z:     2500.0
       yaw_yaw: 2500.0
   height:

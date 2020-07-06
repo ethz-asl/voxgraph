@@ -33,6 +33,7 @@ VoxgraphSubmap::VoxgraphSubmap(
 void VoxgraphSubmap::transformSubmap(const voxblox::Transformation& T_new_old) {
   // Transform TSDF
   voxblox::Layer<voxblox::TsdfVoxel> old_tsdf_layer(tsdf_map_->getTsdfLayer());
+  tsdf_map_->getTsdfLayerPtr()->removeAllBlocks();
   voxblox::transformLayer(old_tsdf_layer, T_new_old,
                           tsdf_map_->getTsdfLayerPtr());
   // Reset cached Oriented Bounding Boxes

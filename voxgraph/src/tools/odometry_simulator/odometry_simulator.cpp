@@ -17,7 +17,7 @@ OdometrySimulator::OdometrySimulator(const ros::NodeHandle& nh,
       published_original_base_frame_("base_ground_truth") {
   // Read odometry simulator params from ROS
   nh_private_.param("debug", debug_, debug_);
-  nh_private_.param("subscriber_queue_length_", subscriber_queue_length_,
+  nh_private_.param("publisher_queue_length_", subscriber_queue_length_,
                     subscriber_queue_length_);
   nh_private_.param("subscribe_to_odom_topic", subscribe_to_odom_topic_,
                     subscribe_to_odom_topic_);
