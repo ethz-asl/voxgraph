@@ -25,9 +25,7 @@ endif()
 #############
 # LIBRARIES #
 #############
-# NOTE: The library is static to avoid segfaults that
-#       otherwise occur in voxblox multi threading
-cs_add_library(${PROJECT_NAME} STATIC
+cs_add_library(${PROJECT_NAME}
     src/frontend/voxgraph_mapper.cpp
     src/frontend/pose_graph_interface/pose_graph_interface.cpp
     src/frontend/pose_graph_interface/node_templates.cpp
