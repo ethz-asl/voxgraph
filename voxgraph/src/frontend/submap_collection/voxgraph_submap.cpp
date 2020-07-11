@@ -242,14 +242,9 @@ bool VoxgraphSubmap::overlapsWith(const VoxgraphSubmap& other_submap) const {
   // that definitely don't overlap
   const BoundingBox aabb = getMissionFrameSurfaceAabb();
   const BoundingBox other_aabb = other_submap.getMissionFrameSurfaceAabb();
-  // If there's a separation along any of the 3 axes, the AABBs don't intersect
-  if (aabb.max[0] < other_aabb.min[0] || aabb.min[0] > other_aabb.max[0])
+  if (!aabb.overlapsWith(other_aabb)) {
     return false;
-  if (aabb.max[1] < other_aabb.min[1] || aabb.min[1] > other_aabb.max[1])
-    return false;
-  if (aabb.max[2] < other_aabb.min[2] || aabb.min[2] > other_aabb.max[2])
-    return false;
-  // Since the AABBs overlap on all axes, the submaps could be overlapping
+  }
 
   // Next, we refine our overlap test by checking if at least one block on the
   // current submap's surface has a correspondence in the other submap

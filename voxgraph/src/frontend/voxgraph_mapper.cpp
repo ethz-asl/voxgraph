@@ -282,7 +282,7 @@ void VoxgraphMapper::submapCallback(
   submap_collection_ptr_->createNewSubmap(Transformation(),
                                           trajectory_middle_timestamp);
   *submap_collection_ptr_->getActiveTsdfMapPtr()->getTsdfLayerPtr() =
-      std::move(tsdf_layer);
+      tsdf_layer;
   for (const geometry_msgs::PoseStamped& pose_stamped :
        submap_msg.trajectory.poses) {
     TransformationD T_odom_base_link;
