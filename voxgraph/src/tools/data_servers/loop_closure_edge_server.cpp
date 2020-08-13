@@ -5,6 +5,7 @@
 #include "voxgraph/common.h"
 
 namespace voxgraph {
+constexpr double LoopClosureEdgeServer::set_unknown_covariance_entries_to_;
 LoopClosureEdgeServer::LoopClosureEdgeServer(ros::NodeHandle nh_private,
                                              bool verbose)
     : verbose_(verbose) {
