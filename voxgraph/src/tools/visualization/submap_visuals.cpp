@@ -13,15 +13,15 @@
 namespace voxgraph {
 SubmapVisuals::SubmapVisuals(VoxgraphSubmap::Config submap_config,
                              voxblox::MeshIntegratorConfig mesh_config)
-    : mesh_config_(std::move(mesh_config)), mesh_opacity_(1.0) {
+    : mesh_config_(mesh_config), mesh_opacity_(1.0) {
   // Meshing params from ROS params server
   // NOTE(alexmillane): The separated mesher *requires* color, so this is
   //                    hard-coded.
   combined_submap_mesher_.reset(
-      new cblox::SubmapMesher(std::move(submap_config), mesh_config_));
+      new cblox::SubmapMesher(submap_config, mesh_config_));
   mesh_config_.use_color = true;
   separated_submap_mesher_.reset(
-      new cblox::SubmapMesher(std::move(submap_config), mesh_config_));
+      new cblox::SubmapMesher(submap_config, mesh_config_));
 }
 
 void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
@@ -62,7 +62,7 @@ void SubmapVisuals::publishMesh(
   separated_submap_mesher_->colorMeshLayer(submap_color, mesh_layer_ptr.get());
 
   // Publish mesh
-  publishMesh(mesh_layer_ptr, submap_frame, publisher);
+  publishMesh(mesh_layer_ptr, submap_frame, publisher, submap_mesh_color_mode_);
 }
 
 void SubmapVisuals::publishSeparatedMesh(
@@ -72,7 +72,8 @@ void SubmapVisuals::publishSeparatedMesh(
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
   separated_submap_mesher_->generateSeparatedMesh(submap_collection,
                                                   mesh_layer_ptr.get());
-  publishMesh(mesh_layer_ptr, mission_frame, publisher);
+  publishMesh(mesh_layer_ptr, mission_frame, publisher,
+              submap_mesh_color_mode_);
 }
 
 void SubmapVisuals::publishCombinedMesh(
@@ -83,7 +84,7 @@ void SubmapVisuals::publishCombinedMesh(
   combined_submap_mesher_->generateCombinedMesh(submap_collection,
                                                 mesh_layer_ptr.get());
   publishMesh(mesh_layer_ptr, mission_frame, publisher,
-              voxblox::ColorMode::kNormals);
+              combined_mesh_color_mode_);
 }
 
 void SubmapVisuals::saveSeparatedMesh(

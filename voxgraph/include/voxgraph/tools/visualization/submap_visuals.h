@@ -20,13 +20,20 @@ class SubmapVisuals {
   explicit SubmapVisuals(VoxgraphSubmap::Config submap_config,
                          voxblox::MeshIntegratorConfig mesh_config);
 
+  // TODO(victorr): Use a Config with fromRosParams(...) method that is passed
+  //                to the constructor method instead
   void setMeshOpacity(float mesh_opacity) { mesh_opacity_ = mesh_opacity; }
+  void setSubmapMeshColorMode(voxblox::ColorMode color_mode) {
+    submap_mesh_color_mode_ = color_mode;
+  }
+  void setCombinedMeshColorMode(voxblox::ColorMode color_mode) {
+    combined_mesh_color_mode_ = color_mode;
+  }
 
   void publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
                    const std::string& submap_frame,
                    const ros::Publisher& publisher,
-                   const voxblox::ColorMode& color_mode =
-                       voxblox::ColorMode::kLambertColor) const;
+                   const voxblox::ColorMode& color_mode) const;
 
   void publishMesh(
       const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
@@ -64,6 +71,8 @@ class SubmapVisuals {
   std::unique_ptr<cblox::SubmapMesher> combined_submap_mesher_;
 
   float mesh_opacity_;
+  voxblox::ColorMode combined_mesh_color_mode_;
+  voxblox::ColorMode submap_mesh_color_mode_;
 };
 }  // namespace voxgraph
 

@@ -91,9 +91,12 @@ void VoxgraphMapper::getParametersFromRos() {
         ros::Duration(update_mesh_every_n_sec),
         std::bind(&VoxgraphMapper::publishActiveSubmapMeshCallback, this));
   }
-  float mesh_opacity = 1.0;
-  nh_private_.param("mesh_opacity", mesh_opacity, mesh_opacity);
-  submap_vis_.setMeshOpacity(mesh_opacity);
+  submap_vis_.setMeshOpacity(nh_private_.param("mesh_opacity", 1.0));
+  submap_vis_.setSubmapMeshColorMode(
+      voxblox::getColorModeFromString(nh_private_.param<std::string>(
+          "submap_mesh_color_mode", "lambert_color")));
+  submap_vis_.setCombinedMeshColorMode(voxblox::getColorModeFromString(
+      nh_private_.param<std::string>("combined_mesh_color_mode", "normals")));
 
   // Read whether or not to auto pause the rosbag during graph optimization
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
