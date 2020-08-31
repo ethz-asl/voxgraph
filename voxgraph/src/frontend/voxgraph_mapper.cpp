@@ -274,15 +274,17 @@ void VoxgraphMapper::submapCallback(
     ROS_WARN("Received submap with empty trajectory. Skipping submap.");
     return;
   }
-  voxblox::Layer<voxblox::TsdfVoxel> tsdf_layer(
-      submap_msg.layer.voxel_size, submap_msg.layer.voxels_per_side);
-  if (!voxblox::deserializeMsgToLayer(submap_msg.layer, &tsdf_layer)) {
+  const SubmapID new_submap_id = submap_collection_ptr_->getLastSubmapId() + 1;
+  VoxgraphSubmap new_submap(Transformation(), new_submap_id,
+                            submap_collection_ptr_->getConfig());
+  if (!voxblox::deserializeMsgToLayer(
+          submap_msg.layer, new_submap.getTsdfMapPtr()->getTsdfLayerPtr())) {
     ROS_WARN("Received a submap msg with an invalid TSDF. Skipping submap.");
     return;
   }
 
   // Create the new submap
-  // TODO(victorr): Implement copy construction for new submaps
+  // TODO(victorr): Finish implementing copy construction for new submaps
   size_t trajectory_middle_idx = submap_msg.trajectory.poses.size() / 2;
   ros::Time trajectory_middle_timestamp =
       submap_msg.trajectory.poses[trajectory_middle_idx].header.stamp;
@@ -298,6 +300,7 @@ void VoxgraphMapper::submapCallback(
         pose_stamped.header.stamp,
         T_odom_base_link.cast<voxblox::FloatingPoint>());
   }
+  // TODO(victorr): Populate T_M_S
 
   // Transform the submap TSDF from odom to submap frame
   TransformationD T_odom_trajectory_middle_pose;

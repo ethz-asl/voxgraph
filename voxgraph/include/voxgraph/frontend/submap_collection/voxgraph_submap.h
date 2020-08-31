@@ -33,7 +33,12 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   VoxgraphSubmap(const voxblox::Transformation& T_M_S,
                  const cblox::SubmapID& submap_id, const Config& config);
 
-  // Create a VoxgraphSubmap based on a COPY of a TsdfLayer
+  // Create a new VoxgraphSubmap based on a copy of another submap
+  // NOTE: Copying the TSDF and ESDF layers is delegated to the
+  //       TsdfEsdfSubmap copy constructor
+  VoxgraphSubmap(const VoxgraphSubmap& original_submap) = default;
+
+  // Create a new VoxgraphSubmap based on a copy of a TsdfLayer
   VoxgraphSubmap(const voxblox::Transformation& T_M_S,
                  const cblox::SubmapID& submap_id,
                  const voxblox::Layer<voxblox::TsdfVoxel>& tsdf_layer);
@@ -54,7 +59,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   // Indicate that the submap is finished and generate all cached members
   // NOTE: These cached members are mainly used in the registration cost funcs
-  virtual void finishSubmap() override;
+  void finishSubmap() override;
 
   void transformSubmap(const voxblox::Transformation& T_new_old);
 
