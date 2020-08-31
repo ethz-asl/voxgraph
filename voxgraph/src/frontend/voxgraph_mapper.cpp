@@ -349,7 +349,7 @@ void VoxgraphMapper::publishActiveSubmapMeshCallback() {
   if (active_mesh_pub_.getNumSubscribers() > 0) {
     cblox::SubmapID active_submap_id =
         submap_collection_ptr_->getActiveSubmapID();
-    const voxblox::ExponentialOffsetColorMap submap_id_color_map;
+    const voxblox::ExponentialOffsetIdColorMap submap_id_color_map;
     submap_vis_.publishMesh(
         *submap_collection_ptr_, active_submap_id,
         submap_id_color_map.colorLookup(active_submap_id),
