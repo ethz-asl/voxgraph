@@ -62,7 +62,7 @@ void SubmapVisuals::publishMesh(
   separated_submap_mesher_->colorMeshLayer(submap_color, mesh_layer_ptr.get());
 
   // Publish mesh
-  publishMesh(mesh_layer_ptr, submap_frame, publisher);
+  publishMesh(mesh_layer_ptr, submap_frame, publisher, submap_mesh_color_mode_);
 }
 
 void SubmapVisuals::publishSeparatedMesh(
@@ -72,7 +72,8 @@ void SubmapVisuals::publishSeparatedMesh(
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
   separated_submap_mesher_->generateSeparatedMesh(submap_collection,
                                                   mesh_layer_ptr.get());
-  publishMesh(mesh_layer_ptr, mission_frame, publisher);
+  publishMesh(mesh_layer_ptr, mission_frame, publisher,
+              submap_mesh_color_mode_);
 }
 
 void SubmapVisuals::publishCombinedMesh(
@@ -83,7 +84,7 @@ void SubmapVisuals::publishCombinedMesh(
   combined_submap_mesher_->generateCombinedMesh(submap_collection,
                                                 mesh_layer_ptr.get());
   publishMesh(mesh_layer_ptr, mission_frame, publisher,
-              voxblox::ColorMode::kNormals);
+              combined_mesh_color_mode_);
 }
 
 void SubmapVisuals::saveSeparatedMesh(
