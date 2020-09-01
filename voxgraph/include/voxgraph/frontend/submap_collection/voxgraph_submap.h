@@ -30,15 +30,18 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
     } registration_filter;
   };
 
+  // Standard constructor
   VoxgraphSubmap(const voxblox::Transformation& T_M_S,
                  const cblox::SubmapID& submap_id, const Config& config);
-
-  // Create a new VoxgraphSubmap based on a copy of another submap
+  // Copy constructor
   // NOTE: Copying the TSDF and ESDF layers is delegated to the
   //       TsdfEsdfSubmap copy constructor
-  VoxgraphSubmap(const VoxgraphSubmap& original_submap) = default;
-
-  // Create a new VoxgraphSubmap based on a copy of a TsdfLayer
+  VoxgraphSubmap(const VoxgraphSubmap& rhs) = default;
+  // Move constructor
+  // NOTE: Moving the TSDF and ESDF layers is delegated to the
+  //       TsdfEsdfSubmap move constructor
+  VoxgraphSubmap(VoxgraphSubmap&& rhs) = default;
+  // Construct based on a TsdfLayer copy
   VoxgraphSubmap(const voxblox::Transformation& T_M_S,
                  const cblox::SubmapID& submap_id,
                  const voxblox::Layer<voxblox::TsdfVoxel>& tsdf_layer);
