@@ -62,10 +62,16 @@ void VoxgraphSubmapCollection::addSubmap(const VoxgraphSubmap::Ptr submap) {
 
 void VoxgraphSubmapCollection::addSubmapToTimeline(
     const VoxgraphSubmap& submap) {
-  ROS_INFO_STREAM("Created submap: " << submap.getID() << " with pose\n"
-                                     << submap.getPose());
+  ROS_INFO_STREAM("Created submap " << submap.getID() << " with pose\n"
+                                    << submap.getPose());
   // Add the new submap to the timeline
-  submap_timeline_.addNextSubmap(submap.getStartTime(), submap.getID());
+  ros::Time submap_time_stamp;
+  {
+    // TODO(victorr): Remove this temporary fix and use submap end time instead
+    submap_time_stamp = ros::Time(
+        (submap.getStartTime().toSec() + submap.getEndTime().toSec()) / 2.0);
+  }
+  submap_timeline_.addNextSubmap(submap_time_stamp, submap.getID());
 }
 
 void VoxgraphSubmapCollection::createNewSubmap(const Transformation& T_M_S,

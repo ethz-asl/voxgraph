@@ -24,6 +24,9 @@ class SubmapTimeline {
   cblox::SubmapID getLastSubmapId() const;
 
  private:
+  // TODO(victorr): Change to submap end time, to avoid issue with first and
+  //                second sliding window submaps potentially having same start
+  //                time. Or consider using a [start, end] interval tree.
   // Map from each time interval's start time to the corresponding active submap
   std::map<const ros::Time, cblox::SubmapID> submap_timeline_;
 };

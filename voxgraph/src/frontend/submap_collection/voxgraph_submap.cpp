@@ -61,6 +61,8 @@ void VoxgraphSubmap::addPoseToHistory(
 bool VoxgraphSubmap::lookupPoseByTime(
     const ros::Time& timestamp, voxblox::Transformation* T_submap_robot) const {
   CHECK_NOTNULL(T_submap_robot);
+  // TODO(victorr): Check if timestamp falls between submap start and end
+  //                timestamps and return false otherwise
 
   // Get an iterator to the end of the time interval in which timestamp falls
   auto iterator = pose_history_.upper_bound(timestamp);
@@ -70,7 +72,7 @@ bool VoxgraphSubmap::lookupPoseByTime(
     return false;
   }
 
-  // TODO(victorr): Use linear interpolation and return false if not in interval
+  // TODO(victorr): Use linear interpolation instead of 0th order hold
   // The interval's starting transform id is stored at its start point
   iterator--;
   *T_submap_robot = iterator->second;

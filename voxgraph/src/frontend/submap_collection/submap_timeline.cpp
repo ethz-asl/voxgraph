@@ -39,6 +39,6 @@ cblox::SubmapID SubmapTimeline::getFirstSubmapId() const {
 
 cblox::SubmapID SubmapTimeline::getLastSubmapId() const {
   CHECK(!submap_timeline_.empty());
-  return (--submap_timeline_.end())->second;
+  return submap_timeline_.rbegin()->second;
 }
 }  // namespace voxgraph
