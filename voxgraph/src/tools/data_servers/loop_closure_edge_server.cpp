@@ -57,7 +57,7 @@ void LoopClosureEdgeServer::publishLoopClosureEdges(
     Transformation T_M_A = first_submap.getPose();
     Transformation T_M_B = second_submap.getPose();
 
-    if (fake_6dof_transforms_) {
+    if (LoopClosureEdgeServer::kFake6dofTransforms) {
       // Go from 4DoF submap origin poses T_M_S to 6DoF robot poses T_M_R
       // by using T_M_B = T_M_S * T_S_R, where T_S_R is the 6DoF robot pose at
       // submap creation time
@@ -78,7 +78,8 @@ void LoopClosureEdgeServer::publishLoopClosureEdges(
       PoseGraph::EdgeCovarianceMap::const_iterator covariance_iter =
           edge_covariance_map.find(overlapping_submap_pair);
       if (covariance_iter != edge_covariance_map.end()) {
-        edge_msg.T_A_B.covariance.fill(set_unknown_covariance_entries_to_);
+        edge_msg.T_A_B.covariance.fill(
+            LoopClosureEdgeServer::kSetUnknownCovarianceEntriesTo);
         for (int original_row = 0; original_row < 4; ++original_row) {
           for (int original_col = 0; original_col < 4; ++original_col) {
             int msg_row = original_row;
