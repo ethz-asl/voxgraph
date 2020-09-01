@@ -36,14 +36,20 @@ class VoxgraphSubmapCollection
 
   bool shouldCreateNewSubmap(const ros::Time& current_time);
 
-  // Overriden method that guarantees that the submap gets added to the timeline
+  // Voxgraph compatible submap creation methods
+  // NOTE: These methods properly add the submaps to the timeline
   void createNewSubmap(const Transformation& T_mission_base,
-                       const ros::Time& timestamp);
+                       const ros::Time& submap_start_time);
+  void addSubmap(const VoxgraphSubmap& submap) override;
+  void addSubmap(VoxgraphSubmap&& submap) override;
+  void addSubmap(const typename VoxgraphSubmap::Ptr submap) override;
+  void addSubmapToTimeline(const VoxgraphSubmap& submap);
 
-  // Delete the inherited methods to avoid accidental calls
+  // Warn the user to avoid using the submap creation methods inherited from
+  // cblox that provide insufficient time information
   void createNewSubmap(const Transformation& T_M_S,
-                       const SubmapID submap_id) = delete;
-  SubmapID createNewSubmap(const Transformation& T_M_S) = delete;
+                       const SubmapID submap_id) override;
+  SubmapID createNewSubmap(const Transformation& T_M_S) override;
 
   SubmapID getPreviousSubmapId() const {
     return submap_timeline_.getPreviousSubmapId();

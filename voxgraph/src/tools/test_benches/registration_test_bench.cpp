@@ -180,8 +180,8 @@ int main(int argc, char** argv) {
         "Reference and reading submap IDs are the same, "
         "duplicating the reference...");
     reading_submap_id = INT32_MAX;
-    CHECK(submap_collection_ptr->duplicateSubmap(reference_submap_id,
-                                                 reading_submap_id));
+    submap_collection_ptr->duplicateSubmap(reference_submap_id,
+                                           reading_submap_id);
   }
 
   // Setup the submap to submap registerer

@@ -28,7 +28,7 @@ bool VoxgraphSubmapCollection::shouldCreateNewSubmap(
 
 // Creates a gravity aligned new submap
 void VoxgraphSubmapCollection::createNewSubmap(
-    const Transformation& T_mission_base, const ros::Time& timestamp) {
+    const Transformation& T_mission_base, const ros::Time& submap_start_time) {
   // Define the new submap frame to be at the current robot pose
   // and have its Z-axis aligned with gravity
   Transformation T_mission__new_submap = gravityAlignPose(T_mission_base);
@@ -42,7 +42,50 @@ void VoxgraphSubmapCollection::createNewSubmap(
                                      << T_mission__new_submap);
 
   // Add the new submap to the timeline
-  submap_timeline_.addNextSubmap(timestamp, new_submap_id);
+  submap_timeline_.addNextSubmap(submap_start_time, new_submap_id);
+}
+
+void VoxgraphSubmapCollection::addSubmap(const VoxgraphSubmap& submap) {
+  addSubmapToTimeline(submap);
+  cblox::SubmapCollection<VoxgraphSubmap>::addSubmap(submap);
+}
+
+void VoxgraphSubmapCollection::addSubmap(VoxgraphSubmap&& submap) {
+  addSubmapToTimeline(submap);
+  cblox::SubmapCollection<VoxgraphSubmap>::addSubmap(std::move(submap));
+}
+
+void VoxgraphSubmapCollection::addSubmap(const VoxgraphSubmap::Ptr submap) {
+  addSubmapToTimeline(*submap);
+  cblox::SubmapCollection<VoxgraphSubmap>::addSubmap(submap);
+}
+
+void VoxgraphSubmapCollection::addSubmapToTimeline(
+    const VoxgraphSubmap& submap) {
+  ROS_INFO_STREAM("Created submap: " << submap.getID() << " with pose\n"
+                                     << submap.getPose());
+  // Add the new submap to the timeline
+  submap_timeline_.addNextSubmap(submap.getStartTime(), submap.getID());
+}
+
+void VoxgraphSubmapCollection::createNewSubmap(const Transformation& T_M_S,
+                                               const SubmapID submap_id) {
+  ROS_ERROR_STREAM(
+      "Used createNewSubmap(...) method from cblox::SubmapCollection "
+      "base class. Submaps that are added this way cannot be included in the "
+      "submap timeline due to missing time information. Please use the "
+      "derived VoxgraphSubmapCollection::createNewSubmap methods instead.");
+  cblox::SubmapCollection<VoxgraphSubmap>::createNewSubmap(T_M_S, submap_id);
+}
+
+SubmapID VoxgraphSubmapCollection::createNewSubmap(
+    const Transformation& T_M_S) {
+  ROS_ERROR_STREAM(
+      "Used createNewSubmap(...) method from cblox::SubmapCollection "
+      "base class. Submaps that are added this way cannot be included in the "
+      "submap timeline due to missing time information. Please use the "
+      "derived VoxgraphSubmapCollection::createNewSubmap methods instead.");
+  cblox::SubmapCollection<VoxgraphSubmap>::createNewSubmap(T_M_S);
 }
 
 VoxgraphSubmapCollection::PoseStampedVector

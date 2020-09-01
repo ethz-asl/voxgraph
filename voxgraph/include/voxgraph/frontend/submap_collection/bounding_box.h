@@ -21,12 +21,16 @@ class BoundingBox {
       const BoundingBox& obb, const voxblox::Transformation& pose);
 
   bool overlapsWith(const BoundingBox& other_bounding_box) const {
-    // If there's a separation along any of the 3 axes, the AABBs don't intersect
-    if (max[0] < other_bounding_box.min[0] || min[0] > other_bounding_box.max[0])
+    // If there's a separation along any of the 3 axes, the AABBs don't
+    // intersect
+    if (max[0] < other_bounding_box.min[0] ||
+        min[0] > other_bounding_box.max[0])
       return false;
-    if (max[1] < other_bounding_box.min[1] || min[1] > other_bounding_box.max[1])
+    if (max[1] < other_bounding_box.min[1] ||
+        min[1] > other_bounding_box.max[1])
       return false;
-    if (max[2] < other_bounding_box.min[2] || min[2] > other_bounding_box.max[2])
+    if (max[2] < other_bounding_box.min[2] ||
+        min[2] > other_bounding_box.max[2])
       return false;
     // Since the AABBs overlap on all axes, the submaps could be overlapping
     return true;

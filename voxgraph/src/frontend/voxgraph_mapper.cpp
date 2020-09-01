@@ -269,49 +269,57 @@ void VoxgraphMapper::loopClosureCallback(
 
 void VoxgraphMapper::submapCallback(
     const voxblox_msgs::LayerWithTrajectory& submap_msg) {
-  // Check and deserialize the submap message
+  // Create the new submap draft
+  VoxgraphSubmap new_submap = submap_collection_ptr_->draftNewSubmap();
+
+  // Deserialize the submap trajectory
   if (submap_msg.trajectory.poses.empty()) {
     ROS_WARN("Received submap with empty trajectory. Skipping submap.");
     return;
   }
-  const SubmapID new_submap_id = submap_collection_ptr_->getLastSubmapId() + 1;
-  VoxgraphSubmap new_submap(Transformation(), new_submap_id,
-                            submap_collection_ptr_->getConfig());
+  for (const geometry_msgs::PoseStamped& pose_stamped :
+       submap_msg.trajectory.poses) {
+    TransformationD T_odom_base_link;
+    tf::poseMsgToKindr(pose_stamped.pose, &T_odom_base_link);
+    new_submap.addPoseToHistory(
+        pose_stamped.header.stamp,
+        T_odom_base_link.cast<voxblox::FloatingPoint>());
+  }
+
+  // Deserialize the submap TSDF
   if (!voxblox::deserializeMsgToLayer(
           submap_msg.layer, new_submap.getTsdfMapPtr()->getTsdfLayerPtr())) {
     ROS_WARN("Received a submap msg with an invalid TSDF. Skipping submap.");
     return;
   }
 
-  // Create the new submap
-  // TODO(victorr): Finish implementing copy construction for new submaps
-  size_t trajectory_middle_idx = submap_msg.trajectory.poses.size() / 2;
-  ros::Time trajectory_middle_timestamp =
-      submap_msg.trajectory.poses[trajectory_middle_idx].header.stamp;
-  submap_collection_ptr_->createNewSubmap(Transformation(),
-                                          trajectory_middle_timestamp);
-  *submap_collection_ptr_->getActiveTsdfMapPtr()->getTsdfLayerPtr() =
-      tsdf_layer;
-  for (const geometry_msgs::PoseStamped& pose_stamped :
-       submap_msg.trajectory.poses) {
-    TransformationD T_odom_base_link;
-    tf::poseMsgToKindr(pose_stamped.pose, &T_odom_base_link);
-    submap_collection_ptr_->getActiveSubmapPtr()->addPoseToHistory(
-        pose_stamped.header.stamp,
-        T_odom_base_link.cast<voxblox::FloatingPoint>());
-  }
-  // TODO(victorr): Populate T_M_S
+  // TODO(victorr): Set the transform below to the latest
+  //                odom to mission correction estimate
+  // TODO(victorr): Add check to ensure that the odom frames from voxblox and
+  //                voxgraph match
+  // The submap pose corresponds to its origin, which is the origin of the
+  // submap_msg
+  // NOTE: We will implicitly update the submap pose later on, when moving the
+  // submap origin to the middle pose of the trajectory
+  const Transformation T_M_O;
+  new_submap.setPose(T_M_O);
 
-  // Transform the submap TSDF from odom to submap frame
+  // Transform the submap from odom to submap frame
+  const size_t trajectory_middle_idx = new_submap.getPoseHistory().size() / 2;
   TransformationD T_odom_trajectory_middle_pose;
   tf::poseMsgToKindr(submap_msg.trajectory.poses[trajectory_middle_idx].pose,
                      &T_odom_trajectory_middle_pose);
   const Transformation T_odom_submap =
       VoxgraphSubmapCollection::gravityAlignPose(
           T_odom_trajectory_middle_pose.cast<voxblox::FloatingPoint>());
-  submap_collection_ptr_->getActiveSubmapPtr()->transformSubmap(
-      T_odom_submap.inverse());
-  // NOTE: This will also automatically compute the submap's ESDF etc
+  new_submap.transformSubmap(T_odom_submap.inverse());
+  // NOTE: In addition to changing the origin for the submap's trajectory and
+  //       TSDF, it will also update the submap's T_M_S pose (such that the
+  //       voxels don't move with respect to the mission frame) and update all
+  //       cached members including the ESDF (implicitly creating it).
+
+  // Add finished new submap to the submap collection
+  submap_collection_ptr_->addSubmap(std::move(new_submap));
 
   // Wait for the last optimization to finish before updating the constraints
   if (optimization_async_handle_.valid() &&
