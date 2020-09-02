@@ -52,7 +52,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
       submap_vis_(submap_config_, mesh_config),
       pose_graph_interface_(
           nh_private, submap_collection_ptr_, mesh_config,
-          FrameNames::fromRosParams(nh_private).output_mission_frame),
+          FrameNames::fromRosParams(nh_private).output_odom_frame),
       projected_map_server_(nh_private),
       submap_server_(nh_private),
       loop_closure_edge_server_(nh_private),
@@ -229,18 +229,16 @@ void VoxgraphMapper::loopClosureCallback(
                                                   T_AB);
 
   // Visualize the loop closure link
-  const Transformation& T_M_A = submap_A.getPose();
-  const Transformation& T_M_B = submap_B.getPose();
-  const Transformation T_M_t1 = T_M_A * T_A_t1;
-  const Transformation T_M_t2 = T_M_B * T_B_t2;
-  loop_closure_vis_.publishLoopClosure(
-      T_M_t1, T_M_t2, T_t1_t2,
-      frame_names_.output_mission_frame,
-      loop_closure_links_pub_);
-  loop_closure_vis_.publishAxes(
-      T_M_t1, T_M_t2, T_t1_t2,
-      frame_names_.output_mission_frame,
-      loop_closure_axes_pub_);
+  const Transformation& T_O_A = submap_A.getPose();
+  const Transformation& T_O_B = submap_B.getPose();
+  const Transformation T_O_t1 = T_O_A * T_A_t1;
+  const Transformation T_O_t2 = T_O_B * T_B_t2;
+  loop_closure_vis_.publishLoopClosure(T_O_t1, T_O_t2, T_t1_t2,
+                                       frame_names_.output_odom_frame,
+                                       loop_closure_links_pub_);
+  loop_closure_vis_.publishAxes(T_O_t1, T_O_t2, T_t1_t2,
+                                frame_names_.output_odom_frame,
+                                loop_closure_axes_pub_);
 }
 
 void VoxgraphMapper::submapCallback(
@@ -275,10 +273,8 @@ void VoxgraphMapper::submapCallback(
   // submap_msg
   // NOTE: We will implicitly update the submap pose later on, when moving the
   //       submap origin to the middle pose of the trajectory
-  // NOTE: In the new robocentric voxgraph frame formulation the mission and
-  //       odom frames are equal, hence T_M_O is an identity transform
-  const Transformation T_M_O = Transformation();
-  new_submap.setPose(T_M_O);
+  const Transformation T_O_O = Transformation();
+  new_submap.setPose(T_O_O);  // Identity transform
 
   // Transform the submap from odom to submap frame
   const size_t trajectory_middle_idx = new_submap.getPoseHistory().size() / 2;
@@ -290,8 +286,8 @@ void VoxgraphMapper::submapCallback(
           T_odom_trajectory_middle_pose.cast<voxblox::FloatingPoint>());
   new_submap.transformSubmap(T_odom_submap.inverse());
   // NOTE: In addition to changing the origin for the submap's trajectory and
-  //       TSDF, it will also update the submap's T_M_S pose (such that the
-  //       voxels don't move with respect to the mission frame) and update all
+  //       TSDF, it will also update the submap's T_O_S pose (such that the
+  //       voxels don't move with respect to the odom frame) and update all
   //       cached members including the ESDF (implicitly creating it).
 
   // Add finished new submap to the submap collection
@@ -312,13 +308,13 @@ void VoxgraphMapper::submapCallback(
   if (submap_collection_ptr_->size() > 1) {
     // Get the previous submap's optimized pose
     SubmapID previous_submap_id = submap_collection_ptr_->getPreviousSubmapId();
-    Transformation T_mission__previous_submap;
+    Transformation T_odom__previous_submap;
     submap_collection_ptr_->getSubmapPose(previous_submap_id,
-                                          &T_mission__previous_submap);
+                                          &T_odom__previous_submap);
 
     // Compute the odometry
     const Transformation T_previous_submap__submap =
-        T_mission__previous_submap.inverse() * T_odom_submap;
+        T_odom__previous_submap.inverse() * T_odom_submap;
 
     // Add an odometry constraint from the previous to the new submap
     if (odometry_constraints_enabled_) {
@@ -339,7 +335,7 @@ void VoxgraphMapper::submapCallback(
                                                  current_height);
     }
   } else {
-    // Since we did not yet perform any optimizations, the odom and mission
+    // Since we did not yet perform any optimizations, the odom and odom
     // frame are equal
     // NOTE: The pose has already implicitly been set to T_odom_submap,
     //       by the earlier transformSubmap(...) call.
@@ -364,25 +360,25 @@ void VoxgraphMapper::submapCallback(
 
   // Publish the pose history
   if (pose_history_pub_.getNumSubscribers() > 0) {
-    submap_vis_.publishPoseHistory(
-        *submap_collection_ptr_,
-        frame_names_.output_mission_frame, pose_history_pub_);
+    submap_vis_.publishPoseHistory(*submap_collection_ptr_,
+                                   frame_names_.output_odom_frame,
+                                   pose_history_pub_);
   }
 }
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
     std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
-  submap_vis_.publishSeparatedMesh(
-      *submap_collection_ptr_,
-      frame_names_.output_mission_frame, separated_mesh_pub_);
+  submap_vis_.publishSeparatedMesh(*submap_collection_ptr_,
+                                   frame_names_.output_odom_frame,
+                                   separated_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
 bool VoxgraphMapper::publishCombinedMeshCallback(
     std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
-  submap_vis_.publishCombinedMesh(
-      *submap_collection_ptr_,
-      frame_names_.output_mission_frame, combined_mesh_pub_);
+  submap_vis_.publishCombinedMesh(*submap_collection_ptr_,
+                                  frame_names_.output_odom_frame,
+                                  combined_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
@@ -487,14 +483,14 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
   if (combined_mesh_pub_.getNumSubscribers() > 0) {
     ThreadingHelper::launchBackgroundThread(
         &SubmapVisuals::publishCombinedMesh, &submap_vis_,
-        *submap_collection_ptr_,
-        frame_names_.output_mission_frame, combined_mesh_pub_);
+        *submap_collection_ptr_, frame_names_.output_odom_frame,
+        combined_mesh_pub_);
   }
   if (separated_mesh_pub_.getNumSubscribers() > 0) {
     ThreadingHelper::launchBackgroundThread(
         &SubmapVisuals::publishSeparatedMesh, &submap_vis_,
-        *submap_collection_ptr_,
-        frame_names_.output_mission_frame, separated_mesh_pub_);
+        *submap_collection_ptr_, frame_names_.output_odom_frame,
+        separated_mesh_pub_);
   }
 
   // Publish the new submap

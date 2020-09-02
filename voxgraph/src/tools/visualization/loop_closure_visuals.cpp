@@ -9,7 +9,7 @@
 
 namespace voxgraph {
 void LoopClosureVisuals::publishLoopClosure(
-    const Transformation& T_M_1, const Transformation& T_M_2,
+    const Transformation& T_O_1, const Transformation& T_O_2,
     const Transformation& T_1_2_est, const std::string& frame_id,
     const ros::Publisher& publisher) const {
   visualization_msgs::MarkerArray marker_array;
@@ -17,10 +17,10 @@ void LoopClosureVisuals::publishLoopClosure(
   static const Color kColorOld = Color(0.0f, 0.0f, 1.0f, 1.0f);
   static const Color kColorEst = Color(1.0f, 0.0f, 0.0f, 1.0f);
   visualization_msgs::Marker old_link =
-      getLinkMarker(T_M_1, T_M_2, frame_id, kColorOld, "old_link");
-  const Transformation T_M_2_est = T_M_1 * T_1_2_est;
+      getLinkMarker(T_O_1, T_O_2, frame_id, kColorOld, "old_link");
+  const Transformation T_O_2_est = T_O_1 * T_1_2_est;
   visualization_msgs::Marker new_link =
-      getLinkMarker(T_M_1, T_M_2_est, frame_id, kColorEst, "new_link");
+      getLinkMarker(T_O_1, T_O_2_est, frame_id, kColorEst, "new_link");
   // Publishing
   marker_array.markers.push_back(old_link);
   marker_array.markers.push_back(new_link);
@@ -28,7 +28,7 @@ void LoopClosureVisuals::publishLoopClosure(
 }
 
 visualization_msgs::Marker LoopClosureVisuals::getLinkMarker(
-    const Transformation& T_M_1, const Transformation& T_M_2,
+    const Transformation& T_O_1, const Transformation& T_O_2,
     const std::string& frame_id, const Color& color,
     const std::string& ns) const {
   // Creating the marker
@@ -46,34 +46,34 @@ visualization_msgs::Marker LoopClosureVisuals::getLinkMarker(
   marker.ns = ns;
   // Extracting the matching frame end points
   // Adding the marker msg
-  geometry_msgs::Point T_M_1_point_msg;
-  geometry_msgs::Point T_M_2_point_msg;
-  tf::pointEigenToMsg(T_M_1.getPosition().cast<double>(), T_M_1_point_msg);
-  tf::pointEigenToMsg(T_M_2.getPosition().cast<double>(), T_M_2_point_msg);
-  marker.points.push_back(T_M_1_point_msg);
-  marker.points.push_back(T_M_2_point_msg);
+  geometry_msgs::Point T_O_1_point_msg;
+  geometry_msgs::Point T_O_2_point_msg;
+  tf::pointEigenToMsg(T_O_1.getPosition().cast<double>(), T_O_1_point_msg);
+  tf::pointEigenToMsg(T_O_2.getPosition().cast<double>(), T_O_2_point_msg);
+  marker.points.push_back(T_O_1_point_msg);
+  marker.points.push_back(T_O_2_point_msg);
   return marker;
 }
 
-void LoopClosureVisuals::publishAxes(const Transformation& T_M_1,
-                                     const Transformation& T_M_2,
+void LoopClosureVisuals::publishAxes(const Transformation& T_O_1,
+                                     const Transformation& T_O_2,
                                      const Transformation& T_1_2_est,
                                      const std::string& frame_id,
                                      const ros::Publisher& publisher) const {
   // Calculating the estimate transform
-  const Transformation T_M_2_est = T_M_1 * T_1_2_est;
+  const Transformation T_O_2_est = T_O_1 * T_1_2_est;
   // Publish
   geometry_msgs::PoseArray pose_array_msg;
   pose_array_msg.header.frame_id = frame_id;
-  geometry_msgs::Pose T_M_1_msg;
-  geometry_msgs::Pose T_M_2_msg;
-  geometry_msgs::Pose T_M_2_est_msg;
-  tf::poseKindrToMsg(T_M_1.cast<double>(), &T_M_1_msg);
-  tf::poseKindrToMsg(T_M_2.cast<double>(), &T_M_2_msg);
-  tf::poseKindrToMsg(T_M_2_est.cast<double>(), &T_M_2_est_msg);
-  pose_array_msg.poses.push_back(T_M_1_msg);
-  pose_array_msg.poses.push_back(T_M_2_msg);
-  pose_array_msg.poses.push_back(T_M_2_est_msg);
+  geometry_msgs::Pose T_O_1_msg;
+  geometry_msgs::Pose T_O_2_msg;
+  geometry_msgs::Pose T_O_2_est_msg;
+  tf::poseKindrToMsg(T_O_1.cast<double>(), &T_O_1_msg);
+  tf::poseKindrToMsg(T_O_2.cast<double>(), &T_O_2_msg);
+  tf::poseKindrToMsg(T_O_2_est.cast<double>(), &T_O_2_est_msg);
+  pose_array_msg.poses.push_back(T_O_1_msg);
+  pose_array_msg.poses.push_back(T_O_2_msg);
+  pose_array_msg.poses.push_back(T_O_2_est_msg);
   publisher.publish(pose_array_msg);
 }
 }  // namespace voxgraph

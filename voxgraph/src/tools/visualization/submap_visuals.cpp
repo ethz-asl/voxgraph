@@ -67,24 +67,22 @@ void SubmapVisuals::publishMesh(
 
 void SubmapVisuals::publishSeparatedMesh(
     const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
-    const std::string& mission_frame, const ros::Publisher& publisher) {
+    const std::string& odom_frame, const ros::Publisher& publisher) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
   separated_submap_mesher_->generateSeparatedMesh(submap_collection,
                                                   mesh_layer_ptr.get());
-  publishMesh(mesh_layer_ptr, mission_frame, publisher,
-              submap_mesh_color_mode_);
+  publishMesh(mesh_layer_ptr, odom_frame, publisher, submap_mesh_color_mode_);
 }
 
 void SubmapVisuals::publishCombinedMesh(
     const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
-    const std::string& mission_frame, const ros::Publisher& publisher) {
+    const std::string& odom_frame, const ros::Publisher& publisher) {
   auto mesh_layer_ptr =
       std::make_shared<cblox::MeshLayer>(submap_collection.block_size());
   combined_submap_mesher_->generateCombinedMesh(submap_collection,
                                                 mesh_layer_ptr.get());
-  publishMesh(mesh_layer_ptr, mission_frame, publisher,
-              combined_mesh_color_mode_);
+  publishMesh(mesh_layer_ptr, odom_frame, publisher, combined_mesh_color_mode_);
 }
 
 void SubmapVisuals::saveSeparatedMesh(
@@ -150,11 +148,11 @@ void SubmapVisuals::publishBox(const BoxCornerMatrix& box_corner_matrix,
 
 void SubmapVisuals::publishPoseHistory(
     const VoxgraphSubmapCollection& submap_collection,
-    const std::string& mission_frame, const ros::Publisher& publisher) const {
+    const std::string& odom_frame, const ros::Publisher& publisher) const {
   // Create the pose history message
   nav_msgs::Path pose_history_msg;
   pose_history_msg.header.stamp = ros::Time::now();
-  pose_history_msg.header.frame_id = mission_frame;
+  pose_history_msg.header.frame_id = odom_frame;
   pose_history_msg.poses = submap_collection.getPoseHistory();
 
   // Publish the message

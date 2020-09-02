@@ -9,7 +9,6 @@
   <arg name="show_rviz" default="true" />
 
   <node pkg="tf" type="static_transform_publisher" name="os1_coordinate_transform" args="0 0 0 0 0 1 0 os1_sensor os1_lidar 100" />
-  <node pkg="tf" type="static_transform_publisher" name="odom_to_mission" args="0 0 0 0 0 0 1 odom mission 100"/>
 
   <include file="$(find lidar_undistortion)/launch/os1_undistortion.launch" />
 

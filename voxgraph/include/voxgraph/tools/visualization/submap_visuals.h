@@ -42,11 +42,11 @@ class SubmapVisuals {
 
   void publishSeparatedMesh(
       const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
-      const std::string& mission_frame, const ros::Publisher& publisher);
+      const std::string& odom_frame, const ros::Publisher& publisher);
 
   void publishCombinedMesh(
       const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
-      const std::string& mission_frame, const ros::Publisher& publisher);
+      const std::string& odom_frame, const ros::Publisher& publisher);
 
   void saveSeparatedMesh(
       const std::string& filepath,
@@ -62,7 +62,7 @@ class SubmapVisuals {
                   const ros::Publisher& publisher) const;
 
   void publishPoseHistory(const VoxgraphSubmapCollection& submap_collection,
-                          const std::string& mission_frame,
+                          const std::string& odom_frame,
                           const ros::Publisher& publisher) const;
 
  private:

@@ -2,15 +2,15 @@
 
 namespace voxgraph {
 NodeTemplates::NodeTemplates()
-    : mission_frame(mission_frame_), gps_frame(gps_frame_), submap(submap_) {
-  // Initialize the mission frame config
+    : odom_frame(odom_frame_), gps_frame(gps_frame_), submap(submap_) {
+  // Initialize the odom frame config
   // NOTE: The frame is fixed to (X, Y, Z, Yaw) = (0, 0, 0, 0)
-  mission_frame_.reference_frame_id = kMissionFrame;
-  mission_frame_.set_constant = true;
-  mission_frame_.T_mission_node_initial.setIdentity();
+  odom_frame_.reference_frame_id = kOdomFrame;
+  odom_frame_.set_constant = true;
+  odom_frame_.T_odom_node_initial.setIdentity();
 
   // Initialize the GPS frame config
-  // NOTE: We let the frame float freely w.r.t. the optimization's mission
+  // NOTE: We let the frame float freely w.r.t. the optimization's odom
   // frame.
   //       This way the submap positions will not jump when the first GPS
   //       measurement is received even if the robot started mapping before
@@ -24,8 +24,8 @@ NodeTemplates::NodeTemplates()
 ReferenceFrameNode::Config NodeTemplates::getReferenceFrameConfigById(
     ReferenceFrameNode::FrameId frame_id) {
   switch (frame_id) {
-    case kMissionFrame:
-      return mission_frame;
+    case kOdomFrame:
+      return odom_frame;
     case kGpsFrame:
       return gps_frame;
     default:

@@ -10,12 +10,12 @@ CostFunctionVisuals::CostFunctionVisuals() {
       "cost_jacobians", 1, true);
 
   // Configure the residual visualization pointcloud
-  residual_ptcloud_.header.frame_id = "mission";
+  residual_ptcloud_.header.frame_id = "odom";
 
   // The magnitudes and orientations of the Jacobians
   // are visualized as a list of lines
   jacobian_arrows_.header.stamp = ros::Time::now();
-  jacobian_arrows_.header.frame_id = "mission";
+  jacobian_arrows_.header.frame_id = "odom";
   jacobian_arrows_.ns = "jacobian_vectors";
   jacobian_arrows_.id = 1;
   jacobian_arrows_.type = visualization_msgs::Marker::LINE_LIST;
@@ -103,7 +103,7 @@ void CostFunctionVisuals::scaleAndPublish(const double factor) {
 void CostFunctionVisuals::reset() {
   // Reset the residual pointcloud
   residual_ptcloud_.clear();
-  residual_ptcloud_.header.frame_id = "mission";
+  residual_ptcloud_.header.frame_id = "odom";
   // Reset variables used to visualize the Jacobians
   jacobian_marker_array_.markers.clear();
   jacobian_origins_.points.clear();

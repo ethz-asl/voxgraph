@@ -40,15 +40,15 @@ void SubmapServer::publishSubmap(const VoxgraphSubmap& submap,
                                  const ros::Time& timestamp) {
   // Only publish if there are subscribers
   if (submap_tsdf_pub_.getNumSubscribers() > 0) {
-    publishSubmapTsdf(submap, frame_names_.output_mission_frame, timestamp,
+    publishSubmapTsdf(submap, frame_names_.output_odom_frame, timestamp,
                       submap_tsdf_pub_);
   }
   if (submap_esdf_pub_.getNumSubscribers() > 0) {
-    publishSubmapTsdfAndEsdf(submap, frame_names_.output_mission_frame,
-                             timestamp, submap_esdf_pub_);
+    publishSubmapTsdfAndEsdf(submap, frame_names_.output_odom_frame, timestamp,
+                             submap_esdf_pub_);
   }
   if (submap_surface_pointcloud_pub_.getNumSubscribers() > 0) {
-    publishSubmapSurfacePointcloud(submap, frame_names_.output_mission_frame,
+    publishSubmapSurfacePointcloud(submap, frame_names_.output_odom_frame,
                                    timestamp, submap_surface_pointcloud_pub_);
   }
 }
@@ -57,7 +57,7 @@ void SubmapServer::publishSubmapTsdf(const VoxgraphSubmap& submap,
                                      const ros::Time& timestamp) {
   // Only publish if there are subscribers
   if (submap_tsdf_pub_.getNumSubscribers() > 0) {
-    publishSubmapTsdf(submap, frame_names_.output_mission_frame, timestamp,
+    publishSubmapTsdf(submap, frame_names_.output_odom_frame, timestamp,
                       submap_tsdf_pub_);
   }
 }
@@ -66,8 +66,8 @@ void SubmapServer::publishSubmapTsdfAndEsdf(const VoxgraphSubmap& submap,
                                             const ros::Time& timestamp) {
   // Only publish if there are subscribers
   if (submap_esdf_pub_.getNumSubscribers() > 0) {
-    publishSubmapTsdfAndEsdf(submap, frame_names_.output_mission_frame,
-                             timestamp, submap_esdf_pub_);
+    publishSubmapTsdfAndEsdf(submap, frame_names_.output_odom_frame, timestamp,
+                             submap_esdf_pub_);
   }
 }
 
@@ -75,7 +75,7 @@ void SubmapServer::publishSubmapSurfacePointcloud(const VoxgraphSubmap& submap,
                                                   const ros::Time& timestamp) {
   // Only publish if there are subscribers
   if (submap_surface_pointcloud_pub_.getNumSubscribers() > 0) {
-    publishSubmapSurfacePointcloud(submap, frame_names_.output_mission_frame,
+    publishSubmapSurfacePointcloud(submap, frame_names_.output_odom_frame,
                                    timestamp, submap_surface_pointcloud_pub_);
   }
 }
@@ -166,7 +166,7 @@ void SubmapServer::publishSubmapPoses(
     const VoxgraphSubmapCollection::Ptr& submap_collection_ptr,
     const ros::Time& timestamp) {
   if (submap_poses_pub_.getNumSubscribers() > 0) {
-    publishSubmapPoses(submap_collection_ptr, "mission", timestamp,
+    publishSubmapPoses(submap_collection_ptr, "odom", timestamp,
                        submap_poses_pub_);
   }
 }

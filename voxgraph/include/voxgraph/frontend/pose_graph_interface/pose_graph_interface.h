@@ -21,7 +21,7 @@ class PoseGraphInterface {
       ros::NodeHandle node_handle,
       VoxgraphSubmapCollection::Ptr submap_collection_ptr,
       voxblox::MeshIntegratorConfig mesh_config,
-      const std::string& visualizations_mission_frame, bool verbose = false);
+      const std::string& visualizations_odom_frame, bool verbose = false);
 
   void setVerbosity(bool verbose) { verbose_ = verbose; }
   void setMeasurementConfigFromRosParams(const ros::NodeHandle& node_handle) {
@@ -67,7 +67,7 @@ class PoseGraphInterface {
   VoxgraphSubmapCollection::Ptr submap_collection_ptr_;
 
   // Pose graph and visualization tools
-  const std::string visualization_mission_frame_;
+  const std::string visualization_odom_frame_;
   PoseGraph pose_graph_;
   SubmapVisuals submap_vis_;
   PoseGraphVisuals pose_graph_vis_;

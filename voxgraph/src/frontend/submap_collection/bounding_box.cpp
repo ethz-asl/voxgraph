@@ -29,14 +29,14 @@ const BoundingBox BoundingBox::getAabbFromObbAndPose(
     const BoundingBox& obb, const voxblox::Transformation& pose) {
   // Create AABB
   BoundingBox aabb;
-  // Transform the OBB corners into mission frame and update the AABB
+  // Transform the OBB corners into odom frame and update the AABB
   const BoxCornerMatrix submap_t_submap__obb_corners =
       obb.getCornerCoordinates();
   for (int i = 0; i < 8; i++) {
-    const voxblox::Point mission_t_mission__obb_corner =
+    const voxblox::Point odom_t_odom__obb_corner =
         pose * submap_t_submap__obb_corners.col(i);
-    aabb.min = aabb.min.cwiseMin(mission_t_mission__obb_corner);
-    aabb.max = aabb.max.cwiseMax(mission_t_mission__obb_corner);
+    aabb.min = aabb.min.cwiseMin(odom_t_odom__obb_corner);
+    aabb.max = aabb.max.cwiseMax(odom_t_odom__obb_corner);
   }
   return aabb;
 }

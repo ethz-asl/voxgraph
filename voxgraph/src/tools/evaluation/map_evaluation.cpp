@@ -35,7 +35,7 @@ MapEvaluation::MapEvaluation(const ros::NodeHandle& node_handle,
 
   // Publish the ground truth TSDF pointcloud
   pcl::PointCloud<pcl::PointXYZI> ground_truth_layer_ptcloud_msg;
-  ground_truth_layer_ptcloud_msg.header.frame_id = "mission";
+  ground_truth_layer_ptcloud_msg.header.frame_id = "odom";
   voxblox::createSurfaceDistancePointcloudFromTsdfLayer(
       *ground_truth_tsdf_layer_ptr, 0.6, &ground_truth_layer_ptcloud_msg);
   ground_truth_layer_pub_.publish(ground_truth_layer_ptcloud_msg);
@@ -52,7 +52,7 @@ MapEvaluation::MapEvaluation(const ros::NodeHandle& node_handle,
   visualization_msgs::Marker marker;
   voxblox::fillMarkerWithMesh(ground_truth_mesh_layer_ptr,
                               voxblox::ColorMode::kNormals, &marker);
-  marker.header.frame_id = "mission";
+  marker.header.frame_id = "odom";
   ground_truth_mesh_pub_.publish(marker);
 }
 
@@ -80,7 +80,7 @@ MapEvaluation::EvaluationDetails MapEvaluation::evaluate(
   projected_map_ptr->finishSubmap();
   ground_truth_map_ptr_->finishSubmap();
   alignSubmapAtoSubmapB(ground_truth_map_ptr_, projected_map_ptr);
-  // Apply the transform (interpolate TSDF and ESDF layers into mission frame)
+  // Apply the transform (interpolate TSDF and ESDF layers into odom frame)
   Transformation T_projected_map__ground_truth =
       ground_truth_map_ptr_->getPose();
   ground_truth_map_ptr_->transformSubmap(T_projected_map__ground_truth);
@@ -99,8 +99,8 @@ MapEvaluation::EvaluationDetails MapEvaluation::evaluate(
   PointcloudMsg rmse_error_msg;
   PointcloudMsg rmse_error_slice_msg;
 
-  rmse_error_msg.header.frame_id = "mission";
-  rmse_error_slice_msg.header.frame_id = "mission";
+  rmse_error_msg.header.frame_id = "odom";
+  rmse_error_slice_msg.header.frame_id = "odom";
 
   voxblox::createDistancePointcloudFromEsdfLayer(error_layer, &rmse_error_msg);
   voxblox::createDistancePointcloudFromEsdfLayerSlice(

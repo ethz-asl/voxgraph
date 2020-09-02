@@ -26,7 +26,7 @@ class SubmapRegistrationHelper {
 
   bool testRegistration(const cblox::SubmapID& reference_submap_id,
                         const cblox::SubmapID& reading_submap_id,
-                        double* mission_pose_reading,
+                        double* odom_pose_reading,
                         ceres::Solver::Summary* summary);
 
  private:

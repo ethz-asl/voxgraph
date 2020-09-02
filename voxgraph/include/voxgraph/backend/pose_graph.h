@@ -25,9 +25,8 @@ class PoseGraph {
   void addReferenceFrameNode(const ReferenceFrameNode::Config& config);
   bool hasReferenceFrameNode(const ReferenceFrameNode::FrameId& frame_id);
 
-  bool setSubmapNodeConstant(
-      const SubmapNode::SubmapId& submap_id,
-      const bool constant) {
+  bool setSubmapNodeConstant(const SubmapNode::SubmapId& submap_id,
+                             const bool constant) {
     SubmapNode::Ptr submap_node_ptr =
         node_collection_.getSubmapNodePtrById(submap_id);
     if (submap_node_ptr) {

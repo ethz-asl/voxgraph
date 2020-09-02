@@ -7,22 +7,19 @@
 namespace voxgraph {
 class NodeTemplates {
  public:
-  enum ReferenceFrames : ReferenceFrameNode::FrameId {
-    kMissionFrame,
-    kGpsFrame
-  };
+  enum ReferenceFrames : ReferenceFrameNode::FrameId { kOdomFrame, kGpsFrame };
 
   NodeTemplates();
 
   ReferenceFrameNode::Config getReferenceFrameConfigById(
       ReferenceFrameNode::FrameId frame_id);
 
-  const ReferenceFrameNode::Config& mission_frame;
+  const ReferenceFrameNode::Config& odom_frame;
   const ReferenceFrameNode::Config& gps_frame;
   const SubmapNode::Config& submap;
 
  private:
-  ReferenceFrameNode::Config mission_frame_;
+  ReferenceFrameNode::Config odom_frame_;
   ReferenceFrameNode::Config gps_frame_;
   SubmapNode::Config submap_;
 };

@@ -41,7 +41,7 @@ std_msgs::Header ProjectedMapServer::generateHeaderMsg(
     const ros::Time& timestamp) {
   std_msgs::Header msg_header;
   // TODO(victorr): Get the world frame name from FrameNames once implemented
-  msg_header.frame_id = "mission";
+  msg_header.frame_id = "odom";
   msg_header.stamp = timestamp;
   return msg_header;
 }
@@ -68,7 +68,7 @@ cblox_msgs::MapHeader ProjectedMapServer::generateMapHeaderMsg(
 
   // Set the pose estimate to zero
   // TODO(victorr): Get the world frame name from FrameNames once implemented
-  map_header.pose_estimate.frame_id = "mission";
+  map_header.pose_estimate.frame_id = "odom";
   tf::poseKindrToMsg(Transformation().cast<double>(),
                      &map_header.pose_estimate.map_pose);
 

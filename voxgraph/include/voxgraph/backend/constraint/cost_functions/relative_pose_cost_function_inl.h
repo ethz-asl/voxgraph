@@ -8,46 +8,45 @@ template <typename T>
 bool RelativePoseCostFunction::operator()(const T* const pose_A,
                                           const T* const pose_B,
                                           T* residuals) const {
-  const Eigen::Matrix<T, 3, 1> t_mission_A(pose_A[0], pose_A[1], pose_A[2]);
-  const Eigen::Matrix<T, 3, 1> t_mission_B(pose_B[0], pose_B[1], pose_B[2]);
-  const T yaw_mission_A(pose_A[3]);
-  const T yaw_mission_B(pose_B[3]);
-  CHECK_NEAR(yaw_mission_A, T(0), T(M_PI));
-  CHECK_NEAR(yaw_mission_B, T(0), T(M_PI));
+  const Eigen::Matrix<T, 3, 1> t_odom_A(pose_A[0], pose_A[1], pose_A[2]);
+  const Eigen::Matrix<T, 3, 1> t_odom_B(pose_B[0], pose_B[1], pose_B[2]);
+  const T yaw_odom_A(pose_A[3]);
+  const T yaw_odom_B(pose_B[3]);
+  CHECK_NEAR(yaw_odom_A, T(0), T(M_PI));
+  CHECK_NEAR(yaw_odom_B, T(0), T(M_PI));
 
   Eigen::Map<Eigen::Matrix<T, 4, 1>> residuals_map(residuals);
 
   // Compute translation error
   residuals_map.template head<3>() =
-      rotationMatrixFromYaw<T>(yaw_mission_A).transpose() *
-          (t_mission_B - t_mission_A) -
+      rotationMatrixFromYaw<T>(yaw_odom_A).transpose() * (t_odom_B - t_odom_A) -
       observed_relative_translation_.cast<T>();
 
   // Compute yaw error and normalize the angle
-  residuals_map(3) = NormalizeAngle((yaw_mission_B - yaw_mission_A) -
+  residuals_map(3) = NormalizeAngle((yaw_odom_B - yaw_odom_A) -
                                     static_cast<T>(observed_relative_yaw_));
 
   if (verbose_) {
-    std::cout << "t_mission_A: " << t_mission_A(0) << ", " << t_mission_A(1)
-              << ", " << t_mission_A(2) << "\n"
-              << "t_mission_B: " << t_mission_B(0) << ", " << t_mission_B(1)
-              << ", " << t_mission_B(2) << "\n"
-              << "Rotated(t_mission_B - t_mission_A):\n"
-              << (rotationMatrixFromYaw(yaw_mission_A).transpose() *
-                  (t_mission_B - t_mission_A))(0)
+    std::cout << "t_odom_A: " << t_odom_A(0) << ", " << t_odom_A(1) << ", "
+              << t_odom_A(2) << "\n"
+              << "t_odom_B: " << t_odom_B(0) << ", " << t_odom_B(1) << ", "
+              << t_odom_B(2) << "\n"
+              << "Rotated(t_odom_B - t_odom_A):\n"
+              << (rotationMatrixFromYaw(yaw_odom_A).transpose() *
+                  (t_odom_B - t_odom_A))(0)
               << "\n"
-              << (rotationMatrixFromYaw(yaw_mission_A).transpose() *
-                  (t_mission_B - t_mission_A))(1)
+              << (rotationMatrixFromYaw(yaw_odom_A).transpose() *
+                  (t_odom_B - t_odom_A))(1)
               << "\n"
-              << (rotationMatrixFromYaw(yaw_mission_A).transpose() *
-                  (t_mission_B - t_mission_A))(2)
+              << (rotationMatrixFromYaw(yaw_odom_A).transpose() *
+                  (t_odom_B - t_odom_A))(2)
               << "\n"
               << "observed_relative_translation: "
               << observed_relative_translation_.cast<T>()(0) << ", "
               << observed_relative_translation_.cast<T>()(1) << ", "
               << observed_relative_translation_.cast<T>()(2) << "\n"
-              << "yaw_mission_A: " << yaw_mission_A << "\n"
-              << "yaw_mission_B: " << yaw_mission_B << "\n"
+              << "yaw_odom_A: " << yaw_odom_A << "\n"
+              << "yaw_odom_B: " << yaw_odom_B << "\n"
               << "observed_relative_yaw: "
               << static_cast<T>(observed_relative_yaw_) << "\n"
               << "Error:" << residuals_map(0) << ", " << residuals_map(1)

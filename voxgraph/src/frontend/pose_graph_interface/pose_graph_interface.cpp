@@ -8,10 +8,10 @@ PoseGraphInterface::PoseGraphInterface(
     ros::NodeHandle node_handle,
     VoxgraphSubmapCollection::Ptr submap_collection_ptr,
     voxblox::MeshIntegratorConfig mesh_config,
-    const std::string& visualizations_mission_frame, bool verbose)
+    const std::string& visualizations_odom_frame, bool verbose)
     : verbose_(verbose),
       submap_collection_ptr_(std::move(submap_collection_ptr)),
-      visualization_mission_frame_(visualizations_mission_frame),
+      visualization_odom_frame_(visualizations_odom_frame),
       submap_vis_(submap_collection_ptr_->getConfig(), mesh_config),
       new_loop_closures_added_since_last_optimization_(false) {
   // Advertise the pose graph visuals publisher
@@ -26,7 +26,7 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id) {
   SubmapNode::Config node_config = node_templates_.submap;
   node_config.submap_id = submap_id;
   CHECK(submap_collection_ptr_->getSubmapPose(
-      submap_id, &node_config.T_mission_node_initial));
+      submap_id, &node_config.T_odom_node_initial));
   // In our robo-centric formulation, the pose of the current submap is constant
   node_config.set_constant = true;
   pose_graph_.addSubmapNode(node_config);
@@ -103,7 +103,7 @@ void PoseGraphInterface::addHeightMeasurement(const SubmapID& submap_id,
   constraint_config.submap_id = submap_id;
   constraint_config.T_ref_submap.getPosition().z() = height;
 
-  // Add the mission reference frame to the pose graph if it isn't already there
+  // Add the odom reference frame to the pose graph if it isn't already there
   addReferenceFrameIfMissing(constraint_config.reference_frame_id);
 
   // Add the height measurement to the pose graph
@@ -126,8 +126,8 @@ void PoseGraphInterface::updateOverlappingSubmapList() {
     // TODO(victorr): Move this to a better place (e.g. visualization class)
     if (submap_pub_.getNumSubscribers() > 0) {
       submap_vis_.publishBox(
-          first_submap.getMissionFrameSurfaceAabb().getCornerCoordinates(),
-          voxblox::Color::Blue(), visualization_mission_frame_,
+          first_submap.getOdomFrameSurfaceAabb().getCornerCoordinates(),
+          voxblox::Color::Blue(), visualization_odom_frame_,
           "surface_abb" + std::to_string(first_submap_id), submap_pub_);
     }
 
@@ -196,7 +196,7 @@ void PoseGraphInterface::optimize() {
 
   // Publish debug visuals
   if (pose_graph_pub_.getNumSubscribers() > 0) {
-    pose_graph_vis_.publishPoseGraph(pose_graph_, visualization_mission_frame_,
+    pose_graph_vis_.publishPoseGraph(pose_graph_, visualization_odom_frame_,
                                      "optimized", pose_graph_pub_);
   }
 }

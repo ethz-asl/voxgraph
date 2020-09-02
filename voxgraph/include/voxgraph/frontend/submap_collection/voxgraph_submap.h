@@ -31,7 +31,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   };
 
   // Standard constructor
-  VoxgraphSubmap(const voxblox::Transformation& T_M_S,
+  VoxgraphSubmap(const voxblox::Transformation& T_O_S,
                  const cblox::SubmapID& submap_id, const Config& config);
   // Copy constructor
   // NOTE: Copying the TSDF and ESDF layers is delegated to the
@@ -42,7 +42,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   //       TsdfEsdfSubmap move constructor
   VoxgraphSubmap(VoxgraphSubmap&& rhs) = default;
   // Construct based on a TsdfLayer copy
-  VoxgraphSubmap(const voxblox::Transformation& T_M_S,
+  VoxgraphSubmap(const voxblox::Transformation& T_O_S,
                  const cblox::SubmapID& submap_id,
                  const voxblox::Layer<voxblox::TsdfVoxel>& tsdf_layer);
 
@@ -76,12 +76,12 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   bool overlapsWith(const VoxgraphSubmap& other_submap) const;
   const BoundingBox getSubmapFrameSurfaceObb() const;
   const BoundingBox getSubmapFrameSubmapObb() const;
-  const BoundingBox getMissionFrameSurfaceAabb() const;
-  const BoundingBox getMissionFrameSubmapAabb() const;
-  const BoxCornerMatrix getMissionFrameSurfaceObbCorners() const;
-  const BoxCornerMatrix getMissionFrameSubmapObbCorners() const;
-  const BoxCornerMatrix getMissionFrameSurfaceAabbCorners() const;
-  const BoxCornerMatrix getMissionFrameSubmapAabbCorners() const;
+  const BoundingBox getOdomFrameSurfaceAabb() const;
+  const BoundingBox getOdomFrameSubmapAabb() const;
+  const BoxCornerMatrix getOdomFrameSurfaceObbCorners() const;
+  const BoxCornerMatrix getOdomFrameSubmapObbCorners() const;
+  const BoxCornerMatrix getOdomFrameSurfaceAabbCorners() const;
+  const BoxCornerMatrix getOdomFrameSubmapAabbCorners() const;
 
   // Load a submap from stream.
   // Note: Returns a nullptr if load is unsuccessful.

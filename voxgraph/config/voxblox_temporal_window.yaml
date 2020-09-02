@@ -1,5 +1,5 @@
 verbose: false
-world_frame: "mission"
+world_frame: "odom"
 color_mode: "normals"
 
 method: "projective"
