@@ -8,21 +8,17 @@
 namespace voxgraph {
 struct FrameNames {
   // Coordinate frame naming convention
-  //   - M: Mission (for a single run of a single robot this corresponds to the
-  //   World frame)
   //   - O: Odometry input frame
   //   - B: Base link (often corresponds to the robot's IMU frame)
   //   - C: Sensor frame of the pointcloud sensor
   //   - S: Active submap (used by the PointcloudIntegrator and MapTracker)
-  //  The full transform input and output chains are O -> B and M -> S -> B -> C
+  //  The full transform input and output chains are O -> B and O -> S -> B -> C
   //  respectively, where:
   //   - T_O_B is provided by the odometry input
-  //   - T_M_S corresponds the the optimized pose of the active submap
+  //   - T_O_S corresponds to the pose of the active submap
   //   - T_S_B corresponds to the pose of the robot in the current submap
   //   - T_B_C stores the transform from the pointcloud sensor
   //           to the base_link frame
-  // TODO(victorr): Update this documentation once Voxgraph's ICP has been
-  //                reimplemented to work with the new frame convention
 
   // Input frame names
   std::string input_odom_frame = "odom";
@@ -32,7 +28,6 @@ struct FrameNames {
   //       given in the header.frame_id field of the PointCloud2 msgs.
 
   // Output frame names
-  std::string output_mission_frame = "voxgraph_mission";
   std::string output_odom_frame = "voxgraph_odom";
   std::string output_active_submap_frame = "voxgraph_active_submap";
   std::string output_base_link_frame = "voxgraph_base_link";
@@ -49,8 +44,6 @@ struct FrameNames {
                       frame_names.input_base_link_frame);
 
     // Outputs
-    node_handle.param("output_mission_frame", frame_names.output_mission_frame,
-                      frame_names.output_mission_frame);
     node_handle.param("output_odom_frame", frame_names.output_odom_frame,
                       frame_names.output_odom_frame);
     node_handle.param("output_active_submap_frame",

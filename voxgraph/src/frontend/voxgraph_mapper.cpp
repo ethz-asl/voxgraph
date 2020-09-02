@@ -56,8 +56,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
       projected_map_server_(nh_private),
       submap_server_(nh_private),
       loop_closure_edge_server_(nh_private),
-      map_tracker_(submap_collection_ptr_,
-                   FrameNames::fromRosParams(nh_private), verbose_) {
+      frame_names_(FrameNames::fromRosParams(nh_private)) {
   // Setup interaction with ROS
   getParametersFromRos();
   subscribeToTopics();
@@ -68,7 +67,6 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
 void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("verbose", verbose_, verbose_);
   pose_graph_interface_.setVerbosity(verbose_);
-  map_tracker_.setVerbosity(verbose_);
 
   nh_private_.param("loop_closure_topic", loop_closure_topic_,
                     loop_closure_topic_);
@@ -98,23 +96,6 @@ void VoxgraphMapper::getParametersFromRos() {
   // Read whether or not to auto pause the rosbag during graph optimization
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
                     auto_pause_rosbag_);
-
-  // Load the transform from the base frame to the sensor frame, if
-  // available
-  // NOTE: If the transform is not specified through ROS params, voxgraph
-  //       will attempt to get if from TFs
-  XmlRpc::XmlRpcValue T_base_sensor_xml;
-  bool get_sensor_calibration_from_tfs =
-      !nh_private_.getParam("T_base_link_sensor", T_base_sensor_xml);
-  if (!get_sensor_calibration_from_tfs) {
-    Transformation T_B_C;
-    kindr::minimal::xmlRpcToKindr(T_base_sensor_xml, &T_B_C);
-    map_tracker_.set_T_B_C(T_B_C);
-  }
-  ROS_INFO_STREAM(
-      "Using transform from pointcloud sensor to robot base "
-      "link from "
-      << (get_sensor_calibration_from_tfs ? "TFs" : "ROS params"));
 
   // Read the measurement params from their sub-namespace
   ros::NodeHandle nh_measurement_params(nh_private_, "measurements");
@@ -146,8 +127,6 @@ void VoxgraphMapper::subscribeToTopics() {
                     &VoxgraphMapper::loopClosureCallback, this);
   submap_subscriber_ = nh_.subscribe(submap_topic_, submap_topic_queue_length_,
                                      &VoxgraphMapper::submapCallback, this);
-  map_tracker_.subscribeToTopics(
-      nh_, nh_private_.param<std::string>("odometry_input_topic", ""));
 }
 
 void VoxgraphMapper::advertiseTopics() {
@@ -162,9 +141,6 @@ void VoxgraphMapper::advertiseTopics() {
           "loop_closure_links_vis", publisher_queue_length_, true);
   loop_closure_axes_pub_ = nh_private_.advertise<geometry_msgs::PoseArray>(
       "loop_closure_axes_vis", publisher_queue_length_, true);
-  map_tracker_.advertiseTopics(
-      nh_private_,
-      nh_private_.param<std::string>("odometry_output_topic", "odometry"));
 }
 
 void VoxgraphMapper::advertiseServices() {
@@ -259,11 +235,11 @@ void VoxgraphMapper::loopClosureCallback(
   const Transformation T_M_t2 = T_M_B * T_B_t2;
   loop_closure_vis_.publishLoopClosure(
       T_M_t1, T_M_t2, T_t1_t2,
-      map_tracker_.getFrameNames().output_mission_frame,
+      frame_names_.output_mission_frame,
       loop_closure_links_pub_);
   loop_closure_vis_.publishAxes(
       T_M_t1, T_M_t2, T_t1_t2,
-      map_tracker_.getFrameNames().output_mission_frame,
+      frame_names_.output_mission_frame,
       loop_closure_axes_pub_);
 }
 
@@ -341,13 +317,8 @@ void VoxgraphMapper::submapCallback(
                                           &T_mission__previous_submap);
 
     // Compute the odometry
-    Transformation T_previous_submap__submap =
-        T_odom__previous_submap_.inverse() * T_odom_submap;
-    Transformation T_mission_submap =
-        T_mission__previous_submap * T_previous_submap__submap;
-
-    // Transform the submap pose from odom to mission frame
-    submap_collection_ptr_->getActiveSubmapPtr()->setPose(T_mission_submap);
+    const Transformation T_previous_submap__submap =
+        T_mission__previous_submap.inverse() * T_odom_submap;
 
     // Add an odometry constraint from the previous to the new submap
     if (odometry_constraints_enabled_) {
@@ -375,7 +346,6 @@ void VoxgraphMapper::submapCallback(
     //       We just do it again to keep the code easy to follow.
     submap_collection_ptr_->getActiveSubmapPtr()->setPose(T_odom_submap);
   }
-  T_odom__previous_submap_ = T_odom_submap;
 
   // Add registration constraints for all overlapping submaps
   if (registration_constraints_enabled_) {
@@ -390,14 +360,13 @@ void VoxgraphMapper::submapCallback(
   ros::Time latest_timestamp = submap_msg.trajectory.poses.back().header.stamp;
   publishMaps(latest_timestamp);
 
-  // Publish the TF frames
-  map_tracker_.publishTFs();
+  // TODO(victorr): Publish the TF frames
 
   // Publish the pose history
   if (pose_history_pub_.getNumSubscribers() > 0) {
     submap_vis_.publishPoseHistory(
         *submap_collection_ptr_,
-        map_tracker_.getFrameNames().output_mission_frame, pose_history_pub_);
+        frame_names_.output_mission_frame, pose_history_pub_);
   }
 }
 
@@ -405,7 +374,7 @@ bool VoxgraphMapper::publishSeparatedMeshCallback(
     std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
   submap_vis_.publishSeparatedMesh(
       *submap_collection_ptr_,
-      map_tracker_.getFrameNames().output_mission_frame, separated_mesh_pub_);
+      frame_names_.output_mission_frame, separated_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
@@ -413,7 +382,7 @@ bool VoxgraphMapper::publishCombinedMeshCallback(
     std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
   submap_vis_.publishCombinedMesh(
       *submap_collection_ptr_,
-      map_tracker_.getFrameNames().output_mission_frame, combined_mesh_pub_);
+      frame_names_.output_mission_frame, combined_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
@@ -519,13 +488,13 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
     ThreadingHelper::launchBackgroundThread(
         &SubmapVisuals::publishCombinedMesh, &submap_vis_,
         *submap_collection_ptr_,
-        map_tracker_.getFrameNames().output_mission_frame, combined_mesh_pub_);
+        frame_names_.output_mission_frame, combined_mesh_pub_);
   }
   if (separated_mesh_pub_.getNumSubscribers() > 0) {
     ThreadingHelper::launchBackgroundThread(
         &SubmapVisuals::publishSeparatedMesh, &submap_vis_,
         *submap_collection_ptr_,
-        map_tracker_.getFrameNames().output_mission_frame, separated_mesh_pub_);
+        frame_names_.output_mission_frame, separated_mesh_pub_);
   }
 
   // Publish the new submap

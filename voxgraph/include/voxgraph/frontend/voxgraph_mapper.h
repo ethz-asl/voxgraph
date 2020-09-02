@@ -14,7 +14,6 @@
 
 #include "voxgraph/common.h"
 #include "voxgraph/frontend/frame_names.h"
-#include "voxgraph/frontend/map_tracker/map_tracker.h"
 #include "voxgraph/frontend/measurement_processors/gps_processor.h"
 #include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
@@ -152,10 +151,8 @@ class VoxgraphMapper {
   SubmapServer submap_server_;
   LoopClosureEdgeServer loop_closure_edge_server_;
 
-  // Map tracker handles the odometry input and refines it using scan-to-map ICP
-  // TODO(victorr): Deprecate the MapTracker
-  MapTracker map_tracker_;
-  Transformation T_odom__previous_submap_;
+  // Class handling all frame names used to interface with ROS
+  FrameNames frame_names_;
 };
 }  // namespace voxgraph
 
