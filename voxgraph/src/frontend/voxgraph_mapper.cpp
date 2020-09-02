@@ -46,6 +46,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
       registration_constraints_enabled_(false),
       odometry_constraints_enabled_(false),
       height_constraints_enabled_(false),
+      loop_closure_constraints_enabled_(false),
       submap_config_(submap_config),
       submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
@@ -131,6 +132,13 @@ void VoxgraphMapper::getParametersFromRos() {
       verbose_,
       "Odometry constraints: " << (odometry_constraints_enabled_ ? "enabled"
                                                                  : "disabled"));
+  nh_measurement_params.param("loop_closure/enabled",
+                              loop_closure_constraints_enabled_,
+                              loop_closure_constraints_enabled_);
+  ROS_INFO_STREAM_COND(
+      verbose_,
+      "Loop Closure registration constraints: "
+          << (loop_closure_constraints_enabled_ ? "enabled" : "disabled"));
   nh_measurement_params.param("height/enabled", height_constraints_enabled_,
                               height_constraints_enabled_);
   ROS_INFO_STREAM_COND(
@@ -249,9 +257,11 @@ void VoxgraphMapper::loopClosureCallback(
   Transformation T_t1_t2(translation.cast<voxblox::FloatingPoint>(),
                          rotation.cast<voxblox::FloatingPoint>());
   Transformation T_AB = T_A_t1 * T_t1_t2 * T_B_t2.inverse();
-  pose_graph_interface_.addLoopClosureMeasurement(submap_id_A, submap_id_B,
-                                                  T_AB);
-
+  // Check if loop closure constraints is enabled
+  if (loop_closure_constraints_enabled_) {
+    pose_graph_interface_.addLoopClosureMeasurement(submap_id_A, submap_id_B,
+                                                    T_AB);
+  }
   // Visualize the loop closure link
   const Transformation& T_M_A = submap_A.getPose();
   const Transformation& T_M_B = submap_B.getPose();
