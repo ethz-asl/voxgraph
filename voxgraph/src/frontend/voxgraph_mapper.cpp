@@ -10,8 +10,8 @@
 #include <minkindr_conversions/kindr_msg.h>
 #include <minkindr_conversions/kindr_xml.h>
 #include <nav_msgs/Path.h>
-#include <sensor_msgs/Imu.h>
-#include <visualization_msgs/MarkerArray.h>
+#include <voxblox_msgs/Mesh.h>
+#include <voxblox_msgs/MultiMesh.h>
 
 #include "voxgraph/frontend/submap_collection/submap_timeline.h"
 #include "voxgraph/tools/io.h"
@@ -37,6 +37,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
       nh_private_(nh_private),
       verbose_(false),
       auto_pause_rosbag_(false),
+      submap_pose_tf_publishing_period_s_(0.1),
       rosbag_helper_(nh),
       publisher_queue_length_(100),
       loop_closure_topic_("loop_closure_input"),
@@ -62,6 +63,9 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
   subscribeToTopics();
   advertiseTopics();
   advertiseServices();
+  submap_pose_tf_publishing_timer_ = nh_private.createTimer(
+      ros::Duration(submap_pose_tf_publishing_period_s_),
+      std::bind(&VoxgraphMapper::publishSubmapPoseTFs, this));
 }
 
 void VoxgraphMapper::getParametersFromRos() {
@@ -97,6 +101,11 @@ void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
                     auto_pause_rosbag_);
 
+  // Get the submap pose TF update timer period
+  nh_private_.param("submap_pose_tf_publishing_period_s",
+                    submap_pose_tf_publishing_period_s_,
+                    submap_pose_tf_publishing_period_s_);
+
   // Read the measurement params from their sub-namespace
   ros::NodeHandle nh_measurement_params(nh_private_, "measurements");
   nh_measurement_params.param("submap_registration/enabled",
@@ -130,9 +139,9 @@ void VoxgraphMapper::subscribeToTopics() {
 }
 
 void VoxgraphMapper::advertiseTopics() {
-  submap_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
+  submap_mesh_pub_ = nh_private_.advertise<voxblox_msgs::MultiMesh>(
       "separated_mesh", publisher_queue_length_, true);
-  combined_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
+  combined_mesh_pub_ = nh_private_.advertise<voxblox_msgs::Mesh>(
       "combined_mesh", publisher_queue_length_, true);
   pose_history_pub_ =
       nh_private_.advertise<nav_msgs::Path>("pose_history", 1, true);
@@ -468,19 +477,8 @@ int VoxgraphMapper::optimizePoseGraph() {
 }
 
 void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
-  const std::string submap_tf_prefix = "submap_";
-
   // Publish the submap poses as msgs
   submap_server_.publishSubmapPoses(submap_collection_ptr_, current_timestamp);
-
-  // Publish the submap poses as TFs
-  for (const VoxgraphSubmap::ConstPtr& submap_ptr :
-       submap_collection_ptr_->getSubmapConstPtrs()) {
-    TfHelper::publishTransform(
-        submap_ptr->getPose(), frame_names_.output_odom_frame,
-        submap_tf_prefix + std::to_string(submap_ptr->getID()), false,
-        current_timestamp);
-  }
 
   // Publish the projected map as a mesh
   if (0 < combined_mesh_pub_.getNumSubscribers()) {
@@ -503,11 +501,9 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
     if (0 < submap_mesh_pub_.getNumSubscribers()) {
       const SubmapID active_submap_id =
           submap_collection_ptr_->getActiveSubmapID();
-      submap_vis_.publishMesh(
-          *submap_collection_ptr_, active_submap_id,
-          submap_tf_prefix + std::to_string(active_submap_id),
-          submap_mesh_pub_,
-          submap_tf_prefix + std::to_string(active_submap_id));
+      submap_vis_.publishMesh(*submap_collection_ptr_, active_submap_id,
+                              "submap_" + std::to_string(active_submap_id),
+                              submap_mesh_pub_);
     }
   }
 
@@ -521,5 +517,17 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
   // Publish the loop closure edges
   loop_closure_edge_server_.publishLoopClosureEdges(
       pose_graph_interface_, *submap_collection_ptr_, current_timestamp);
+}
+
+void VoxgraphMapper::publishSubmapPoseTFs() {
+  // Publish the submap poses as TFs
+  ros::Time current_timestamp = ros::Time::now();
+  for (const VoxgraphSubmap::ConstPtr& submap_ptr :
+       submap_collection_ptr_->getSubmapConstPtrs()) {
+    TfHelper::publishTransform(submap_ptr->getPose(),
+                               frame_names_.output_odom_frame,
+                               "submap_" + std::to_string(submap_ptr->getID()),
+                               false, current_timestamp);
+  }
 }
 }  // namespace voxgraph

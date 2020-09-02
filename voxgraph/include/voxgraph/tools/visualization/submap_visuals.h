@@ -31,22 +31,24 @@ class SubmapVisuals {
   }
 
   void publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
-                   const std::string& submap_frame,
-                   const ros::Publisher& publisher,
-                   const voxblox::ColorMode& color_mode,
-                   const std::string& name_space = "") const;
+                   const std::string& frame_id, const ros::Publisher& publisher,
+                   const voxblox::ColorMode& color_mode) const;
+
+  void publishMultiMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
+                        const std::string& frame_id,
+                        const ros::Publisher& publisher,
+                        const voxblox::ColorMode& color_mode,
+                        const SubmapID mesh_id) const;
 
   void publishMesh(
       const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
       const cblox::SubmapID& submap_id, const voxblox::Color& submap_color,
-      const std::string& submap_frame, const ros::Publisher& publisher,
-      const std::string& name_space = "") const;
+      const std::string& frame_id, const ros::Publisher& publisher) const;
 
   void publishMesh(
       const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
-      const SubmapID& submap_id, const std::string& submap_frame,
-      const ros::Publisher& publisher,
-      const std::string& name_space);
+      const SubmapID& submap_id, const std::string& frame_id,
+      const ros::Publisher& publisher);
 
   void publishSeparatedMesh(
       const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
