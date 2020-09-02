@@ -356,7 +356,14 @@ void VoxgraphMapper::submapCallback(
   ros::Time latest_timestamp = submap_msg.trajectory.poses.back().header.stamp;
   publishMaps(latest_timestamp);
 
-  // TODO(victorr): Publish the TF frames
+  // Publish the submap TF frames
+  for (VoxgraphSubmap::ConstPtr submap_ptr :
+       submap_collection_ptr_->getSubmapConstPtrs()) {
+    TfHelper::publishTransform(submap_ptr->getPose(),
+                               frame_names_.output_odom_frame,
+                               "submap_" + std::to_string(submap_ptr->getID()),
+                               false, latest_timestamp);
+  }
 
   // Publish the pose history
   if (pose_history_pub_.getNumSubscribers() > 0) {
