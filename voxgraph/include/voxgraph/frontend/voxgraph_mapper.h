@@ -111,7 +111,7 @@ class VoxgraphMapper {
   // TODO(victorr): Add support for absolute pose measurements
 
   // ROS topic publishers
-  ros::Publisher separated_mesh_pub_;
+  ros::Publisher submap_mesh_pub_;
   ros::Publisher combined_mesh_pub_;
   ros::Publisher pose_history_pub_;
   ros::Publisher loop_closure_links_pub_;

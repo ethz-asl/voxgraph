@@ -41,7 +41,8 @@ class SubmapServer {
                                 const ros::Publisher& submap_tsdf_publisher);
   static void publishSubmapTsdfAndEsdf(
       const VoxgraphSubmap& submap, const std::string& frame_id,
-      const ros::Time& timestamp, const ros::Publisher& submap_esdf_publisher);
+      const ros::Time& timestamp,
+      const ros::Publisher& submap_tsdf_esdf_publisher);
   static void publishSubmapSurfacePointcloud(
       const VoxgraphSubmap& submap, const std::string& frame_id,
       const ros::Time& timestamp,
@@ -53,7 +54,7 @@ class SubmapServer {
 
  private:
   ros::Publisher submap_tsdf_pub_;
-  ros::Publisher submap_esdf_pub_;
+  ros::Publisher submap_tsdf_esdf_pub_;
   ros::Publisher submap_surface_pointcloud_pub_;
   ros::Publisher submap_poses_pub_;
 

@@ -130,7 +130,7 @@ void VoxgraphMapper::subscribeToTopics() {
 }
 
 void VoxgraphMapper::advertiseTopics() {
-  separated_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
+  submap_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
       "separated_mesh", publisher_queue_length_, true);
   combined_mesh_pub_ = nh_private_.advertise<visualization_msgs::Marker>(
       "combined_mesh", publisher_queue_length_, true);
@@ -355,29 +355,13 @@ void VoxgraphMapper::submapCallback(
   // Publish the map in its different representations
   ros::Time latest_timestamp = submap_msg.trajectory.poses.back().header.stamp;
   publishMaps(latest_timestamp);
-
-  // Publish the submap TF frames
-  for (VoxgraphSubmap::ConstPtr submap_ptr :
-       submap_collection_ptr_->getSubmapConstPtrs()) {
-    TfHelper::publishTransform(submap_ptr->getPose(),
-                               frame_names_.output_odom_frame,
-                               "submap_" + std::to_string(submap_ptr->getID()),
-                               false, latest_timestamp);
-  }
-
-  // Publish the pose history
-  if (pose_history_pub_.getNumSubscribers() > 0) {
-    submap_vis_.publishPoseHistory(*submap_collection_ptr_,
-                                   frame_names_.output_odom_frame,
-                                   pose_history_pub_);
-  }
 }
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
     std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
   submap_vis_.publishSeparatedMesh(*submap_collection_ptr_,
                                    frame_names_.output_odom_frame,
-                                   separated_mesh_pub_);
+                                   submap_mesh_pub_);
   return true;  // Tell ROS it succeeded
 }
 
@@ -484,34 +468,55 @@ int VoxgraphMapper::optimizePoseGraph() {
 }
 
 void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
-  // Publish the meshes if there are subscribers
-  // NOTE: Users can request new meshes at any time through service calls
-  //       so there's no point in publishing them just in case
-  if (combined_mesh_pub_.getNumSubscribers() > 0) {
+  const std::string submap_tf_prefix = "submap_";
+
+  // Publish the submap poses as msgs
+  submap_server_.publishSubmapPoses(submap_collection_ptr_, current_timestamp);
+
+  // Publish the submap poses as TFs
+  for (const VoxgraphSubmap::ConstPtr& submap_ptr :
+       submap_collection_ptr_->getSubmapConstPtrs()) {
+    TfHelper::publishTransform(
+        submap_ptr->getPose(), frame_names_.output_odom_frame,
+        submap_tf_prefix + std::to_string(submap_ptr->getID()), false,
+        current_timestamp);
+  }
+
+  // Publish the projected map as a mesh
+  if (0 < combined_mesh_pub_.getNumSubscribers()) {
+    // NOTE: Users can request new meshes at any time through service calls
+    //       so there's no point in publishing them just in case
     ThreadingHelper::launchBackgroundThread(
         &SubmapVisuals::publishCombinedMesh, &submap_vis_,
         *submap_collection_ptr_, frame_names_.output_odom_frame,
         combined_mesh_pub_);
   }
-  if (separated_mesh_pub_.getNumSubscribers() > 0) {
-    ThreadingHelper::launchBackgroundThread(
-        &SubmapVisuals::publishSeparatedMesh, &submap_vis_,
-        *submap_collection_ptr_, frame_names_.output_odom_frame,
-        separated_mesh_pub_);
-  }
 
-  // Publish the new submap
-  if (submap_collection_ptr_->size() >= 1) {
-    submap_server_.publishSubmap(submap_collection_ptr_->getActiveSubmap(),
-                                 current_timestamp);
-  }
-
-  // Publish the submap collection
+  // Publish the projected map as a TSDF
   projected_map_server_.publishProjectedMap(*submap_collection_ptr_,
                                             current_timestamp);
 
-  // Publish the submap poses
-  submap_server_.publishSubmapPoses(submap_collection_ptr_, current_timestamp);
+  // Publish the new submap's TSDF, ESDF, and surface vertices
+  if (!submap_collection_ptr_->empty()) {
+    submap_server_.publishSubmap(submap_collection_ptr_->getActiveSubmap(),
+                                 current_timestamp);
+    if (0 < submap_mesh_pub_.getNumSubscribers()) {
+      const SubmapID active_submap_id =
+          submap_collection_ptr_->getActiveSubmapID();
+      submap_vis_.publishMesh(
+          *submap_collection_ptr_, active_submap_id,
+          submap_tf_prefix + std::to_string(active_submap_id),
+          submap_mesh_pub_,
+          submap_tf_prefix + std::to_string(active_submap_id));
+    }
+  }
+
+  // Publish the robot trajectory
+  if (0 < pose_history_pub_.getNumSubscribers()) {
+    submap_vis_.publishPoseHistory(*submap_collection_ptr_,
+                                   frame_names_.output_odom_frame,
+                                   pose_history_pub_);
+  }
 
   // Publish the loop closure edges
   loop_closure_edge_server_.publishLoopClosureEdges(

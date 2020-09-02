@@ -27,7 +27,8 @@ SubmapVisuals::SubmapVisuals(VoxgraphSubmap::Config submap_config,
 void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
                                 const std::string& submap_frame,
                                 const ros::Publisher& publisher,
-                                const voxblox::ColorMode& color_mode) const {
+                                const voxblox::ColorMode& color_mode,
+                                const std::string& name_space) const {
   // Create a marker containing the mesh
   visualization_msgs::Marker marker;
   voxblox::fillMarkerWithMesh(mesh_layer_ptr, color_mode, &marker);
@@ -39,13 +40,15 @@ void SubmapVisuals::publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
   }
   // Update the marker's transform each time its TF frame is updated:
   marker.frame_locked = true;
+  marker.ns = name_space;
   publisher.publish(marker);
 }
 
 void SubmapVisuals::publishMesh(
     const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
     const cblox::SubmapID& submap_id, const voxblox::Color& submap_color,
-    const std::string& submap_frame, const ros::Publisher& publisher) const {
+    const std::string& submap_frame, const ros::Publisher& publisher,
+    const std::string& name_space) const {
   // Get a pointer to the submap
   VoxgraphSubmap::ConstPtr submap_ptr =
       submap_collection.getSubmapConstPtr(submap_id);
@@ -62,7 +65,18 @@ void SubmapVisuals::publishMesh(
   separated_submap_mesher_->colorMeshLayer(submap_color, mesh_layer_ptr.get());
 
   // Publish mesh
-  publishMesh(mesh_layer_ptr, submap_frame, publisher, submap_mesh_color_mode_);
+  publishMesh(mesh_layer_ptr, submap_frame, publisher, submap_mesh_color_mode_, name_space);
+}
+
+void SubmapVisuals::publishMesh(
+    const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
+    const SubmapID& submap_id, const std::string& submap_frame,
+    const ros::Publisher& publisher,
+    const std::string& name_space) {
+  const voxblox::Color submap_color =
+      submap_id_color_map_.colorLookup(submap_id);
+  publishMesh(submap_collection, submap_id, submap_color, submap_frame,
+              publisher, name_space);
 }
 
 void SubmapVisuals::publishSeparatedMesh(

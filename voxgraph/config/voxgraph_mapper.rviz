@@ -4,10 +4,13 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
+        - /TF1
         - /TF1/Frames1
         - /TF1/Tree1
         - /Voxgraph1
         - /Voxgraph1/Meshes1
+        - /Voxgraph1/Meshes1/Individual submaps1/Namespaces1
       Splitter Ratio: 0.6735293865203857
     Tree Height: 1088
   - Class: rviz/Selection
@@ -63,8 +66,6 @@ Visualization Manager:
           Value: true
         imu:
           Value: true
-        mission:
-          Value: true
         odom:
           Value: true
         os1_lidar:
@@ -72,10 +73,6 @@ Visualization Manager:
         os1_sensor:
           Value: true
         penguin/current_reference:
-          Value: true
-        sensor_voxgraph:
-          Value: true
-        voxgraph_active_submap:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -90,11 +87,6 @@ Visualization Manager:
             os1_sensor:
               os1_lidar:
                 {}
-            sensor_voxgraph:
-              {}
-          mission:
-            voxgraph_active_submap:
-              {}
           penguin/current_reference:
             {}
       Update Interval: 0
@@ -129,27 +121,27 @@ Visualization Manager:
           Marker Topic: /voxgraph_mapper/pose_graph
           Name: Pose graph
           Namespaces:
-            optimized: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/Group
           Displays:
             - Class: rviz/Marker
-              Enabled: true
+              Enabled: false
               Marker Topic: /voxgraph_mapper/combined_mesh
               Name: Merged map
               Namespaces:
-                mesh: true
+                {}
               Queue Size: 100
-              Value: true
+              Value: false
             - Class: rviz/Marker
-              Enabled: false
+              Enabled: true
               Marker Topic: /voxgraph_mapper/separated_mesh
               Name: Individual submaps
               Namespaces:
                 {}
               Queue Size: 100
-              Value: false
+              Value: true
           Enabled: true
           Name: Meshes
       Enabled: true
@@ -159,6 +151,7 @@ Visualization Manager:
         - Class: voxblox_rviz_plugin/VoxbloxMesh
           Enabled: true
           Name: Mesh
+          Reset Mesh: false
           Topic: /voxblox/mesh
           Unreliable: false
           Value: true
@@ -168,7 +161,7 @@ Visualization Manager:
   Global Options:
     Background Color: 255; 255; 255
     Default Light: true
-    Fixed Frame: mission
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -192,16 +185,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 103.07327270507812
+      Distance: 115.44206237792969
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -5.688131809234619
-        Y: 17.48892593383789
-        Z: -12.342564582824707
+        X: -4.7484941482543945
+        Y: 14.519073486328125
+        Z: -15.91702938079834
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -228,5 +221,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 2493
-  X: 1987
+  X: 67
   Y: 27

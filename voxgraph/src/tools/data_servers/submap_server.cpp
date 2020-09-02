@@ -16,7 +16,7 @@ SubmapServer::SubmapServer(ros::NodeHandle nh_private)
     : frame_names_(FrameNames::fromRosParams(nh_private)) {
   submap_tsdf_pub_ =
       nh_private.advertise<cblox_msgs::MapLayer>("submap_tsdfs", 3, false);
-  submap_esdf_pub_ =
+  submap_tsdf_esdf_pub_ =
       nh_private.advertise<cblox_msgs::MapLayer>("submap_esdfs", 3, false);
   submap_surface_pointcloud_pub_ =
       nh_private.advertise<voxgraph_msgs::MapSurface>(
@@ -43,9 +43,9 @@ void SubmapServer::publishSubmap(const VoxgraphSubmap& submap,
     publishSubmapTsdf(submap, frame_names_.output_odom_frame, timestamp,
                       submap_tsdf_pub_);
   }
-  if (submap_esdf_pub_.getNumSubscribers() > 0) {
+  if (submap_tsdf_esdf_pub_.getNumSubscribers() > 0) {
     publishSubmapTsdfAndEsdf(submap, frame_names_.output_odom_frame, timestamp,
-                             submap_esdf_pub_);
+                             submap_tsdf_esdf_pub_);
   }
   if (submap_surface_pointcloud_pub_.getNumSubscribers() > 0) {
     publishSubmapSurfacePointcloud(submap, frame_names_.output_odom_frame,
@@ -65,9 +65,9 @@ void SubmapServer::publishSubmapTsdf(const VoxgraphSubmap& submap,
 void SubmapServer::publishSubmapTsdfAndEsdf(const VoxgraphSubmap& submap,
                                             const ros::Time& timestamp) {
   // Only publish if there are subscribers
-  if (submap_esdf_pub_.getNumSubscribers() > 0) {
+  if (submap_tsdf_esdf_pub_.getNumSubscribers() > 0) {
     publishSubmapTsdfAndEsdf(submap, frame_names_.output_odom_frame, timestamp,
-                             submap_esdf_pub_);
+                             submap_tsdf_esdf_pub_);
   }
 }
 
@@ -94,14 +94,16 @@ void SubmapServer::publishSubmapTsdf(
 
 void SubmapServer::publishSubmapTsdfAndEsdf(
     const VoxgraphSubmap& submap, const std::string& frame_id,
-    const ros::Time& timestamp, const ros::Publisher& submap_esdf_publisher) {
+    const ros::Time& timestamp,
+    const ros::Publisher& submap_tsdf_esdf_publisher) {
   // Create and fill the message
-  cblox_msgs::MapLayer submap_esdf_msg;
-  cblox::serializeSubmapToMsg<cblox::TsdfEsdfSubmap>(submap, &submap_esdf_msg);
-  submap_esdf_msg.map_header.pose_estimate.frame_id = frame_id;
+  cblox_msgs::MapLayer submap_tsdf_esdf_msg;
+  cblox::serializeSubmapToMsg<cblox::TsdfEsdfSubmap>(submap,
+                                                     &submap_tsdf_esdf_msg);
+  submap_tsdf_esdf_msg.map_header.pose_estimate.frame_id = frame_id;
 
   // Publish
-  submap_esdf_publisher.publish(submap_esdf_msg);
+  submap_tsdf_esdf_publisher.publish(submap_tsdf_esdf_msg);
 }
 
 void SubmapServer::publishSubmapSurfacePointcloud(

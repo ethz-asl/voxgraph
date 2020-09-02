@@ -33,12 +33,20 @@ class SubmapVisuals {
   void publishMesh(const voxblox::MeshLayer::Ptr& mesh_layer_ptr,
                    const std::string& submap_frame,
                    const ros::Publisher& publisher,
-                   const voxblox::ColorMode& color_mode) const;
+                   const voxblox::ColorMode& color_mode,
+                   const std::string& name_space = "") const;
 
   void publishMesh(
       const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
       const cblox::SubmapID& submap_id, const voxblox::Color& submap_color,
-      const std::string& submap_frame, const ros::Publisher& publisher) const;
+      const std::string& submap_frame, const ros::Publisher& publisher,
+      const std::string& name_space = "") const;
+
+  void publishMesh(
+      const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
+      const SubmapID& submap_id, const std::string& submap_frame,
+      const ros::Publisher& publisher,
+      const std::string& name_space);
 
   void publishSeparatedMesh(
       const cblox::SubmapCollection<VoxgraphSubmap>& submap_collection,
@@ -73,6 +81,7 @@ class SubmapVisuals {
   float mesh_opacity_;
   voxblox::ColorMode combined_mesh_color_mode_;
   voxblox::ColorMode submap_mesh_color_mode_;
+  const voxblox::ExponentialOffsetIdColorMap submap_id_color_map_;
 };
 }  // namespace voxgraph
 
