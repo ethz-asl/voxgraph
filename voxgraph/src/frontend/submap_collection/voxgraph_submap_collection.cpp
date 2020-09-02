@@ -65,13 +65,7 @@ void VoxgraphSubmapCollection::addSubmapToTimeline(
   ROS_INFO_STREAM("Created submap " << submap.getID() << " with pose\n"
                                     << submap.getPose());
   // Add the new submap to the timeline
-  ros::Time submap_time_stamp;
-  {
-    // TODO(victorr): Remove this temporary fix and use submap end time instead
-    submap_time_stamp = ros::Time(
-        (submap.getStartTime().toSec() + submap.getEndTime().toSec()) / 2.0);
-  }
-  submap_timeline_.addNextSubmap(submap_time_stamp, submap.getID());
+  submap_timeline_.addNextSubmap(submap.getEndTime(), submap.getID());
 }
 
 void VoxgraphSubmapCollection::createNewSubmap(const Transformation& T_M_S,
@@ -92,6 +86,14 @@ SubmapID VoxgraphSubmapCollection::createNewSubmap(
       "submap timeline due to missing time information. Please use the "
       "derived VoxgraphSubmapCollection::createNewSubmap methods instead.");
   cblox::SubmapCollection<VoxgraphSubmap>::createNewSubmap(T_M_S);
+}
+
+bool VoxgraphSubmapCollection::lookupActiveSubmapByTime(
+    const ros::Time& timestamp, SubmapID* submap_id) {
+  if (submap_timeline_.lookupActiveSubmapByTime(timestamp, submap_id)) {
+    return getSubmap(*submap_id).getStartTime() <= timestamp;
+  }
+  return false;
 }
 
 VoxgraphSubmapCollection::PoseStampedVector
