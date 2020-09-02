@@ -273,6 +273,8 @@ void VoxgraphMapper::submapCallback(
   VoxgraphSubmap new_submap = submap_collection_ptr_->draftNewSubmap();
 
   // Deserialize the submap trajectory
+  // TODO(victorr): Add check to ensure that the odom frames from voxblox and
+  //                voxgraph match
   if (submap_msg.trajectory.poses.empty()) {
     ROS_WARN("Received submap with empty trajectory. Skipping submap.");
     return;
@@ -293,15 +295,13 @@ void VoxgraphMapper::submapCallback(
     return;
   }
 
-  // TODO(victorr): Set the transform below to the latest
-  //                odom to mission correction estimate
-  // TODO(victorr): Add check to ensure that the odom frames from voxblox and
-  //                voxgraph match
   // The submap pose corresponds to its origin, which is the origin of the
   // submap_msg
   // NOTE: We will implicitly update the submap pose later on, when moving the
-  // submap origin to the middle pose of the trajectory
-  const Transformation T_M_O;
+  //       submap origin to the middle pose of the trajectory
+  // NOTE: In the new robocentric voxgraph frame formulation the mission and
+  //       odom frames are equal, hence T_M_O is an identity transform
+  const Transformation T_M_O = Transformation();
   new_submap.setPose(T_M_O);
 
   // Transform the submap from odom to submap frame

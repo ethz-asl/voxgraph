@@ -27,13 +27,17 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id) {
   node_config.submap_id = submap_id;
   CHECK(submap_collection_ptr_->getSubmapPose(
       submap_id, &node_config.T_mission_node_initial));
-  if (submap_id == 0) {
-    ROS_INFO("Setting pose of submap 0 to constant");
-    node_config.set_constant = true;
-  } else {
-    node_config.set_constant = false;
-  }
+  // In our robo-centric formulation, the pose of the current submap is constant
+  node_config.set_constant = true;
   pose_graph_.addSubmapNode(node_config);
+
+  // The pose of the previous submap (and all earlier submaps) can now be
+  // optimized with respect to the current submap's pose
+  if (1 < submap_collection_ptr_->size()) {
+    pose_graph_.setSubmapNodeConstant(
+        submap_collection_ptr_->getPreviousSubmapId(), false);
+  }
+
   ROS_INFO_STREAM_COND(verbose_,
                        "Added node to graph for submap: " << submap_id);
 }
