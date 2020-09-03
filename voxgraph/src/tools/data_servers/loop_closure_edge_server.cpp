@@ -5,6 +5,10 @@
 #include "voxgraph/common.h"
 
 namespace voxgraph {
+
+constexpr bool LoopClosureEdgeServer::kFake6dofTransforms;
+constexpr double LoopClosureEdgeServer::kSetUnknownCovarianceEntriesTo;
+
 LoopClosureEdgeServer::LoopClosureEdgeServer(ros::NodeHandle nh_private,
                                              bool verbose)
     : verbose_(verbose) {
