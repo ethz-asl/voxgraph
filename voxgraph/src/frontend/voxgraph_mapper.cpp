@@ -134,8 +134,11 @@ void VoxgraphMapper::subscribeToTopics() {
   loop_closure_subscriber_ =
       nh_.subscribe(loop_closure_topic_, loop_closure_topic_queue_length_,
                     &VoxgraphMapper::loopClosureCallback, this);
-  submap_subscriber_ = nh_.subscribe(submap_topic_, submap_topic_queue_length_,
-                                     &VoxgraphMapper::submapCallback, this);
+  submap_subscriber_ = nh_.subscribe<voxblox_msgs::LayerWithTrajectory>(
+      submap_topic_, submap_topic_queue_length_,
+      [this](const voxblox_msgs::LayerWithTrajectory::ConstPtr& msg) {
+        submapCallback(*msg);
+      });
 }
 
 void VoxgraphMapper::advertiseTopics() {
@@ -250,7 +253,7 @@ void VoxgraphMapper::loopClosureCallback(
                                 loop_closure_axes_pub_);
 }
 
-void VoxgraphMapper::submapCallback(
+bool VoxgraphMapper::submapCallback(
     const voxblox_msgs::LayerWithTrajectory& submap_msg) {
   // Create the new submap draft
   VoxgraphSubmap new_submap = submap_collection_ptr_->draftNewSubmap();
@@ -260,7 +263,7 @@ void VoxgraphMapper::submapCallback(
   //                voxgraph match
   if (submap_msg.trajectory.poses.empty()) {
     ROS_WARN("Received submap with empty trajectory. Skipping submap.");
-    return;
+    return false;
   }
   for (const geometry_msgs::PoseStamped& pose_stamped :
        submap_msg.trajectory.poses) {
@@ -275,7 +278,7 @@ void VoxgraphMapper::submapCallback(
   if (!voxblox::deserializeMsgToLayer(
           submap_msg.layer, new_submap.getTsdfMapPtr()->getTsdfLayerPtr())) {
     ROS_WARN("Received a submap msg with an invalid TSDF. Skipping submap.");
-    return;
+    return false;
   }
 
   // The submap pose corresponds to its origin, which is the origin of the
@@ -364,6 +367,9 @@ void VoxgraphMapper::submapCallback(
   // Publish the map in its different representations
   ros::Time latest_timestamp = submap_msg.trajectory.poses.back().header.stamp;
   publishMaps(latest_timestamp);
+
+  // Signal that the new submap was successfully added
+  return true;
 }
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
