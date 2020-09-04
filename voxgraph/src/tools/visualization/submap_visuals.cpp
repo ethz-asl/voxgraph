@@ -44,7 +44,7 @@ void SubmapVisuals::publishMultiMesh(
   voxblox_msgs::MultiMesh mesh_msg;
   voxblox::generateVoxbloxMeshMsg(mesh_layer_ptr, color_mode, &mesh_msg.mesh);
   mesh_msg.header.frame_id = frame_id;
-  mesh_msg.id = mesh_id;
+  mesh_msg.name_space = "submap_" + std::to_string(mesh_id);
   publisher.publish(mesh_msg);
 }
 
