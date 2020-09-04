@@ -224,7 +224,7 @@ void VoxgraphSubmap::findIsosurfaceVertices() {
     // Try to interpolate the voxel weight
     voxblox::TsdfVoxel voxel;
     if (tsdf_interpolator.getVoxel(mesh_vertex_coordinates, &voxel, true)) {
-      CHECK_LE(voxel.distance, 1e-2 * tsdf_map_->voxel_size());
+      DCHECK_LE(voxel.distance, 1e-2 * tsdf_map_->voxel_size());
 
       // Store the isosurface vertex
       RegistrationPoint isosurface_vertex{mesh_vertex_coordinates,
