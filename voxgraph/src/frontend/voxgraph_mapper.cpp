@@ -367,6 +367,7 @@ bool VoxgraphMapper::submapCallback(
   // Publish the map in its different representations
   ros::Time latest_timestamp = submap_msg.trajectory.poses.back().header.stamp;
   publishMaps(latest_timestamp);
+  publishSubmapPoseTFs();
 
   // Signal that the new submap was successfully added
   return true;
