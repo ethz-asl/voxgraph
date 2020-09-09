@@ -122,14 +122,26 @@ VoxgraphSubmapCollection::getPoseHistory() const {
     }
   }
 
-  // Copy the averaged trajectory poses into the msg
+  // Copy the averaged trajectory poses into the msg and compute the total
+  // trajectory length
   PoseStampedVector poses;
+  float total_trajectory_length = 0.0;
+  Transformation::Position previous_position;
+  bool previous_position_initialized = false;
   for (const auto& kv : averaged_trajectory) {
       geometry_msgs::PoseStamped pose_stamped_msg;
       pose_stamped_msg.header.stamp = kv.first;
       tf::poseKindrToMsg(kv.second.first.cast<double>(), &pose_stamped_msg.pose);
       poses.emplace_back(pose_stamped_msg);
+
+      if (previous_position_initialized) {
+        total_trajectory_length += (kv.second.first.getPosition() - previous_position).norm();
+      } else {
+        previous_position_initialized = true;
+      }
+      previous_position = kv.second.first.getPosition();
   }
+  ROS_INFO_STREAM("Total trajectory length: " << total_trajectory_length);
   return poses;
 }
 
