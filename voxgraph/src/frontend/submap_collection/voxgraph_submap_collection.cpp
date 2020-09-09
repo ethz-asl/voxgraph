@@ -98,19 +98,37 @@ bool VoxgraphSubmapCollection::lookupActiveSubmapByTime(
 
 VoxgraphSubmapCollection::PoseStampedVector
 VoxgraphSubmapCollection::getPoseHistory() const {
-  PoseStampedVector poses;
-  // Iterate over all submaps
+  using PoseCountPair = std::pair<Transformation, int>;
+  std::map<ros::Time, PoseCountPair> averaged_trajectory;
+  // Iterate over all submaps and poses
   for (const VoxgraphSubmap::ConstPtr& submap_ptr : getSubmapConstPtrs()) {
-    // Iterate over all poses in the submap
     for (const std::pair<const ros::Time, Transformation>& time_pose_pair :
-         submap_ptr->getPoseHistory()) {
-      geometry_msgs::PoseStamped pose_stamped_msg;
-      pose_stamped_msg.header.stamp = time_pose_pair.first;
+        submap_ptr->getPoseHistory()) {
       // Transform the pose from submap frame into odom frame
-      const Transformation pose = submap_ptr->getPose() * time_pose_pair.second;
-      tf::poseKindrToMsg(pose.cast<double>(), &pose_stamped_msg.pose);
-      poses.emplace_back(pose_stamped_msg);
+      const Transformation T_O_B_i =
+          submap_ptr->getPose() * time_pose_pair.second;
+      const ros::Time& timestamp_i = time_pose_pair.first;
+
+      // Insert, or average if there was a previous pose with the same stamp
+      auto it = averaged_trajectory.find(timestamp_i);
+      if (it == averaged_trajectory.end()) {
+        averaged_trajectory.emplace(timestamp_i, PoseCountPair(T_O_B_i, 1));
+      } else {
+        it->second.second++;
+        const double lambda =  1.0 / it->second.second;
+        it->second.first =
+            kindr::minimal::interpolateComponentwise(it->second.first, T_O_B_i, lambda);
+      }
     }
+  }
+
+  // Copy the averaged trajectory poses into the msg
+  PoseStampedVector poses;
+  for (const auto& kv : averaged_trajectory) {
+      geometry_msgs::PoseStamped pose_stamped_msg;
+      pose_stamped_msg.header.stamp = kv.first;
+      tf::poseKindrToMsg(kv.second.first.cast<double>(), &pose_stamped_msg.pose);
+      poses.emplace_back(pose_stamped_msg);
   }
   return poses;
 }
