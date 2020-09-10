@@ -390,7 +390,7 @@ const BoxCornerMatrix VoxgraphSubmap::getMissionFrameSubmapAabbCorners() const {
 }
 
 VoxgraphSubmap::Ptr VoxgraphSubmap::LoadFromStream(
-    const Config& config, std::fstream* proto_file_ptr,
+    const Config& config, std::istream* proto_file_ptr,
     uint64_t* tmp_byte_offset_ptr) {
   // Note(alexmillane): There is no difference (for now) between the information
   // loaded in a VoxgraphSubmap and a TsdfEsdfSubmap. Therefore we just load the
