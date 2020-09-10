@@ -32,14 +32,14 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   VoxgraphSubmap(const voxblox::Transformation& T_M_S,
                  const cblox::SubmapID& submap_id, const Config& config,
-                 const voxblox::EsdfIntegrator::Config esdf_integrator_config =
+                 const voxblox::EsdfIntegrator::Config& esdf_integrator_config =
                      voxblox::EsdfIntegrator::Config());
 
   // Create a VoxgraphSubmap based on a COPY of a TsdfLayer
   VoxgraphSubmap(const voxblox::Transformation& T_M_S,
                  const cblox::SubmapID& submap_id,
                  const voxblox::Layer<voxblox::TsdfVoxel>& tsdf_layer,
-                 const voxblox::EsdfIntegrator::Config esdf_integrator_config =
+                 const voxblox::EsdfIntegrator::Config& esdf_integrator_config =
                      voxblox::EsdfIntegrator::Config());
 
   // Setter method for the registration filter config
