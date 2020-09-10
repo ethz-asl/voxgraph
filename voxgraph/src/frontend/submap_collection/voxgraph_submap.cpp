@@ -12,14 +12,14 @@ namespace voxgraph {
 VoxgraphSubmap::VoxgraphSubmap(
     const voxblox::Transformation& T_M_S, const cblox::SubmapID& submap_id,
     const voxgraph::VoxgraphSubmap::Config& config,
-    const voxblox::EsdfIntegrator::Config esdf_integrator_config)
+    const voxblox::EsdfIntegrator::Config& esdf_integrator_config)
     : cblox::TsdfEsdfSubmap(T_M_S, submap_id, config, esdf_integrator_config),
       config_(config) {}
 
 VoxgraphSubmap::VoxgraphSubmap(
     const voxblox::Transformation& T_M_S, const cblox::SubmapID& submap_id,
     const voxblox::Layer<voxblox::TsdfVoxel>& tsdf_layer,
-    const voxblox::EsdfIntegrator::Config esdf_integrator_config)
+    const voxblox::EsdfIntegrator::Config& esdf_integrator_config)
     : cblox::TsdfEsdfSubmap(T_M_S, submap_id, Config(),
                             esdf_integrator_config) {
   // Update the inherited TsdfEsdfSubmap config
