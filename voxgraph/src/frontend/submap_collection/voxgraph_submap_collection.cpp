@@ -103,7 +103,7 @@ VoxgraphSubmapCollection::getPoseHistory() const {
   // Iterate over all submaps and poses
   for (const VoxgraphSubmap::ConstPtr& submap_ptr : getSubmapConstPtrs()) {
     for (const std::pair<const ros::Time, Transformation>& time_pose_pair :
-        submap_ptr->getPoseHistory()) {
+         submap_ptr->getPoseHistory()) {
       // Transform the pose from submap frame into odom frame
       const Transformation T_O_B_i =
           submap_ptr->getPose() * time_pose_pair.second;
@@ -115,9 +115,9 @@ VoxgraphSubmapCollection::getPoseHistory() const {
         averaged_trajectory.emplace(timestamp_i, PoseCountPair(T_O_B_i, 1));
       } else {
         it->second.second++;
-        const double lambda =  1.0 / it->second.second;
-        it->second.first =
-            kindr::minimal::interpolateComponentwise(it->second.first, T_O_B_i, lambda);
+        const double lambda = 1.0 / it->second.second;
+        it->second.first = kindr::minimal::interpolateComponentwise(
+            it->second.first, T_O_B_i, lambda);
       }
     }
   }
@@ -129,17 +129,18 @@ VoxgraphSubmapCollection::getPoseHistory() const {
   Transformation::Position previous_position;
   bool previous_position_initialized = false;
   for (const auto& kv : averaged_trajectory) {
-      geometry_msgs::PoseStamped pose_stamped_msg;
-      pose_stamped_msg.header.stamp = kv.first;
-      tf::poseKindrToMsg(kv.second.first.cast<double>(), &pose_stamped_msg.pose);
-      poses.emplace_back(pose_stamped_msg);
+    geometry_msgs::PoseStamped pose_stamped_msg;
+    pose_stamped_msg.header.stamp = kv.first;
+    tf::poseKindrToMsg(kv.second.first.cast<double>(), &pose_stamped_msg.pose);
+    poses.emplace_back(pose_stamped_msg);
 
-      if (previous_position_initialized) {
-        total_trajectory_length += (kv.second.first.getPosition() - previous_position).norm();
-      } else {
-        previous_position_initialized = true;
-      }
-      previous_position = kv.second.first.getPosition();
+    if (previous_position_initialized) {
+      total_trajectory_length +=
+          (kv.second.first.getPosition() - previous_position).norm();
+    } else {
+      previous_position_initialized = true;
+    }
+    previous_position = kv.second.first.getPosition();
   }
   ROS_INFO_STREAM("Total trajectory length: " << total_trajectory_length);
   return poses;
