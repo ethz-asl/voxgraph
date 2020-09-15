@@ -528,13 +528,36 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
 
 void VoxgraphMapper::publishSubmapPoseTFs() {
   // Publish the submap poses as TFs
-  ros::Time current_timestamp = ros::Time::now();
+  const ros::Time current_timestamp = ros::Time::now();
+  // NOTE: The rest of the voxgraph is purely driven by the sensor message
+  //       timestamps, but the submap pose TFs are published at the current ROS
+  //       time (e.g. computer time or /clock topic if use_time_time:=true).
+  //       This is necessary because TF lookups only interpolate (i.e. no
+  //       extrapolation), and TFs subscribers typically have a limited buffer
+  //       time length (e.g. Rviz). The TFs therefore have to be published at a
+  //       frequency that exceeds the rate at which new submaps come in (e.g.
+  //       once every 10s). In case you intend to use the TFs for more than
+  //       visualization, it would be important that the message timestamps and
+  //       ros::Time::now() are well synchronized.
   for (const VoxgraphSubmap::ConstPtr& submap_ptr :
        submap_collection_ptr_->getSubmapConstPtrs()) {
     TfHelper::publishTransform(submap_ptr->getPose(),
                                frame_names_.output_odom_frame,
                                "submap_" + std::to_string(submap_ptr->getID()),
                                false, current_timestamp);
+  }
+  if (!submap_collection_ptr_->empty()) {
+    const SubmapID first_submap_id = submap_collection_ptr_->getFirstSubmapId();
+    const VoxgraphSubmap& first_submap =
+        submap_collection_ptr_->getSubmap(first_submap_id);
+    if (!first_submap.getPoseHistory().empty()) {
+      const Transformation T_odom__initial_pose =
+          first_submap.getPose() *
+          first_submap.getPoseHistory().begin()->second;
+      TfHelper::publishTransform(T_odom__initial_pose,
+                                 frame_names_.output_odom_frame, "initial_pose",
+                                 false, current_timestamp);
+    }
   }
 }
 }  // namespace voxgraph
