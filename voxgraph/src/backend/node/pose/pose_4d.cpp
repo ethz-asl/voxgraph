@@ -19,6 +19,8 @@ Pose4D::operator Transformation() const {
   // Set pitch and roll to zero from the initial pose
   T_vec_6d[3] = initial_pose_vec_[3];
   T_vec_6d[4] = initial_pose_vec_[4];
-  return Transformation::exp(T_vec_6d);
+  Transformation result = Transformation::exp(T_vec_6d);
+  result.getRotation().normalize();
+  return result;
 }
 }  // namespace voxgraph
