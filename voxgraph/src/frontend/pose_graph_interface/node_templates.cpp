@@ -7,7 +7,7 @@ NodeTemplates::NodeTemplates()
   // NOTE: The frame is fixed to (X, Y, Z, Yaw) = (0, 0, 0, 0)
   odom_frame_.reference_frame_id = kOdomFrame;
   odom_frame_.set_constant = true;
-  odom_frame_.T_odom_node_initial.setIdentity();
+  odom_frame_.T_I_node_initial.setIdentity();
 
   // Initialize the GPS frame config
   // NOTE: We let the frame float freely w.r.t. the optimization's odom

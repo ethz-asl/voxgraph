@@ -105,6 +105,19 @@ void PoseGraph::optimize(bool exclude_registration_constraints) {
   solver_summaries_.emplace_back(summary);
 }
 
+bool PoseGraph::getSubmapPose(const SubmapID submap_id,
+                              Transformation* submap_pose) {
+  CHECK_NOTNULL(submap_pose);
+  SubmapNode::Ptr submap_node_ptr =
+      node_collection_.getSubmapNodePtrById(submap_id);
+  if (submap_node_ptr) {
+    *submap_pose = submap_node_ptr->getPose();
+    return true;
+  } else {
+    return false;
+  }
+}
+
 PoseGraph::PoseMap PoseGraph::getSubmapPoses() {
   PoseMap submap_poses;
   for (const auto& submap_node_kv : node_collection_.getSubmapNodes()) {
@@ -209,4 +222,5 @@ PoseGraph::VisualizationEdgeList PoseGraph::getVisualizationEdges() const {
 
   return edges;
 }
+
 }  // namespace voxgraph

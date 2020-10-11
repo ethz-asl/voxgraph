@@ -47,6 +47,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
       registration_constraints_enabled_(false),
       odometry_constraints_enabled_(false),
       height_constraints_enabled_(false),
+      pause_optimization_(false),
       submap_config_(submap_config),
       submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
@@ -178,6 +179,8 @@ void VoxgraphMapper::advertiseServices() {
   save_optimization_times_srv_ = nh_private_.advertiseService(
       "save_optimization_times", &VoxgraphMapper::saveOptimizationTimesCallback,
       this);
+  pause_optimization_srv_ = nh_private_.advertiseService(
+      "pause_optimization", &VoxgraphMapper::pauseOptimizationCallback, this);
 }
 
 void VoxgraphMapper::loopClosureCallback(
@@ -361,8 +364,10 @@ bool VoxgraphMapper::submapCallback(
   }
 
   // Optimize the pose graph in a separate thread
-  optimization_async_handle_ =
-      std::async(std::launch::async, &VoxgraphMapper::optimizePoseGraph, this);
+  if (!pause_optimization_) {
+    optimization_async_handle_ = std::async(
+        std::launch::async, &VoxgraphMapper::optimizePoseGraph, this);
+  }
 
   // Publish the map in its different representations
   ros::Time latest_timestamp = submap_msg.trajectory.poses.back().header.stamp;
@@ -466,6 +471,14 @@ bool VoxgraphMapper::saveOptimizationTimesCallback(
   }
   io::saveVectorToFile(request.file_path, total_times);
   return true;  // Tell ROS it succeeded
+}
+
+bool VoxgraphMapper::pauseOptimizationCallback(
+    std_srvs::SetBool::Request& request,
+    std_srvs::SetBool::Response& response) {
+  pause_optimization_ = request.data;
+  response.success = true;
+  return true;
 }
 
 int VoxgraphMapper::optimizePoseGraph() {

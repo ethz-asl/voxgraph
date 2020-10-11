@@ -25,18 +25,36 @@ void PoseGraphInterface::addSubmap(SubmapID submap_id) {
   // Configure the submap node and add it to the pose graph
   SubmapNode::Config node_config = node_templates_.submap;
   node_config.submap_id = submap_id;
-  CHECK(submap_collection_ptr_->getSubmapPose(
-      submap_id, &node_config.T_odom_node_initial));
-  // In our robo-centric formulation, the pose of the current submap is constant
-  node_config.set_constant = true;
-  pose_graph_.addSubmapNode(node_config);
+  // Although the submap collection is in robocentric frame, the pose graph
+  // optimization is run in an inertial frame to avoid moving all submaps to
+  // follow the drift on the new submap
+  if (submap_collection_ptr_->size() == 1u) {
+    // Use the first submap as the inertial frame origin,
+    // and fix its pose in the optimization
+    node_config.T_I_node_initial = Transformation();
+    node_config.set_constant = true;
+  } else {
+    // Get the transformation from the current to the previous submap
+    SubmapID previous_submap_id = submap_collection_ptr_->getPreviousSubmapId();
+    Transformation T_O_previous_submap;
+    CHECK(submap_collection_ptr_->getSubmapPose(previous_submap_id,
+                                                &T_O_previous_submap));
+    Transformation T_O_current_submap;
+    CHECK(
+        submap_collection_ptr_->getSubmapPose(submap_id, &T_O_current_submap));
+    const Transformation T_previous_current_submap =
+        T_O_previous_submap.inverse() * T_O_current_submap;
 
-  // The pose of the previous submap (and all earlier submaps) can now be
-  // optimized with respect to the current submap's pose
-  if (1 < submap_collection_ptr_->size()) {
-    pose_graph_.setSubmapNodeConstant(
-        submap_collection_ptr_->getPreviousSubmapId(), false);
+    // Transform the current submap pose into inertial frame
+    Transformation T_I_previous_submap;
+    CHECK(pose_graph_.getSubmapPose(previous_submap_id, &T_I_previous_submap));
+    const Transformation T_I_current_submap =
+        T_I_previous_submap * T_previous_current_submap;
+
+    node_config.T_I_node_initial = T_I_current_submap;
+    node_config.set_constant = false;
   }
+  pose_graph_.addSubmapNode(node_config);
 
   ROS_INFO_STREAM_COND(verbose_,
                        "Added node to graph for submap: " << submap_id);
@@ -202,9 +220,22 @@ void PoseGraphInterface::optimize() {
 }
 
 void PoseGraphInterface::updateSubmapCollectionPoses() {
-  for (const auto& submap_pose_kv : pose_graph_.getSubmapPoses()) {
-    submap_collection_ptr_->setSubmapPose(submap_pose_kv.first,
-                                          submap_pose_kv.second);
+  SubmapID last_submap_id = submap_collection_ptr_->getLastSubmapId();
+  Transformation T_I_last_submap, T_O_last_submap, T_O_I;
+  if (pose_graph_.getSubmapPose(last_submap_id, &T_I_last_submap) &&
+      submap_collection_ptr_->getSubmapPose(last_submap_id, &T_O_last_submap)) {
+    T_O_I = T_O_last_submap * T_I_last_submap.inverse();
+    for (const auto& submap_pose_kv : pose_graph_.getSubmapPoses()) {
+      // Write back the updated pose,
+      // after transforming them back into robocentric frame
+      Transformation T_O_submap = T_O_I * submap_pose_kv.second;
+      submap_collection_ptr_->setSubmapPose(submap_pose_kv.first, T_O_submap);
+    }
+  } else {
+    ROS_WARN_STREAM(
+        "Could not get the optimized or original pose for "
+        "submap ID: "
+        << last_submap_id);
   }
 }
 

@@ -16,13 +16,14 @@ class Node {
   struct Config {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     bool set_constant;
-    voxblox::Transformation T_odom_node_initial;
+    // Initial pose of the node in the inertial (non-robocentric) frame
+    voxblox::Transformation T_I_node_initial;
   };
 
   Node(const Node::NodeId& node_id, const Config& config)
       : node_id_(node_id),
         config_(config),
-        optimized_pose_(config.T_odom_node_initial) {}
+        optimized_pose_(config.T_I_node_initial) {}
   virtual ~Node() = default;
 
   const Pose& getPose() const { return optimized_pose_; }

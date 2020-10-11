@@ -66,6 +66,9 @@ class VoxgraphMapper {
   bool saveOptimizationTimesCallback(
       voxblox_msgs::FilePath::Request& request,     // NOLINT
       voxblox_msgs::FilePath::Response& response);  // NOLINT
+  bool pauseOptimizationCallback(
+      std_srvs::SetBool::Request& request,     // NOLINT
+      std_srvs::SetBool::Response& response);  // NOLINT
 
   const VoxgraphSubmapCollection& getSubmapCollection() {
     return *submap_collection_ptr_;
@@ -132,12 +135,14 @@ class VoxgraphMapper {
   ros::ServiceServer save_separated_mesh_srv_;
   ros::ServiceServer save_combined_mesh_srv_;
   ros::ServiceServer save_optimization_times_srv_;
+  ros::ServiceServer pause_optimization_srv_;
   // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
 
   // Constraints to be used
   bool registration_constraints_enabled_;
   bool odometry_constraints_enabled_;
   bool height_constraints_enabled_;
+  bool pause_optimization_;
 
   // Instantiate the submap collection
   VoxgraphSubmap::Config submap_config_;

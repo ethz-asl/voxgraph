@@ -47,6 +47,7 @@ class PoseGraph {
   void initialize(bool exclude_registration_constraints = false);
   void optimize(bool exclude_registration_constraints = false);
 
+  bool getSubmapPose(const SubmapID submap_id, Transformation* submap_pose);
   PoseMap getSubmapPoses();
 
   typedef Eigen::Matrix<double, 4, 4> EdgeCovarianceMatrix;
