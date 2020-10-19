@@ -29,7 +29,7 @@ Globally consistent dense maps are a key requirement for long-term robot navigat
 ## Install
 Voxgraph extends voxblox and runs on [ROS](https://www.ros.org/). Therefore start by installing and configuring these as described in the [voxblox installation instructions](https://voxblox.readthedocs.io/en/latest/pages/Installation.html).
 
-Next, clone this repository and its dependencies into your catkin workspace. 
+Next, clone this repository and its dependencies into *the same* catkin workspace. 
 If you have [SSH keys for GitHub](https://help.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh) set up:
 ```shell script
 cd ~/catkin_ws/src
