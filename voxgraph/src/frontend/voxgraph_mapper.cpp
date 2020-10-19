@@ -203,6 +203,15 @@ void VoxgraphMapper::loopClosureCallback(
   warning_msg_prefix << "Could not add loop closure from timestamp "
                      << timestamp_A << " to " << timestamp_B;
 
+  // Check if loop closure happens in future
+  if (isTimeInFuture(timestamp_A) || isTimeInFuture(timestamp_B)) {
+    addFutureLoopClosure(loop_closure_msg);
+    ROS_WARN_STREAM(warning_msg_prefix.str()
+                    << ": timestamp A or B is ahead of submap timeline, loop "
+                       "closure saved for later process");
+    return;
+  }
+
   // Find the submaps that were active at both timestamps
   SubmapID submap_id_A, submap_id_B;
   bool success_A = submap_collection_ptr_->lookupActiveSubmapByTime(
@@ -382,6 +391,8 @@ void VoxgraphMapper::submapCallback(
     pose_graph_interface_.updateRegistrationConstraints();
   }
 
+  processFutureLoopClosure();
+
   // Optimize the pose graph in a separate thread
   optimization_async_handle_ =
       std::async(std::launch::async, &VoxgraphMapper::optimizePoseGraph, this);
@@ -545,4 +556,24 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
   loop_closure_edge_server_.publishLoopClosureEdges(
       pose_graph_interface_, *submap_collection_ptr_, current_timestamp);
 }
+
+void VoxgraphMapper::addFutureLoopClosure(
+    const voxgraph_msgs::LoopClosure& loop_closure_msg) {
+  if (future_loop_closure_queue_.size() < future_loop_closure_queue_length_) {
+    future_loop_closure_queue_.emplace_back(loop_closure_msg);
+  }
+}
+
+void VoxgraphMapper::processFutureLoopClosure() {
+  for (auto it = future_loop_closure_queue_.begin();
+       it != future_loop_closure_queue_.end(); it++) {
+    const ros::Time& timestamp_A = it->from_timestamp;
+    const ros::Time& timestamp_B = it->to_timestamp;
+    if (!isTimeInFuture(timestamp_A) && !isTimeInFuture(timestamp_B)) {
+      loopClosureCallback(*it);
+      future_loop_closure_queue_.erase(it--);
+    }
+  }
+}
+
 }  // namespace voxgraph

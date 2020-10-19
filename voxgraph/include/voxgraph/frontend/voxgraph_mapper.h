@@ -1,6 +1,7 @@
 #ifndef VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 #define VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 
+#include <deque>
 #include <future>
 #include <memory>
 #include <string>
@@ -156,6 +157,17 @@ class VoxgraphMapper {
   // TODO(victorr): Deprecate the MapTracker
   MapTracker map_tracker_;
   Transformation T_odom__previous_submap_;
+
+  std::deque<voxgraph_msgs::LoopClosure> future_loop_closure_queue_;
+  int future_loop_closure_queue_length_;
+  void addFutureLoopClosure(const voxgraph_msgs::LoopClosure& loop_closure_msg);
+  void processFutureLoopClosure();
+  inline bool isTimeInFuture(const ros::Time& timestamp) {
+    return timestamp >
+           submap_collection_ptr_
+               ->getSubmapConstPtr(submap_collection_ptr_->getLastSubmapId())
+               ->getEndTime();
+  }
 };
 }  // namespace voxgraph
 
