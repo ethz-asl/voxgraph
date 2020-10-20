@@ -4,6 +4,7 @@ auto_pause_rosbag: false
 
 submap_creation_interval: 10
 loop_closure_topic_queue_length: 1000
+future_loop_closure_queue_length: 10
 submap_topic_queue_length: 10
 publisher_queue_length: 10
 

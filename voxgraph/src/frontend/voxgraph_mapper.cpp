@@ -57,7 +57,8 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
       submap_server_(nh_private),
       loop_closure_edge_server_(nh_private),
       map_tracker_(submap_collection_ptr_,
-                   FrameNames::fromRosParams(nh_private), verbose_) {
+                   FrameNames::fromRosParams(nh_private), verbose_),
+      future_loop_closure_queue_length_(10) {
   // Setup interaction with ROS
   getParametersFromRos();
   subscribeToTopics();
@@ -138,6 +139,10 @@ void VoxgraphMapper::getParametersFromRos() {
                     << (height_constraints_enabled_ ? "enabled" : "disabled"));
   pose_graph_interface_.setMeasurementConfigFromRosParams(
       nh_measurement_params);
+
+  nh_private_.param("future_loop_closure_queue_length",
+                    future_loop_closure_queue_length_,
+                    future_loop_closure_queue_length_);
 }
 
 void VoxgraphMapper::subscribeToTopics() {
@@ -560,18 +565,24 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
 void VoxgraphMapper::addFutureLoopClosure(
     const voxgraph_msgs::LoopClosure& loop_closure_msg) {
   if (future_loop_closure_queue_.size() < future_loop_closure_queue_length_) {
-    future_loop_closure_queue_.emplace_back(loop_closure_msg);
+    future_loop_closure_queue_.emplace_back(loop_closure_msg, 0);
   }
 }
 
 void VoxgraphMapper::processFutureLoopClosure() {
   for (auto it = future_loop_closure_queue_.begin();
        it != future_loop_closure_queue_.end(); it++) {
-    const ros::Time& timestamp_A = it->from_timestamp;
-    const ros::Time& timestamp_B = it->to_timestamp;
+    const ros::Time& timestamp_A = it->first.from_timestamp;
+    const ros::Time& timestamp_B = it->first.to_timestamp;
     if (!isTimeInFuture(timestamp_A) && !isTimeInFuture(timestamp_B)) {
-      loopClosureCallback(*it);
+      loopClosureCallback(it->first);
       future_loop_closure_queue_.erase(it--);
+    } else {
+      // Loop Closure still ahead of last submap timeline, after new submaps
+      // received. Drop it
+      it->second++;
+      if (it->second > kMaxNLcNotCatched)
+        future_loop_closure_queue_.erase(it--);
     }
   }
 }
