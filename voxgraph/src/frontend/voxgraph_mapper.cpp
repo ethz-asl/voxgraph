@@ -463,6 +463,8 @@ bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request& request,
     pose_graph_interface_.updateRegistrationConstraints();
   }
 
+  processFutureLoopClosure();
+
   // Optimize the pose graph
   optimizePoseGraph();
 
