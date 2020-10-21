@@ -1,4 +1,4 @@
-verbose: false
+verbose: true
 debug: true
 auto_pause_rosbag: false
 
@@ -51,6 +51,14 @@ measurements:
   height:
     enabled: false
     information_zz: 2500.0
+  loop_closure:
+    enabled: true
+    information_matrix:
+      x_x:     100.0
+      y_y:     100.0
+      z_z:     250.0
+      yaw_yaw: 250.0
+
 
 mesh_min_weight: 2.0
 submap_mesh_color_mode: "lambert_color"

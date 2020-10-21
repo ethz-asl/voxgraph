@@ -165,12 +165,13 @@ class VoxgraphMapper {
   void addFutureLoopClosure(const voxgraph_msgs::LoopClosure& loop_closure_msg);
   void processFutureLoopClosure();
   inline bool isTimeInFuture(const ros::Time& timestamp) {
-    return timestamp >
-           submap_collection_ptr_
-               ->getSubmapConstPtr(submap_collection_ptr_->getLastSubmapId())
-               ->getEndTime();
+    SubmapID submap_id;
+    return !submap_collection_ptr_->lookupActiveSubmapByTime(timestamp,
+                                                             &submap_id);
   }
-  constexpr static int kMaxNLcNotCatched = 2;
+  bool addLoopClosureMesurement(
+      const voxgraph_msgs::LoopClosure& loop_closure_msg);
+  constexpr static int kMaxNotCatched = 2;
 };
 }  // namespace voxgraph
 
