@@ -1,9 +1,11 @@
 #ifndef VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 #define VOXGRAPH_FRONTEND_VOXGRAPH_MAPPER_H_
 
+#include <deque>
 #include <future>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -156,6 +158,20 @@ class VoxgraphMapper {
   // TODO(victorr): Deprecate the MapTracker
   MapTracker map_tracker_;
   Transformation T_odom__previous_submap_;
+
+  std::deque<std::pair<voxgraph_msgs::LoopClosure, int>>
+      future_loop_closure_queue_;
+  int future_loop_closure_queue_length_;
+  void addFutureLoopClosure(const voxgraph_msgs::LoopClosure& loop_closure_msg);
+  void processFutureLoopClosure();
+  inline bool isTimeInFuture(const ros::Time& timestamp) {
+    SubmapID submap_id;
+    return !submap_collection_ptr_->lookupActiveSubmapByTime(timestamp,
+                                                             &submap_id);
+  }
+  bool addLoopClosureMesurement(
+      const voxgraph_msgs::LoopClosure& loop_closure_msg);
+  constexpr static int kMaxNotCatched = 2;
 };
 }  // namespace voxgraph
 
