@@ -1,6 +1,6 @@
 Panels:
   - Class: rviz/Displays
-    Help Height: 78
+    Help Height: 104
     Name: Displays
     Property Tree Widget:
       Expanded:
@@ -10,7 +10,7 @@ Panels:
         - /Voxgraph1
         - /Voxgraph1/Meshes1
       Splitter Ratio: 0.6852940917015076
-    Tree Height: 1087
+    Tree Height: 872
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -64,6 +64,8 @@ Visualization Manager:
           Value: true
         imu:
           Value: true
+        initial_pose:
+          Value: true
         odom:
           Value: true
         os1_lidar:
@@ -88,99 +90,13 @@ Visualization Manager:
           Value: true
         submap_15:
           Value: true
-        submap_16:
-          Value: true
-        submap_17:
-          Value: true
-        submap_18:
-          Value: true
-        submap_19:
-          Value: true
         submap_2:
-          Value: true
-        submap_20:
-          Value: true
-        submap_21:
-          Value: true
-        submap_22:
-          Value: true
-        submap_23:
-          Value: true
-        submap_24:
-          Value: true
-        submap_25:
-          Value: true
-        submap_26:
-          Value: true
-        submap_27:
-          Value: true
-        submap_28:
-          Value: true
-        submap_29:
           Value: true
         submap_3:
           Value: true
-        submap_30:
-          Value: true
-        submap_31:
-          Value: true
-        submap_32:
-          Value: true
-        submap_33:
-          Value: true
-        submap_34:
-          Value: true
-        submap_35:
-          Value: true
-        submap_36:
-          Value: true
-        submap_37:
-          Value: true
-        submap_38:
-          Value: true
-        submap_39:
-          Value: true
         submap_4:
           Value: true
-        submap_40:
-          Value: true
-        submap_41:
-          Value: true
-        submap_42:
-          Value: true
-        submap_43:
-          Value: true
-        submap_44:
-          Value: true
-        submap_45:
-          Value: true
-        submap_46:
-          Value: true
-        submap_47:
-          Value: true
-        submap_48:
-          Value: true
-        submap_49:
-          Value: true
         submap_5:
-          Value: true
-        submap_50:
-          Value: true
-        submap_51:
-          Value: true
-        submap_52:
-          Value: true
-        submap_53:
-          Value: true
-        submap_54:
-          Value: true
-        submap_55:
-          Value: true
-        submap_56:
-          Value: true
-        submap_57:
-          Value: true
-        submap_58:
           Value: true
         submap_6:
           Value: true
@@ -203,6 +119,8 @@ Visualization Manager:
             os1_sensor:
               os1_lidar:
                 {}
+          initial_pose:
+            {}
           penguin/current_reference:
             {}
           submap_0:
@@ -221,99 +139,13 @@ Visualization Manager:
             {}
           submap_15:
             {}
-          submap_16:
-            {}
-          submap_17:
-            {}
-          submap_18:
-            {}
-          submap_19:
-            {}
           submap_2:
-            {}
-          submap_20:
-            {}
-          submap_21:
-            {}
-          submap_22:
-            {}
-          submap_23:
-            {}
-          submap_24:
-            {}
-          submap_25:
-            {}
-          submap_26:
-            {}
-          submap_27:
-            {}
-          submap_28:
-            {}
-          submap_29:
             {}
           submap_3:
             {}
-          submap_30:
-            {}
-          submap_31:
-            {}
-          submap_32:
-            {}
-          submap_33:
-            {}
-          submap_34:
-            {}
-          submap_35:
-            {}
-          submap_36:
-            {}
-          submap_37:
-            {}
-          submap_38:
-            {}
-          submap_39:
-            {}
           submap_4:
             {}
-          submap_40:
-            {}
-          submap_41:
-            {}
-          submap_42:
-            {}
-          submap_43:
-            {}
-          submap_44:
-            {}
-          submap_45:
-            {}
-          submap_46:
-            {}
-          submap_47:
-            {}
-          submap_48:
-            {}
-          submap_49:
-            {}
           submap_5:
-            {}
-          submap_50:
-            {}
-          submap_51:
-            {}
-          submap_52:
-            {}
-          submap_53:
-            {}
-          submap_54:
-            {}
-          submap_55:
-            {}
-          submap_56:
-            {}
-          submap_57:
-            {}
-          submap_58:
             {}
           submap_6:
             {}
@@ -361,19 +193,21 @@ Visualization Manager:
         - Class: rviz/Group
           Displays:
             - Class: voxblox_rviz_plugin/VoxbloxMesh
-              Enabled: true
+              Enabled: false
               Name: Merged map
-              Reset Mesh: false
               Topic: /voxgraph_mapper/combined_mesh
               Unreliable: false
-              Value: true
+              Value: false
+              Visible: true
             - Class: voxblox_rviz_plugin/VoxbloxMultiMesh
-              Enabled: false
+              Enabled: true
               Name: Individual submaps
-              Reset Mesh: false
               Topic: /voxgraph_mapper/separated_mesh
               Unreliable: false
-              Value: false
+              Value: true
+              Visible:
+                Value: true
+                submap_15: true
           Enabled: true
           Name: Meshes
       Enabled: true
@@ -383,10 +217,10 @@ Visualization Manager:
         - Class: voxblox_rviz_plugin/VoxbloxMesh
           Enabled: true
           Name: Mesh
-          Reset Mesh: false
           Topic: /voxblox/mesh
           Unreliable: false
           Value: true
+          Visible: true
       Enabled: true
       Name: Voxblox
   Enabled: true
@@ -417,33 +251,33 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 82.24832153320312
+      Distance: 78.74610900878906
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 7.510792255401611
-        Y: 5.719734191894531
-        Z: -10.562336921691895
+        X: 17.573074340820312
+        Y: -8.476472854614258
+        Z: -11.425797462463379
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.10000000149011612
-      Pitch: 0.534797191619873
+      Pitch: 0.924796462059021
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.77174711227417
+      Yaw: 5.716738700866699
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1385
+  Height: 1269
   Hide Left Dock: false
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd000000040000000000000156000004cafc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000004ca000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000037efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000037e000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000009bd0000003ffc0100000002fb0000000800540069006d00650100000000000009bd000002eb00fffffffb0000000800540069006d0065010000000000000450000000000000000000000861000004ca00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000019300000426fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000008600fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000056000004260000012600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000037efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d0000037e000000ec00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000008f10000004afc0100000002fb0000000800540069006d00650100000000000008f10000042b00fffffffb0000000800540069006d00650100000000000004500000000000000000000007550000042600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -452,6 +286,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: true
-  Width: 2493
-  X: 67
-  Y: 27
+  Width: 2289
+  X: 3044
+  Y: 603

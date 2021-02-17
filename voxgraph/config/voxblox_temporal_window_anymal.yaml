@@ -1,0 +1,33 @@
+verbose: false
+world_frame: "odom"
+color_mode: "normals"
+
+method: "projective"
+sensor_horizontal_resolution: 1740
+# NOTE: This horizontal resolution for the VLP16 is just a placeholder value.
+#       The value of 1740, taken from a repo that converts Velodyne scans to range images for segmentation, gives a reasonable (qualitative) trade off between sparsity of the range image and resolution.
+#       However, it'd be better to properly evaluate what value works best and update this setting.
+sensor_vertical_resolution: 16
+sensor_vertical_field_of_view_degrees: 30
+integrator_threads: 1
+
+tsdf_voxel_size: 0.20
+truncation_distance: 0.80
+max_weight: 1000
+pointcloud_queue_size: 6
+max_ray_length_m: 14.0
+min_ray_length_m: 1.0
+max_consecutive_ray_collisions: 1
+use_const_weight: true
+use_weight_dropoff: false
+
+# publish_pointclouds_on_update: true
+# slice_level: 1.0
+# publish_slices: true
+# update_mesh_every_n_sec: 1.0
+
+pointcloud_deintegration_queue_length: 100
+
+publish_tsdf_map: true
+publish_map_every_n_sec: 6.0
+publish_map_with_trajectory: true

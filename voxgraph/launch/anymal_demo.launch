@@ -1,0 +1,45 @@
+<launch>
+  <param name="use_sim_time" value="true" />
+
+  <arg name="rosbag_path" default="/home/victor/data/darpa/2021-01-29-09-39-25_anymal-cerberus_gbplanner_debug.bag" />
+  <arg name="rosbag_skip_first_n_sec" default="0" />
+
+  <arg name="pointcloud_topic" default="/point_cloud_filter/lidar/point_cloud_filtered" />
+
+  <arg name="debug_mode" default="false" />
+  <arg name="show_rviz" default="true" />
+
+  <!-- Play the rosbag, unless no path is specified -->
+  <node unless="$(eval arg('rosbag_path') is '')"
+        name="player" pkg="rosbag" type="play" output="screen"
+        args="-r 1.0 -s $(arg rosbag_skip_first_n_sec) -q --clock $(arg rosbag_path)" />
+
+  <!-- Run voxblox in sliding window mode -->
+  <group>
+    <node name="voxblox" pkg="voxblox_ros" type="tsdf_server"
+          output="screen" args="-alsologtostderr" clear_params="true">
+      <remap from="pointcloud" to="$(arg pointcloud_topic)"/>
+      <rosparam file="$(find voxgraph)/config/voxblox_temporal_window_anymal.yaml"/>
+    </node>
+  </group>
+
+  <!-- Run voxgraph, subscribing to voxblox's sliding window -->
+  <group>
+    <arg unless="$(arg debug_mode)" name="launch_prefix" value="" />
+    <arg if="$(arg debug_mode)" name="launch_prefix" value="gdb -ex run --args" />
+
+    <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node"
+          output="screen" launch-prefix="$(arg launch_prefix)">
+      <rosparam file="$(find voxgraph)/config/voxgraph_mapper.yaml" />
+      <param name="submap_topic" value="/voxblox/tsdf_map_out" />
+    </node>
+  </group>
+
+  <!-- Show Rviz -->
+  <group if="$(arg show_rviz)">
+    <arg name="rviz_file" default="$(find voxgraph)/config/voxgraph_mapper.rviz" />
+    <node pkg="rviz" type="rviz" name="$(anon rviz)" output="screen"
+          args="-d $(arg rviz_file)" />
+  </group>
+
+</launch>
