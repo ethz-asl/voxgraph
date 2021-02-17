@@ -30,7 +30,7 @@
 
     <node name="voxgraph_mapper" pkg="voxgraph" type="voxgraph_mapping_node"
           output="screen" launch-prefix="$(arg launch_prefix)">
-      <rosparam file="$(find voxgraph)/config/voxgraph_mapper.yaml" />
+      <rosparam file="$(find voxgraph)/config/voxgraph_mapper_anymal.yaml" />
       <param name="submap_topic" value="/voxblox/tsdf_map_out" />
     </node>
   </group>
