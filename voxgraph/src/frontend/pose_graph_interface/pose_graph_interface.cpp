@@ -214,17 +214,30 @@ void PoseGraphInterface::optimize() {
 
   // Publish debug visuals
   if (pose_graph_pub_.getNumSubscribers() > 0) {
-    pose_graph_vis_.publishPoseGraph(pose_graph_, visualization_odom_frame_,
-                                     "optimized", pose_graph_pub_);
+    SubmapID last_submap_id = submap_collection_ptr_->getLastSubmapId();
+    Transformation T_I_last_submap, T_O_last_submap;
+    if (pose_graph_.getSubmapPose(last_submap_id, &T_I_last_submap) &&
+        submap_collection_ptr_->getSubmapPose(last_submap_id,
+                                              &T_O_last_submap)) {
+      const Transformation T_O_I = T_O_last_submap * T_I_last_submap.inverse();
+      pose_graph_vis_.publishPoseGraph(pose_graph_, T_O_I,
+                                       visualization_odom_frame_, "optimized",
+                                       pose_graph_pub_);
+    } else {
+      ROS_WARN_STREAM(
+          "Could not get the optimized or original pose of "
+          "submap ID "
+          << last_submap_id << " for pose graph visualization");
+    }
   }
 }
 
 void PoseGraphInterface::updateSubmapCollectionPoses() {
   SubmapID last_submap_id = submap_collection_ptr_->getLastSubmapId();
-  Transformation T_I_last_submap, T_O_last_submap, T_O_I;
+  Transformation T_I_last_submap, T_O_last_submap;
   if (pose_graph_.getSubmapPose(last_submap_id, &T_I_last_submap) &&
       submap_collection_ptr_->getSubmapPose(last_submap_id, &T_O_last_submap)) {
-    T_O_I = T_O_last_submap * T_I_last_submap.inverse();
+    const Transformation T_O_I = T_O_last_submap * T_I_last_submap.inverse();
     for (const auto& submap_pose_kv : pose_graph_.getSubmapPoses()) {
       // Write back the updated pose,
       // after transforming them back into robocentric frame

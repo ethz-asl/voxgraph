@@ -6,12 +6,13 @@
 
 namespace voxgraph {
 void PoseGraphVisuals::publishPoseGraph(const PoseGraph& pose_graph,
-                                        const std::string& frame_id,
+                                        const Transformation& T_vis_pose_graph,
+                                        const std::string& vis_frame_id,
                                         const std::string& name_space,
                                         const ros::Publisher& publisher) const {
   // Initialize the Rviz marker msg
   visualization_msgs::Marker marker;
-  marker.header.frame_id = frame_id;
+  marker.header.frame_id = vis_frame_id;
   marker.header.stamp = ros::Time();
   marker.ns = name_space;
   marker.id = 0;
@@ -42,11 +43,16 @@ void PoseGraphVisuals::publishPoseGraph(const PoseGraph& pose_graph,
   // Add the edges to the marker
   for (const PoseGraph::VisualizationEdge& edge : edges) {
     // Add edge endpoints
-    geometry_msgs::Point point_msg;
-    tf::pointEigenToMsg(edge.first_node_position.cast<double>(), point_msg);
-    marker.points.push_back(point_msg);
-    tf::pointEigenToMsg(edge.second_node_position.cast<double>(), point_msg);
-    marker.points.push_back(point_msg);
+    const Transformation::Position t_vis_start_point =
+        T_vis_pose_graph * edge.first_node_position;
+    const Transformation::Position t_vis_end_point =
+        T_vis_pose_graph * edge.second_node_position;
+
+    geometry_msgs::Point start_point_msg, end_point_msg;
+    tf::pointEigenToMsg(t_vis_start_point.cast<double>(), start_point_msg);
+    tf::pointEigenToMsg(t_vis_end_point.cast<double>(), end_point_msg);
+    marker.points.push_back(start_point_msg);
+    marker.points.push_back(end_point_msg);
 
     // Color edge according to residual
     std_msgs::ColorRGBA color_msg;

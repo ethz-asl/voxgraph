@@ -11,7 +11,8 @@ class PoseGraphVisuals {
   PoseGraphVisuals() = default;
 
   void publishPoseGraph(const PoseGraph& pose_graph,
-                        const std::string& frame_id,
+                        const Transformation& T_vis_pose_graph,
+                        const std::string& vis_frame_id,
                         const std::string& name_space,
                         const ros::Publisher& publisher) const;
 };
