@@ -14,8 +14,12 @@ void RelativePoseConstraint::addToProblem(const NodeCollection& node_collection,
       node_collection.getSubmapNodePtrById(config_.origin_submap_id);
   SubmapNode::Ptr destination_submap_node_ptr =
       node_collection.getSubmapNodePtrById(config_.destination_submap_id);
-  CHECK_NOTNULL(origin_submap_node_ptr);
-  CHECK_NOTNULL(destination_submap_node_ptr);
+  CHECK(origin_submap_node_ptr)
+      << "Could not get pose graph submap node ptr for submap ID "
+      << config_.origin_submap_id;
+  CHECK(destination_submap_node_ptr)
+      << "Could not get pose graph submap node ptr for submap ID "
+      << config_.destination_submap_id;
 
   // Add the submap parameters to the problem
   origin_submap_node_ptr->addToProblem(

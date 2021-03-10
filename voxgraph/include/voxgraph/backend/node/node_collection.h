@@ -16,18 +16,22 @@ class NodeCollection {
 
   NodeCollection();
 
+  // Submap nodes
   void addSubmapNode(const SubmapNode::Config& config);
+  SubmapNode::Ptr getSubmapNodePtrById(const cblox::SubmapID& submap_id) const;
+  const SubmapNodeMap& getSubmapNodes() { return submap_nodes_; }
+
+  // Reference frame nodes
   void addReferenceFrameNode(const ReferenceFrameNode::Config& config);
+  ReferenceFrameNode::Ptr getReferenceFrameNodePtrById(
+      const ReferenceFrameNode::FrameId& frame_id) const;
+  const ReferenceFrameNodeMap& getReferenceFrameNodes() {
+    return reference_frame_nodes_;
+  }
 
   ceres::LocalParameterization* getLocalParameterization() const {
     return local_parameterization_.get();
   }
-
-  SubmapNode::Ptr getSubmapNodePtrById(const cblox::SubmapID& submap_id) const;
-  ReferenceFrameNode::Ptr getReferenceFrameNodePtrById(
-      const ReferenceFrameNode::FrameId& frame_id) const;
-
-  const SubmapNodeMap& getSubmapNodes() { return submap_nodes_; }
 
  private:
   Node::NodeId node_id_counter_ = 0;

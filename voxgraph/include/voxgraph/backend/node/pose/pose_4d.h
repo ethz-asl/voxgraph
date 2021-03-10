@@ -11,6 +11,9 @@ class Pose4D : public Pose {
   // Converting constructor from minkindr
   explicit Pose4D(const Transformation& initial_pose);
 
+  // Assignment from minkindr
+  Pose4D& operator=(const Transformation& rhs) final;
+
   // User defined conversion to minkindr
   operator Transformation() const final;  // NOLINT
 

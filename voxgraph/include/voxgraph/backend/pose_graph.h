@@ -17,38 +17,73 @@ class PoseGraph {
   typedef std::shared_ptr<const PoseGraph> ConstPtr;
   typedef std::list<ceres::Solver::Summary> SolverSummaryList;
   typedef std::map<const SubmapID, const Transformation> PoseMap;
+  typedef std::map<SubmapID, bool> SubmapNodeConstnessMap;
 
-  PoseGraph() = default;
+  struct Config {
+    int num_threads = 2;
+    double parameter_tolerance = 3e-3;
+    double max_solver_time_in_seconds = 60.0;
+    int max_num_iterations = 20;
+    enum class SolverType {
+      kSparseSchur,
+      kDenseSchur
+    } solver_type = SolverType::kSparseSchur;
+  };
 
+  explicit PoseGraph(std::string pose_graph_name = "");
+  // TODO(victorr): Switch to config_utilities
+  void setConfig(const Config& config);
+
+  // Submap node getters and setters
   void addSubmapNode(const SubmapNode::Config& config);
   bool hasSubmapNode(const SubmapNode::SubmapId& submap_id);
+  bool setSubmapNodeConstant(const SubmapNode::SubmapId& submap_id,
+                             const bool constant);
+  const NodeCollection::SubmapNodeMap& getSubmapNodes() {
+    return node_collection_.getSubmapNodes();
+  }
+  SubmapNodeConstnessMap getSubmapNodeConstness();
+  bool getSubmapPose(const SubmapID submap_id, Transformation* submap_pose);
+  PoseMap getSubmapPoses();
+  bool setSubmapPose(const SubmapID submap_id,
+                     const Transformation& submap_pose);
+
+  // Reference frame node getters and setters
   void addReferenceFrameNode(const ReferenceFrameNode::Config& config);
   bool hasReferenceFrameNode(const ReferenceFrameNode::FrameId& frame_id);
-
-  bool setSubmapNodeConstant(const SubmapNode::SubmapId& submap_id,
-                             const bool constant) {
-    SubmapNode::Ptr submap_node_ptr =
-        node_collection_.getSubmapNodePtrById(submap_id);
-    if (submap_node_ptr) {
-      submap_node_ptr->setConstant(constant);
-      return true;
-    }
-    return false;
+  const NodeCollection::ReferenceFrameNodeMap& getReferenceFrameNodes() {
+    return node_collection_.getReferenceFrameNodes();
   }
+  bool setReferenceFramePose(const ReferenceFrameNode::FrameId& frame_id,
+                             const Transformation& reference_frame_pose);
 
+  // Absolute pose constraint getters and setters
   void addAbsolutePoseConstraint(const AbsolutePoseConstraint::Config& config);
-  void addRelativePoseConstraint(const RelativePoseConstraint::Config& config);
-  void addRegistrationConstraint(const RegistrationConstraint::Config& config);
+  const ConstraintCollection::AbsolutePoseConstraintList&
+  getAbsolutePoseConstraints() {
+    return constraints_collection_.getAbsolutePoseConstraints();
+  }
+  void resetAbsolutePoseConstraints() {}
 
+  // Relative pose constraint getters and setters
+  void addRelativePoseConstraint(const RelativePoseConstraint::Config& config);
+  const ConstraintCollection::RelativePoseConstraintList&
+  getRelativePoseConstraints() {
+    return constraints_collection_.getRelativePoseConstraints();
+  }
+  void resetRelativePoseConstraints() {}
+
+  // Registration constraint getters and setters
+  void addRegistrationConstraint(const RegistrationConstraint::Config& config);
+  const ConstraintCollection::RegistrationConstraintList&
+  getRegistrationConstraints() {
+    return constraints_collection_.getRegistrationConstraints();
+  }
   void resetRegistrationConstraints() {
     constraints_collection_.resetRegistrationConstraints();
   }
 
-  void initialize(bool exclude_registration_constraints = false);
-  void optimize(bool exclude_registration_constraints = false);
-
-  bool getSubmapPose(const SubmapID submap_id, Transformation* submap_pose);
-  PoseMap getSubmapPoses();
+  void optimize();
 
   typedef Eigen::Matrix<double, 4, 4> EdgeCovarianceMatrix;
   typedef std::map<SubmapIdPair, EdgeCovarianceMatrix> EdgeCovarianceMap;
@@ -67,10 +102,14 @@ class PoseGraph {
   }
 
  private:
-  ConstraintCollection constraints_collection_;
-  NodeCollection node_collection_;
+  std::string pose_graph_name_;
 
-  // Ceres problem
+  // Pose graph nodes and edges
+  NodeCollection node_collection_;
+  ConstraintCollection constraints_collection_;
+
+  // Ceres options, problem and stats
+  ceres::Solver::Options solver_options_;
   ceres::Problem::Options problem_options_;
   std::shared_ptr<ceres::Problem> problem_ptr_;
   SolverSummaryList solver_summaries_;

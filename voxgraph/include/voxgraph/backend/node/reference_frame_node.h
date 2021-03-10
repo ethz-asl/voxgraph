@@ -21,6 +21,7 @@ class ReferenceFrameNode : public Node {
   const FrameId getReferenceFrameId() const {
     return config_.reference_frame_id;
   }
+  const Config& getConfig() const { return config_; }
 
  private:
   Config config_;

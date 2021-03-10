@@ -9,6 +9,14 @@ Pose4D::Pose4D(const Transformation& initial_pose) : Pose(initial_pose) {
   xyz_yaw_vector_[3] = initial_pose_vec_[5];
 }
 
+Pose4D& Pose4D::operator=(const Transformation& rhs) {
+  Transformation::Vector6 rhs_log = rhs.log();
+  xyz_yaw_vector_[0] = rhs_log[0];
+  xyz_yaw_vector_[1] = rhs_log[1];
+  xyz_yaw_vector_[2] = rhs_log[2];
+  xyz_yaw_vector_[3] = rhs_log[5];
+}
+
 Pose4D::operator Transformation() const {
   Transformation::Vector6 T_vec_6d;
   // Set x, y, z and yaw from the optimization variables
@@ -19,8 +27,6 @@ Pose4D::operator Transformation() const {
   // Set pitch and roll to zero from the initial pose
   T_vec_6d[3] = initial_pose_vec_[3];
   T_vec_6d[4] = initial_pose_vec_[4];
-  Transformation result = Transformation::exp(T_vec_6d);
-  result.getRotation().normalize();
-  return result;
+  return Transformation::exp(T_vec_6d);
 }
 }  // namespace voxgraph

@@ -16,9 +16,8 @@
 #include "voxgraph/frontend/frame_names.h"
 #include "voxgraph/frontend/measurement_processors/gps_processor.h"
 #include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
-#include "voxgraph/frontend/pose_graph_interface/pose_graph_interface.h"
+#include "voxgraph/frontend/pose_graph_interface/pose_graph_manager.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
-#include "voxgraph/tools/data_servers/loop_closure_edge_server.h"
 #include "voxgraph/tools/data_servers/projected_map_server.h"
 #include "voxgraph/tools/data_servers/submap_server.h"
 #include "voxgraph/tools/rosbag_helper.h"
@@ -66,7 +65,10 @@ class VoxgraphMapper {
   bool saveOptimizationTimesCallback(
       voxblox_msgs::FilePath::Request& request,     // NOLINT
       voxblox_msgs::FilePath::Response& response);  // NOLINT
-  bool pauseOptimizationCallback(
+  bool pauseSlidingOptimizationCallback(
+      std_srvs::SetBool::Request& request,     // NOLINT
+      std_srvs::SetBool::Response& response);  // NOLINT
+  bool pauseFullOptimizationCallback(
       std_srvs::SetBool::Request& request,     // NOLINT
       std_srvs::SetBool::Response& response);  // NOLINT
 
@@ -74,8 +76,11 @@ class VoxgraphMapper {
     return *submap_collection_ptr_;
   }
 
-  const PoseGraph::SolverSummaryList& getSolverSummaries() {
-    return pose_graph_interface_.getSolverSummaries();
+  const PoseGraph::SolverSummaryList& getSlidingPoseGraphSolverSummaries() {
+    return pose_graph_manager_.getSlidingPoseGraphSolverSummaries();
+  }
+  const PoseGraph::SolverSummaryList& getFullPoseGraphSolverSummaries() {
+    return pose_graph_manager_.getFullPoseGraphSolverSummaries();
   }
 
  private:
@@ -98,15 +103,14 @@ class VoxgraphMapper {
   void advertiseServices();
   void getParametersFromRos();
 
-  // New submap creation, pose graph optimization and map publishing
-  int optimizePoseGraph();
+  // Map and pose publishing
   void publishMaps(const ros::Time& current_timestamp);
   void publishSubmapPoseTFs();
   double submap_pose_tf_publishing_period_s_;
   ros::Timer submap_pose_tf_publishing_timer_;
 
   // Asynchronous handle for the pose graph optimization thread
-  std::future<int> optimization_async_handle_;
+  std::future<void> optimization_async_handle_;
 
   // ROS topic subscribers
   std::string loop_closure_topic_;
@@ -135,14 +139,15 @@ class VoxgraphMapper {
   ros::ServiceServer save_separated_mesh_srv_;
   ros::ServiceServer save_combined_mesh_srv_;
   ros::ServiceServer save_optimization_times_srv_;
-  ros::ServiceServer pause_optimization_srv_;
+  ros::ServiceServer pause_sliding_optimization_srv_;
+  ros::ServiceServer pause_full_optimization_srv_;
   // TODO(victorr): Add srvs to receive absolute pose and loop closure updates
 
   // Constraints to be used
-  bool registration_constraints_enabled_;
   bool odometry_constraints_enabled_;
   bool height_constraints_enabled_;
-  bool pause_optimization_;
+  bool pause_sliding_optimization_;
+  bool pause_full_optimization_;
 
   // Instantiate the submap collection
   VoxgraphSubmap::Config submap_config_;
@@ -152,13 +157,17 @@ class VoxgraphMapper {
   SubmapVisuals submap_vis_;
   LoopClosureVisuals loop_closure_vis_;
 
-  // Interface to ease interaction with the pose graph
-  PoseGraphInterface pose_graph_interface_;
+  // Pose graph interaction
+  Transformation T_odom_previous_submap_;
+  double full_pose_graph_optimization_period_s_;
+  ros::Timer full_pose_graph_optimization_timer_;
+  int optimizeSlidingPoseGraph();
+  int optimizeFullPoseGraph(bool skip_if_busy);
+  PoseGraphManager pose_graph_manager_;
 
   // Map servers, used to share the projected map and submaps with ROS nodes
   ProjectedMapServer projected_map_server_;
   SubmapServer submap_server_;
-  LoopClosureEdgeServer loop_closure_edge_server_;
 
   // Class handling all frame names used to interface with ROS
   FrameNames frame_names_;

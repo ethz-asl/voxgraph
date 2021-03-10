@@ -10,12 +10,16 @@ class Pose {
 
   typedef double ValueType;
 
+  // Converting constructor from minkindr
   explicit Pose(const Transformation& initial_pose) {
     initial_pose_vec_ = initial_pose.log();
   }
-
   ~Pose() = default;
 
+  // Assignment from minkindr
+  virtual Pose& operator=(const Transformation& rhs) = 0;
+
+  // User defined conversion to minkindr
   virtual operator Transformation() const = 0;  // NOLINT
 
   virtual ValueType* optimizationVectorData() = 0;

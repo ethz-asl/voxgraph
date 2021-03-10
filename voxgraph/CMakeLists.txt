@@ -27,7 +27,7 @@ endif()
 #############
 cs_add_library(${PROJECT_NAME}
     src/frontend/voxgraph_mapper.cpp
-    src/frontend/pose_graph_interface/pose_graph_interface.cpp
+    src/frontend/pose_graph_interface/pose_graph_manager.cpp
     src/frontend/pose_graph_interface/node_templates.cpp
     src/frontend/pose_graph_interface/measurement_templates.cpp
     src/frontend/measurement_processors/pointcloud_integrator.cpp
@@ -52,7 +52,6 @@ cs_add_library(${PROJECT_NAME}
     src/tools/evaluation/map_evaluation.cpp
     src/tools/data_servers/projected_map_server.cpp
     src/tools/data_servers/submap_server.cpp
-    src/tools/data_servers/loop_closure_edge_server.cpp
     src/tools/odometry_simulator/odometry_simulator.cpp
     src/tools/visualization/cost_function_visuals.cpp
     src/tools/visualization/pose_graph_visuals.cpp

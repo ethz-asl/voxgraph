@@ -22,6 +22,8 @@ class AbsolutePoseConstraint : public Constraint {
   void addToProblem(const NodeCollection& node_collection,
                     ceres::Problem* problem) final;
 
+  const Config& getConfig() const { return config_; }
+
  private:
   const Config config_;
 };

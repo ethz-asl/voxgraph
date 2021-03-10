@@ -37,6 +37,8 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
       nh_private_(nh_private),
       verbose_(false),
       auto_pause_rosbag_(false),
+      T_odom_previous_submap_(Transformation()),
+      full_pose_graph_optimization_period_s_(0.0),
       submap_pose_tf_publishing_period_s_(0.1),
       rosbag_helper_(nh),
       publisher_queue_length_(100),
@@ -44,34 +46,41 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
       submap_topic_("submap_input"),
       loop_closure_topic_queue_length_(1000),
       submap_topic_queue_length_(10),
-      registration_constraints_enabled_(false),
       odometry_constraints_enabled_(false),
       height_constraints_enabled_(false),
-      pause_optimization_(false),
+      pause_sliding_optimization_(false),
+      pause_full_optimization_(false),
       submap_config_(submap_config),
       submap_collection_ptr_(
           std::make_shared<VoxgraphSubmapCollection>(submap_config_)),
       submap_vis_(submap_config_, mesh_config),
-      pose_graph_interface_(
+      pose_graph_manager_(
           nh_private, submap_collection_ptr_, mesh_config,
           FrameNames::fromRosParams(nh_private).output_odom_frame),
       projected_map_server_(nh_private),
       submap_server_(nh_private),
-      loop_closure_edge_server_(nh_private),
       frame_names_(FrameNames::fromRosParams(nh_private)) {
   // Setup interaction with ROS
   getParametersFromRos();
   subscribeToTopics();
   advertiseTopics();
   advertiseServices();
+
+  // Setup timers
   submap_pose_tf_publishing_timer_ = nh_private.createTimer(
       ros::Duration(submap_pose_tf_publishing_period_s_),
       std::bind(&VoxgraphMapper::publishSubmapPoseTFs, this));
+  if (0.0 < full_pose_graph_optimization_period_s_) {
+    full_pose_graph_optimization_timer_ = nh_private.createTimer(
+        ros::Duration(full_pose_graph_optimization_period_s_),
+        std::bind(&VoxgraphMapper::optimizeFullPoseGraph, this,
+                  /* skip_if_busy */ true));
+  }
 }
 
 void VoxgraphMapper::getParametersFromRos() {
   nh_private_.param("verbose", verbose_, verbose_);
-  pose_graph_interface_.setVerbosity(verbose_);
+  pose_graph_manager_.setVerbosity(verbose_);
 
   nh_private_.param("loop_closure_topic", loop_closure_topic_,
                     loop_closure_topic_);
@@ -107,15 +116,24 @@ void VoxgraphMapper::getParametersFromRos() {
                     submap_pose_tf_publishing_period_s_,
                     submap_pose_tf_publishing_period_s_);
 
+  // Get the pose graph optimization period
+  nh_private_.param("full_pose_graph_optimization_period_s",
+                    full_pose_graph_optimization_period_s_,
+                    full_pose_graph_optimization_period_s_);
+
   // Read the measurement params from their sub-namespace
+  bool registration_constraints_enabled = false;
   ros::NodeHandle nh_measurement_params(nh_private_, "measurements");
   nh_measurement_params.param("submap_registration/enabled",
-                              registration_constraints_enabled_,
-                              registration_constraints_enabled_);
+                              registration_constraints_enabled,
+                              registration_constraints_enabled);
+  pose_graph_manager_.setRegistrationConstraintsEnabled(
+      registration_constraints_enabled);
   ROS_INFO_STREAM_COND(
-      verbose_,
-      "Submap registration constraints: "
-          << (registration_constraints_enabled_ ? "enabled" : "disabled"));
+      verbose_, "Submap registration constraints: "
+                    << (pose_graph_manager_.getRegistrationConstraintsEnabled()
+                            ? "enabled"
+                            : "disabled"));
   nh_measurement_params.param("odometry/enabled", odometry_constraints_enabled_,
                               odometry_constraints_enabled_);
   ROS_INFO_STREAM_COND(
@@ -127,8 +145,7 @@ void VoxgraphMapper::getParametersFromRos() {
   ROS_INFO_STREAM_COND(
       verbose_, "Height constraints: "
                     << (height_constraints_enabled_ ? "enabled" : "disabled"));
-  pose_graph_interface_.setMeasurementConfigFromRosParams(
-      nh_measurement_params);
+  pose_graph_manager_.setMeasurementConfigFromRosParams(nh_measurement_params);
 }
 
 void VoxgraphMapper::subscribeToTopics() {
@@ -179,8 +196,12 @@ void VoxgraphMapper::advertiseServices() {
   save_optimization_times_srv_ = nh_private_.advertiseService(
       "save_optimization_times", &VoxgraphMapper::saveOptimizationTimesCallback,
       this);
-  pause_optimization_srv_ = nh_private_.advertiseService(
-      "pause_optimization", &VoxgraphMapper::pauseOptimizationCallback, this);
+  pause_sliding_optimization_srv_ = nh_private_.advertiseService(
+      "pause_sliding_optimization",
+      &VoxgraphMapper::pauseSlidingOptimizationCallback, this);
+  pause_full_optimization_srv_ = nh_private_.advertiseService(
+      "pause_full_optimization", &VoxgraphMapper::pauseFullOptimizationCallback,
+      this);
 }
 
 void VoxgraphMapper::loopClosureCallback(
@@ -240,8 +261,7 @@ void VoxgraphMapper::loopClosureCallback(
   Transformation T_t1_t2(translation.cast<voxblox::FloatingPoint>(),
                          rotation.cast<voxblox::FloatingPoint>());
   Transformation T_AB = T_A_t1 * T_t1_t2 * T_B_t2.inverse();
-  pose_graph_interface_.addLoopClosureMeasurement(submap_id_A, submap_id_B,
-                                                  T_AB);
+  pose_graph_manager_.addLoopClosureMeasurement(submap_id_A, submap_id_B, T_AB);
 
   // Visualize the loop closure link
   const Transformation& T_O_A = submap_A.getPose();
@@ -262,20 +282,27 @@ bool VoxgraphMapper::submapCallback(
   VoxgraphSubmap new_submap = submap_collection_ptr_->draftNewSubmap();
 
   // Deserialize the submap trajectory
-  // TODO(victorr): Add check to ensure that the odom frames from voxblox and
-  //                voxgraph match
+  std::string mismatched_odom_frame;
   if (submap_msg.trajectory.poses.empty()) {
     ROS_WARN("Received submap with empty trajectory. Skipping submap.");
     return false;
   }
   for (const geometry_msgs::PoseStamped& pose_stamped :
        submap_msg.trajectory.poses) {
+    if (frame_names_.input_odom_frame != pose_stamped.header.frame_id) {
+      mismatched_odom_frame = pose_stamped.header.frame_id;
+    }
     TransformationD T_odom_base_link;
     tf::poseMsgToKindr(pose_stamped.pose, &T_odom_base_link);
     new_submap.addPoseToHistory(
         pose_stamped.header.stamp,
         T_odom_base_link.cast<voxblox::FloatingPoint>());
   }
+  ROS_WARN_STREAM_COND(!mismatched_odom_frame.empty(),
+                       "All submap trajectory poses are expected in frame "
+                           << frame_names_.input_odom_frame
+                           << ", but encountered pose in frame "
+                           << mismatched_odom_frame << " instead.");
 
   // Deserialize the submap TSDF
   if (!voxblox::deserializeMsgToLayer(
@@ -308,65 +335,40 @@ bool VoxgraphMapper::submapCallback(
   // Add finished new submap to the submap collection
   submap_collection_ptr_->addSubmap(std::move(new_submap));
 
-  // Wait for the last optimization to finish before updating the constraints
-  if (optimization_async_handle_.valid() &&
-      optimization_async_handle_.wait_for(std::chrono::milliseconds(10)) !=
-          std::future_status::ready) {
-    ROS_WARN("Previous pose graph optimization not yet complete. Waiting...");
-    optimization_async_handle_.wait();
-  }
-
   // Add the new submap to the pose graph
   SubmapID active_submap_id = submap_collection_ptr_->getActiveSubmapID();
-  pose_graph_interface_.addSubmap(active_submap_id);
+  pose_graph_manager_.addSubmap(active_submap_id);
 
-  if (submap_collection_ptr_->size() > 1) {
-    // Get the previous submap's optimized pose
-    SubmapID previous_submap_id = submap_collection_ptr_->getPreviousSubmapId();
-    Transformation T_odom__previous_submap;
-    submap_collection_ptr_->getSubmapPose(previous_submap_id,
-                                          &T_odom__previous_submap);
-
+  // Add an odometry constraint from the previous to the new submap
+  if (odometry_constraints_enabled_ && 1 < submap_collection_ptr_->size()) {
     // Compute the odometry
     const Transformation T_previous_submap__submap =
-        T_odom__previous_submap.inverse() * T_odom_submap;
+        T_odom_previous_submap_.inverse() * T_odom_submap;
 
-    // Add an odometry constraint from the previous to the new submap
-    if (odometry_constraints_enabled_) {
-      // Add the constraint to the pose graph
-      pose_graph_interface_.addOdometryMeasurement(
-          submap_collection_ptr_->getPreviousSubmapId(),
-          submap_collection_ptr_->getActiveSubmapID(),
-          T_previous_submap__submap);
-    }
+    // Add the constraint to the pose graph
+    pose_graph_manager_.addOdometryMeasurement(
+        submap_collection_ptr_->getPreviousSubmapId(),
+        submap_collection_ptr_->getActiveSubmapID(), T_previous_submap__submap);
+  }
+  T_odom_previous_submap_ = T_odom_submap;
 
-    // Constrain the height
-    // NOTE: No constraint is added for the 1st submap since its pose is fixed
-    if (height_constraints_enabled_) {
-      // This assumes that the height estimate from the odometry source is
-      // really good (e.g. when it fuses an altimeter)
-      double current_height = T_odom_submap.getPosition().z();
-      pose_graph_interface_.addHeightMeasurement(active_submap_id,
-                                                 current_height);
-    }
-  } else {
-    // Since we did not yet perform any optimizations, the odom and odom
-    // frame are equal
-    // NOTE: The pose has already implicitly been set to T_odom_submap,
-    //       by the earlier transformSubmap(...) call.
-    //       We just do it again to keep the code easy to follow.
-    submap_collection_ptr_->getActiveSubmapPtr()->setPose(T_odom_submap);
+  // Add a height constraint if appropriate
+  if (height_constraints_enabled_) {
+    // This assumes that the height estimate from the odometry source is
+    // really good (e.g. when it fuses an altimeter)
+    double current_height = T_odom_submap.getPosition().z();
+    pose_graph_manager_.addHeightMeasurement(active_submap_id, current_height);
   }
 
-  // Add registration constraints for all overlapping submaps
-  if (registration_constraints_enabled_) {
-    pose_graph_interface_.updateRegistrationConstraints();
-  }
+  // NOTE: Registration constraints are managed in the graph optimization calls
 
-  // Optimize the pose graph in a separate thread
-  if (!pause_optimization_) {
-    optimization_async_handle_ = std::async(
-        std::launch::async, &VoxgraphMapper::optimizePoseGraph, this);
+  // Align the new submap to the collection
+  optimizeSlidingPoseGraph();
+
+  // Launch a new full pose graph optimization if the previous one finished,
+  // if we're running the optimization as fast as possible instead of on a timer
+  if (full_pose_graph_optimization_period_s_ <= 0.0) {
+    optimizeFullPoseGraph(/* skip_if_busy */ true);
   }
 
   // Publish the map in its different representations
@@ -403,16 +405,8 @@ bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request& request,
     submap_collection_ptr_->getActiveSubmapPtr()->finishSubmap();
   }
 
-  // Add registration constraints for all overlapping submaps
-  if (registration_constraints_enabled_) {
-    ROS_INFO(
-        "Updating the registration constraints "
-        "to include the last submap");
-    pose_graph_interface_.updateRegistrationConstraints();
-  }
-
   // Optimize the pose graph
-  optimizePoseGraph();
+  optimizeFullPoseGraph(/* skip_if_busy */ false);
 
   // Publishing the finished submap
   submap_server_.publishActiveSubmap(submap_collection_ptr_, ros::Time::now());
@@ -424,7 +418,7 @@ bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request& request,
 
 bool VoxgraphMapper::optimizeGraphCallback(
     std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
-  optimizePoseGraph();
+  optimizeFullPoseGraph(/* skip_if_busy */ false);
   return true;
 }
 
@@ -464,7 +458,7 @@ bool VoxgraphMapper::saveOptimizationTimesCallback(
   ROS_INFO_STREAM(
       "Writing optimization times to csv at: " << request.file_path);
   const PoseGraph::SolverSummaryList& solver_summary_list =
-      pose_graph_interface_.getSolverSummaries();
+      pose_graph_manager_.getFullPoseGraphSolverSummaries();
   std::vector<double> total_times;
   for (const ceres::Solver::Summary& summary : solver_summary_list) {
     total_times.push_back(summary.total_time_in_seconds);
@@ -473,24 +467,84 @@ bool VoxgraphMapper::saveOptimizationTimesCallback(
   return true;  // Tell ROS it succeeded
 }
 
-bool VoxgraphMapper::pauseOptimizationCallback(
+bool VoxgraphMapper::pauseSlidingOptimizationCallback(
     std_srvs::SetBool::Request& request,
     std_srvs::SetBool::Response& response) {
-  pause_optimization_ = request.data;
+  pause_sliding_optimization_ = request.data;
   response.success = true;
   return true;
 }
 
-int VoxgraphMapper::optimizePoseGraph() {
-  // Optimize the pose graph
-  ROS_INFO("Optimizing the pose graph");
-  pose_graph_interface_.optimize();
+bool VoxgraphMapper::pauseFullOptimizationCallback(
+    std_srvs::SetBool::Request& request,
+    std_srvs::SetBool::Response& response) {
+  pause_full_optimization_ = request.data;
+  response.success = true;
+  return true;
+}
 
-  // Update the submap poses
-  pose_graph_interface_.updateSubmapCollectionPoses();
+int VoxgraphMapper::optimizeSlidingPoseGraph() {
+  // Avoid optimizing an empty pose graph
+  if (submap_collection_ptr_->size() < 2) {
+    return 1;
+  }
+
+  if (!pause_sliding_optimization_) {
+    // Redetect and add the relevant registration constraints
+    pose_graph_manager_.updateSlidingPoseGraphRegistrationConstraints();
+
+    // Optimize the pose graph
+    ROS_INFO_STREAM("Optimizing the sliding pose graph");
+    pose_graph_manager_.optimizeSlidingPoseGraph();
+  }
 
   // Publish updated poses
   submap_server_.publishSubmapPoses(submap_collection_ptr_, ros::Time::now());
+
+  // Report successful completion
+  return 1;
+}
+
+int VoxgraphMapper::optimizeFullPoseGraph(const bool skip_if_busy) {
+  // Avoid optimizing an empty pose graph
+  if (submap_collection_ptr_->size() < 2) {
+    return 1;
+  }
+
+  // Wait for the last optimization to finish before updating the constraints
+  if (optimization_async_handle_.valid() &&
+      optimization_async_handle_.wait_for(std::chrono::milliseconds(10)) !=
+          std::future_status::ready) {
+    if (skip_if_busy) {
+      ROS_INFO(
+          "Previous full pose graph optimization not yet complete. "
+          "Skipping...");
+      return 0;
+    } else {
+      ROS_WARN(
+          "Previous full pose graph optimization not yet complete. Waiting...");
+      optimization_async_handle_.wait();
+    }
+  }
+
+  // Move the new sliding window nodes and constraints to the full pose graph
+  ROS_INFO("Absorbing sliding window into full pose graph");
+  pose_graph_manager_.absorbSlidingWindowIntoFullPoseGraph();
+
+  if (!pause_full_optimization_) {
+    // Redetect and add the relevant registration constraints
+    pose_graph_manager_.updateFullPoseGraphRegistrationConstraints();
+
+    // Optimize the pose graph
+    optimization_async_handle_ = std::async(std::launch::async, [this]() {
+      ROS_INFO("Starting full pose graph optimization in separate thread");
+      pose_graph_manager_.optimizeFullPoseGraph();
+
+      // Publish the updated poses
+      submap_server_.publishSubmapPoses(submap_collection_ptr_,
+                                        ros::Time::now());
+    });
+  }
 
   // Report successful completion
   return 1;
@@ -533,10 +587,6 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
                                    frame_names_.output_odom_frame,
                                    pose_history_pub_);
   }
-
-  // Publish the loop closure edges
-  loop_closure_edge_server_.publishLoopClosureEdges(
-      pose_graph_interface_, *submap_collection_ptr_, current_timestamp);
 }
 
 void VoxgraphMapper::publishSubmapPoseTFs() {

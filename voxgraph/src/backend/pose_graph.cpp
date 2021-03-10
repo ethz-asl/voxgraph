@@ -9,6 +9,32 @@
 #include "voxgraph/backend/node/pose/pose.h"
 
 namespace voxgraph {
+PoseGraph::PoseGraph(std::string pose_graph_name)
+    : pose_graph_name_(std::move(pose_graph_name)) {
+  // Set problem options
+  problem_options_.local_parameterization_ownership =
+      ceres::Ownership::DO_NOT_TAKE_OWNERSHIP;
+}
+
+void PoseGraph::setConfig(const Config& config) {
+  // Set solver options
+  solver_options_.num_threads = config.num_threads;
+  solver_options_.parameter_tolerance = config.parameter_tolerance;
+  solver_options_.max_solver_time_in_seconds =
+      config.max_solver_time_in_seconds;
+  solver_options_.max_num_iterations = config.max_num_iterations;
+  switch (config.solver_type) {
+    case Config::SolverType::kDenseSchur:
+      solver_options_.linear_solver_type = ceres::LinearSolverType::DENSE_SCHUR;
+      break;
+    case Config::SolverType::kSparseSchur:
+    default:
+      solver_options_.linear_solver_type =
+          ceres::LinearSolverType::SPARSE_SCHUR;
+      break;
+  }
+}
+
 void PoseGraph::addSubmapNode(const SubmapNode::Config& config) {
   node_collection_.addSubmapNode(config);
 }
@@ -16,6 +42,25 @@ void PoseGraph::addSubmapNode(const SubmapNode::Config& config) {
 bool PoseGraph::hasSubmapNode(const voxgraph::SubmapNode::SubmapId& submap_id) {
   auto ptr = node_collection_.getSubmapNodePtrById(submap_id);
   return ptr != nullptr;
+}
+
+bool PoseGraph::setSubmapNodeConstant(const SubmapNode::SubmapId& submap_id,
+                                      const bool constant) {
+  SubmapNode::Ptr submap_node_ptr =
+      node_collection_.getSubmapNodePtrById(submap_id);
+  if (submap_node_ptr) {
+    submap_node_ptr->setConstant(constant);
+    return true;
+  }
+  return false;
+}
+
+PoseGraph::SubmapNodeConstnessMap PoseGraph::getSubmapNodeConstness() {
+  SubmapNodeConstnessMap submap_constness_map;
+  for (const auto& submap_node : node_collection_.getSubmapNodes()) {
+    submap_constness_map[submap_node.first] = submap_node.second->isConstant();
+  }
+  return submap_constness_map;
 }
 
 void PoseGraph::addReferenceFrameNode(
@@ -29,18 +74,26 @@ bool PoseGraph::hasReferenceFrameNode(
   return ptr != nullptr;
 }
 
+bool PoseGraph::setReferenceFramePose(
+    const ReferenceFrameNode::FrameId& frame_id,
+    const Transformation& reference_frame_pose) {
+  ReferenceFrameNode::Ptr reference_frame_node_ptr =
+      node_collection_.getReferenceFrameNodePtrById(frame_id);
+  if (reference_frame_node_ptr) {
+    *reference_frame_node_ptr->getPosePtr() = reference_frame_pose;
+    return true;
+  }
+  return false;
+}
+
 void PoseGraph::addAbsolutePoseConstraint(
     const voxgraph::AbsolutePoseConstraint::Config& config) {
-  // TODO(victorr): Add check on whether both endpoints exist
-
   // Add to the constraint set
   constraints_collection_.addAbsolutePoseConstraint(config);
 }
 
 void PoseGraph::addRelativePoseConstraint(
     const RelativePoseConstraint::Config& config) {
-  // TODO(victorr): Add check on whether both endpoints exist
-
   // Add to the constraint set
   constraints_collection_.addRelativePoseConstraint(config);
 }
@@ -58,51 +111,36 @@ void PoseGraph::addRegistrationConstraint(
 
   // Add to the constraint set
   constraints_collection_.addRegistrationConstraint(config);
-
-  // TODO(victorr): Remove or permanently add the experimental code below
-  if (config.registration.registration_point_type ==
-      VoxgraphSubmap::RegistrationPointType::kIsosurfacePoints) {
-    RegistrationConstraint::Config mirrored_config = config;
-    mirrored_config.first_submap_id = config.second_submap_id;
-    mirrored_config.first_submap_ptr = config.second_submap_ptr;
-    mirrored_config.second_submap_id = config.first_submap_id;
-    mirrored_config.second_submap_ptr = config.first_submap_ptr;
-    constraints_collection_.addRegistrationConstraint(mirrored_config);
-  }
 }
 
-void PoseGraph::initialize(bool exclude_registration_constraints) {
+void PoseGraph::optimize() {
   // Initialize the problem
-  problem_options_.local_parameterization_ownership =
-      ceres::Ownership::DO_NOT_TAKE_OWNERSHIP;
-  problem_ptr_.reset(new ceres::Problem(problem_options_));
+  problem_ptr_ = std::make_shared<ceres::Problem>(problem_options_);
 
   // Add the appropriate constraints
-  constraints_collection_.addConstraintsToProblem(
-      node_collection_, problem_ptr_.get(), exclude_registration_constraints);
-}
-
-void PoseGraph::optimize(bool exclude_registration_constraints) {
-  // Initialize the problem
-  initialize(exclude_registration_constraints);
+  constraints_collection_.addConstraintsToProblem(node_collection_,
+                                                  problem_ptr_.get());
 
   // Run the solver
-  ceres::Solver::Options ceres_options;
-  // TODO(victorr): Set these from parameters
-  // TODO(victorr): Look into manual parameter block ordering
-  ceres_options.parameter_tolerance = 3e-3;
-  //  ceres_options.max_num_iterations = 4;
-  ceres_options.max_solver_time_in_seconds = 4;
-  ceres_options.num_threads = 4;
-  ceres_options.linear_solver_type = ceres::LinearSolverType::SPARSE_SCHUR;
-  // NOTE: For small problems DENSE_SCHUR is much faster
-
   ceres::Solver::Summary summary;
-  ceres::Solve(ceres_options, problem_ptr_.get(), &summary);
+  ceres::Solve(solver_options_, problem_ptr_.get(), &summary);
 
   // Display and store the solver summary
-  std::cout << summary.BriefReport() << std::endl;
+  std::cout << "Optimized " << pose_graph_name_ << ":\n"
+            << "- parameter blocks original " << summary.num_parameter_blocks
+            << " -> reduced " << summary.num_parameter_blocks_reduced << "\n"
+            << "- cost initial " << summary.initial_cost << " -> final "
+            << summary.final_cost << "\n"
+            << "- iterations successful " << summary.num_successful_steps
+            << " -> unsuccessful " << summary.num_unsuccessful_steps << "\n"
+            << "- total time " << summary.total_time_in_seconds << "\n"
+            << "- termination "
+            << ceres::TerminationTypeToString(summary.termination_type)
+            << std::endl;
   solver_summaries_.emplace_back(summary);
+
+  // TODO(victorr): Make this check more formal
+  CHECK(summary.IsSolutionUsable());
 }
 
 bool PoseGraph::getSubmapPose(const SubmapID submap_id,
@@ -125,6 +163,17 @@ PoseGraph::PoseMap PoseGraph::getSubmapPoses() {
                          submap_node_kv.second->getPose());
   }
   return submap_poses;
+}
+
+bool PoseGraph::setSubmapPose(const SubmapID submap_id,
+                              const Transformation& submap_pose) {
+  SubmapNode::Ptr submap_node_ptr =
+      node_collection_.getSubmapNodePtrById(submap_id);
+  if (submap_node_ptr) {
+    *submap_node_ptr->getPosePtr() = submap_pose;
+    return true;
+  }
+  return false;
 }
 
 bool PoseGraph::getEdgeCovarianceMap(
