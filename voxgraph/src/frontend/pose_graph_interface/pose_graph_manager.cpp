@@ -360,9 +360,12 @@ void PoseGraphManager::optimizeFullPoseGraph() {
     // Reoptimize the sliding pose graph, if it has any new (non-constant) nodes
     // NOTE: Optimizing the sliding pose graph will also update
     //       the submap_collection poses
-    if (std::any_of(
-            sliding_pose_graph_.getSubmapNodeConstness().begin(),
-            sliding_pose_graph_.getSubmapNodeConstness().end(),
+    const std::map<SubmapID, bool> sliding_submap_node_constness_map =
+        sliding_pose_graph_.getSubmapNodeConstness();
+    if (!sliding_submap_node_constness_map.empty() &&
+        std::any_of(
+            sliding_submap_node_constness_map.begin(),
+            sliding_submap_node_constness_map.end(),
             [](const std::pair<SubmapID, bool>& kv) { return !kv.second; })) {
       updateSlidingPoseGraphRegistrationConstraints();
       optimizeSlidingPoseGraphImpl();

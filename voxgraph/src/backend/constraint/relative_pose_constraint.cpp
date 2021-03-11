@@ -4,7 +4,8 @@
 
 namespace voxgraph {
 void RelativePoseConstraint::addToProblem(const NodeCollection& node_collection,
-                                          ceres::Problem* problem) {
+                                          ceres::Problem* problem,
+                                          bool ignore_if_endpoints_constant) {
   CHECK_NOTNULL(problem);
 
   ceres::LossFunction* loss_function = kNoRobustLossFunction;
@@ -20,6 +21,12 @@ void RelativePoseConstraint::addToProblem(const NodeCollection& node_collection,
   CHECK(destination_submap_node_ptr)
       << "Could not get pose graph submap node ptr for submap ID "
       << config_.destination_submap_id;
+
+  // Skip constraints that don't affect any non-constant pose graph nodes
+  if (ignore_if_endpoints_constant && origin_submap_node_ptr->isConstant() &&
+      destination_submap_node_ptr->isConstant()) {
+    return;
+  }
 
   // Add the submap parameters to the problem
   origin_submap_node_ptr->addToProblem(

@@ -21,21 +21,11 @@ class RegistrationConstraint : public Constraint {
   };
 
   explicit RegistrationConstraint(ConstraintId constraint_id,
-                                  const Config& config)
-      : Constraint(constraint_id, config), config_(config) {
-    // Check whether both submap pointers have been provided
-    CHECK_NOTNULL(config_.first_submap_ptr);
-    CHECK_NOTNULL(config_.second_submap_ptr);
-
-    // Registration constraints do not yet support non-identity information
-    // matrices, therefore assert this
-    CHECK(sqrt_information_matrix_.isIdentity())
-        << "Registration constraint information matrices that differ "
-           "from the identity matrix are not yet supported.";
-  }
+                                  const Config& config);
 
   void addToProblem(const NodeCollection& node_collection,
-                    ceres::Problem* problem) final;
+                    ceres::Problem* problem,
+                    bool ignore_if_endpoints_constant) final;
 
   const Config& getConfig() const { return config_; }
 

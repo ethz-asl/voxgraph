@@ -20,7 +20,8 @@ class RelativePoseConstraint : public Constraint {
       : Constraint(constraint_id, config), config_(config) {}
 
   void addToProblem(const NodeCollection& node_collection,
-                    ceres::Problem* problem) final;
+                    ceres::Problem* problem,
+                    bool ignore_if_endpoints_constant) final;
 
   const Config& getConfig() const { return config_; }
 

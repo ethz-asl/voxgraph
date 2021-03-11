@@ -3,8 +3,24 @@
 #include "voxgraph/backend/constraint/cost_functions/registration_cost_function.h"
 
 namespace voxgraph {
+RegistrationConstraint::RegistrationConstraint(
+    Constraint::ConstraintId constraint_id,
+    const RegistrationConstraint::Config& config)
+    : Constraint(constraint_id, config), config_(config) {
+  // Check whether both submap pointers have been provided
+  CHECK_NOTNULL(config_.first_submap_ptr);
+  CHECK_NOTNULL(config_.second_submap_ptr);
+
+  // Registration constraints do not yet support non-identity information
+  // matrices, therefore assert this
+  CHECK(sqrt_information_matrix_.isIdentity())
+      << "Registration constraint information matrices that differ "
+         "from the identity matrix are not yet supported.";
+}
+
 void RegistrationConstraint::addToProblem(const NodeCollection& node_collection,
-                                          ceres::Problem* problem) {
+                                          ceres::Problem* problem,
+                                          bool ignore_if_endpoints_constant) {
   CHECK_NOTNULL(problem);
 
   ceres::LossFunction* loss_function = kNoRobustLossFunction;
@@ -16,6 +32,12 @@ void RegistrationConstraint::addToProblem(const NodeCollection& node_collection,
       node_collection.getSubmapNodePtrById(config_.second_submap_id);
   CHECK_NOTNULL(first_submap_node_ptr);
   CHECK_NOTNULL(second_submap_node_ptr);
+
+  // Skip constraints that don't affect any non-constant pose graph nodes
+  if (ignore_if_endpoints_constant && first_submap_node_ptr->isConstant() &&
+      second_submap_node_ptr->isConstant()) {
+    return;
+  }
 
   // Add the submap parameters to the problem
   first_submap_node_ptr->addToProblem(
