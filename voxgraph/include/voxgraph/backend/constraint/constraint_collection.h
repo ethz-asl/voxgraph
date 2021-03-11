@@ -47,7 +47,7 @@ class ConstraintCollection {
 
  private:
   Constraint::ConstraintId constraint_id_counter_ = 0;
-  const Constraint::ConstraintId newConstraintId() {
+  Constraint::ConstraintId newConstraintId() {
     return constraint_id_counter_++;
   }
 

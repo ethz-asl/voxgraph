@@ -35,7 +35,7 @@ class NodeCollection {
 
  private:
   Node::NodeId node_id_counter_ = 0;
-  const Node::NodeId newNodeId() { return node_id_counter_++; }
+  Node::NodeId newNodeId() { return node_id_counter_++; }
 
   SubmapNodeMap submap_nodes_;
   ReferenceFrameNodeMap reference_frame_nodes_;
