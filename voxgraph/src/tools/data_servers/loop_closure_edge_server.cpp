@@ -42,7 +42,7 @@ void LoopClosureEdgeServer::publishLoopClosureEdges(
       overlapping_submap_list.size());
 
   PoseGraph::EdgeCovarianceMap edge_covariance_map;
-  bool edge_covariances_useable =
+  bool edge_covariances_usable =
       pose_graph_interface.getEdgeCovarianceMap(&edge_covariance_map);
 
   for (const SubmapIdPair& overlapping_submap_pair : overlapping_submap_list) {
@@ -77,7 +77,7 @@ void LoopClosureEdgeServer::publishLoopClosureEdges(
     tf::poseKindrToMsg(T_A_B.cast<double>(), &edge_msg.T_A_B.pose);
 
     // Set the edge's covariance
-    if (edge_covariances_useable) {
+    if (edge_covariances_usable) {
       // Get the covariance from the pose graph
       PoseGraph::EdgeCovarianceMap::const_iterator covariance_iter =
           edge_covariance_map.find(overlapping_submap_pair);

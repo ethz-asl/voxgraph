@@ -28,9 +28,7 @@ class Constraint {
   virtual void addToProblem(const NodeCollection& node_collection,
                             ceres::Problem* problem) = 0;
 
-  const ceres::ResidualBlockId getResidualBlockId() {
-    return residual_block_id_;
-  }
+  ceres::ResidualBlockId getResidualBlockId() { return residual_block_id_; }
 
  protected:
   static constexpr ceres::LossFunction* kNoRobustLossFunction = nullptr;

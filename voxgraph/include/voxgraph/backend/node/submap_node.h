@@ -20,7 +20,7 @@ class SubmapNode : public Node {
   SubmapNode(const NodeId& node_id, const Config& config)
       : Node(node_id, config), config_(config) {}
 
-  const cblox::SubmapID getSubmapId() const { return config_.submap_id; }
+  cblox::SubmapID getSubmapId() const { return config_.submap_id; }
 
  private:
   Config config_;
