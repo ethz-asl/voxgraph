@@ -15,6 +15,8 @@ Pose4D& Pose4D::operator=(const Transformation& rhs) {
   xyz_yaw_vector_[1] = rhs_log[1];
   xyz_yaw_vector_[2] = rhs_log[2];
   xyz_yaw_vector_[3] = rhs_log[5];
+
+  return *this;
 }
 
 Pose4D::operator Transformation() const {

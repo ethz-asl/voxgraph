@@ -13,6 +13,8 @@ Pose6D& Pose6D::operator=(const Transformation& rhs) {
   for (int i = 0; i < 6; i++) {
     r3_so3_vector_[i] = rhs_log[i];
   }
+
+  return *this;
 }
 
 Pose6D::operator Transformation() const {
