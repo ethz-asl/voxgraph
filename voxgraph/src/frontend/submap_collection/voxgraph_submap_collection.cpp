@@ -85,7 +85,7 @@ SubmapID VoxgraphSubmapCollection::createNewSubmap(
       "base class. Submaps that are added this way cannot be included in the "
       "submap timeline due to missing time information. Please use the "
       "derived VoxgraphSubmapCollection::createNewSubmap methods instead.");
-  cblox::SubmapCollection<VoxgraphSubmap>::createNewSubmap(T_O_S);
+  return cblox::SubmapCollection<VoxgraphSubmap>::createNewSubmap(T_O_S);
 }
 
 bool VoxgraphSubmapCollection::lookupActiveSubmapByTime(
