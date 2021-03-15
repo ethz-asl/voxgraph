@@ -382,9 +382,13 @@ bool VoxgraphMapper::submapCallback(
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
     std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
-  submap_vis_.publishSeparatedMesh(*submap_collection_ptr_,
-                                   frame_names_.output_odom_frame,
-                                   submap_mesh_pub_);
+  for (const VoxgraphSubmap::ConstPtr& submap_ptr :
+       submap_collection_ptr_->getSubmapConstPtrs()) {
+    submap_vis_.publishMesh(*submap_collection_ptr_, submap_ptr->getID(),
+                            "submap_" + std::to_string(submap_ptr->getID()),
+                            submap_mesh_pub_);
+  }
+
   return true;  // Tell ROS it succeeded
 }
 
