@@ -78,6 +78,7 @@ target_link_libraries(registration_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES}
 ##########
 # EXPORT #
 ##########
+cs_install()
 cs_export()
 
 ####################
