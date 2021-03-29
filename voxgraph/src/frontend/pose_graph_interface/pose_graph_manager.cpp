@@ -1,5 +1,7 @@
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_manager.h"
 
+#include <map>
+#include <string>
 #include <utility>
 #include <vector>
 

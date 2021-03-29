@@ -3,6 +3,8 @@
 
 #include <map>
 #include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include <cblox/core/tsdf_esdf_submap.h>

@@ -1,7 +1,9 @@
 #ifndef VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_VOXGRAPH_SUBMAP_COLLECTION_H_
 #define VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_VOXGRAPH_SUBMAP_COLLECTION_H_
 
+#include <map>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 

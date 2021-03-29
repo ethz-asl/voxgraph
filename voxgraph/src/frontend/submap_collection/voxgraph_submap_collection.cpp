@@ -2,6 +2,8 @@
 
 #include <math.h>
 
+#include <map>
+#include <string>
 #include <utility>
 
 #include "voxgraph/tools/tf_helper.h"
