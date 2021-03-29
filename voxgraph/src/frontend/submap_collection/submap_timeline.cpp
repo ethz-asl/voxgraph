@@ -7,8 +7,8 @@ void voxgraph::SubmapTimeline::addNextSubmap(
                                 submap_id);
 }
 
-bool SubmapTimeline::lookupActiveSubmapByTime(const ros::Time& timestamp,
-                                              cblox::SubmapID* submap_id) {
+bool SubmapTimeline::lookupActiveSubmapByTime(
+    const ros::Time& timestamp, cblox::SubmapID* submap_id) const {
   CHECK_NOTNULL(submap_id);
 
   // Get an iterator to the end of the time interval in which timestamp falls
@@ -24,18 +24,30 @@ bool SubmapTimeline::lookupActiveSubmapByTime(const ros::Time& timestamp,
   return true;
 }
 
-cblox::SubmapID SubmapTimeline::getPreviousSubmapId() const {
-  CHECK_GE(submap_timeline_.size(), 2);
-  return (++submap_timeline_.crbegin())->second;
+bool SubmapTimeline::getPreviousSubmapId(SubmapID* submap_id) const {
+  CHECK_NOTNULL(submap_id);
+  if (1 < submap_timeline_.size()) {
+    *submap_id = (++submap_timeline_.crbegin())->second;
+    return true;
+  }
+  return false;
 }
 
-cblox::SubmapID SubmapTimeline::getFirstSubmapId() const {
-  CHECK(!submap_timeline_.empty());
-  return submap_timeline_.cbegin()->second;
+bool SubmapTimeline::getFirstSubmapId(SubmapID* submap_id) const {
+  CHECK_NOTNULL(submap_id);
+  if (!submap_timeline_.empty()) {
+    *submap_id = submap_timeline_.cbegin()->second;
+    return true;
+  }
+  return false;
 }
 
-cblox::SubmapID SubmapTimeline::getLastSubmapId() const {
-  CHECK(!submap_timeline_.empty());
-  return submap_timeline_.crbegin()->second;
+bool SubmapTimeline::getLastSubmapId(SubmapID* submap_id) const {
+  CHECK_NOTNULL(submap_id);
+  if (!submap_timeline_.empty()) {
+    *submap_id = submap_timeline_.crbegin()->second;
+    return true;
+  }
+  return false;
 }
 }  // namespace voxgraph

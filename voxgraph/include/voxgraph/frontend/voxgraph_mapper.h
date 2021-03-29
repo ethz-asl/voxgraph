@@ -9,7 +9,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
 #include <voxblox_msgs/FilePath.h>
-#include <voxblox_msgs/LayerWithTrajectory.h>
+#include <voxblox_msgs/Submap.h>
 #include <voxgraph_msgs/LoopClosure.h>
 
 #include "voxgraph/common.h"
@@ -36,8 +36,7 @@ class VoxgraphMapper {
 
   // ROS topic callbacks
   void loopClosureCallback(const voxgraph_msgs::LoopClosure& loop_closure_msg);
-  virtual bool submapCallback(
-      const voxblox_msgs::LayerWithTrajectory& submap_msg);
+  virtual bool submapCallback(const voxblox_msgs::Submap& submap_msg);
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
@@ -158,7 +157,6 @@ class VoxgraphMapper {
   LoopClosureVisuals loop_closure_vis_;
 
   // Pose graph interaction
-  Transformation T_odom_previous_submap_;
   double full_pose_graph_optimization_period_s_;
   ros::Timer full_pose_graph_optimization_timer_;
   int optimizeSlidingPoseGraph();

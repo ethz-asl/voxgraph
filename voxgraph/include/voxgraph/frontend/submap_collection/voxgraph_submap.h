@@ -8,6 +8,7 @@
 #include <cblox/core/tsdf_esdf_submap.h>
 #include <ros/ros.h>
 
+#include "voxgraph/common.h"
 #include "voxgraph/frontend/submap_collection/bounding_box.h"
 #include "voxgraph/frontend/submap_collection/registration_point.h"
 #include "voxgraph/frontend/submap_collection/weighted_sampler.h"
@@ -51,8 +52,14 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   void setRegistrationFilterConfig(
       const Config::RegistrationFilter& registration_filter_config);
 
+  const std::string& getRobotName() const { return robot_name_; }
+  void setRobotName(std::string robot_name) {
+    robot_name_ = std::move(robot_name);
+  }
+
   const ros::Time getStartTime() const;
   const ros::Time getEndTime() const;
+  Transformation getInitialPose() const { return T_O_S_initial_; }
 
   void addPoseToHistory(const ros::Time& timestamp,
                         const voxblox::Transformation& T_submap_base);
@@ -100,6 +107,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   using Interpolator = voxblox::Interpolator<voxblox::TsdfVoxel>;
 
   Config config_;
+  std::string robot_name_;
 
   // Track whether this submap has been declared finished
   // and all cached values have been generated
@@ -121,6 +129,7 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
 
   // History of how the robot moved through the submap
   PoseHistoryMap pose_history_;
+  Transformation T_O_S_initial_;
 };
 }  // namespace voxgraph
 

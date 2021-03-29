@@ -28,7 +28,8 @@ bool VoxgraphSubmapCollection::shouldCreateNewSubmap(
 
 // Creates a gravity aligned new submap
 void VoxgraphSubmapCollection::createNewSubmap(
-    const Transformation& T_odom_base, const ros::Time& submap_start_time) {
+    const Transformation& T_odom_base, const ros::Time& submap_end_time,
+    const std::string& robot_name) {
   // Define the new submap frame to be at the current robot pose
   // and have its Z-axis aligned with gravity
   Transformation T_odom__new_submap = gravityAlignPose(T_odom_base);
@@ -42,7 +43,8 @@ void VoxgraphSubmapCollection::createNewSubmap(
                                      << T_odom__new_submap);
 
   // Add the new submap to the timeline
-  submap_timeline_.addNextSubmap(submap_start_time, new_submap_id);
+  multi_robot_submap_timeline_[robot_name].addNextSubmap(submap_end_time,
+                                                         new_submap_id);
 }
 
 void VoxgraphSubmapCollection::addSubmap(const VoxgraphSubmap& submap) {
@@ -65,7 +67,8 @@ void VoxgraphSubmapCollection::addSubmapToTimeline(
   ROS_INFO_STREAM("Created submap " << submap.getID() << " with pose\n"
                                     << submap.getPose());
   // Add the new submap to the timeline
-  submap_timeline_.addNextSubmap(submap.getEndTime(), submap.getID());
+  multi_robot_submap_timeline_[submap.getRobotName()].addNextSubmap(
+      submap.getEndTime(), submap.getID());
 }
 
 void VoxgraphSubmapCollection::createNewSubmap(const Transformation& T_O_S,
@@ -88,10 +91,75 @@ SubmapID VoxgraphSubmapCollection::createNewSubmap(
   return cblox::SubmapCollection<VoxgraphSubmap>::createNewSubmap(T_O_S);
 }
 
+bool VoxgraphSubmapCollection::getPreviousSubmapId(
+    const std::string& robot_name, SubmapID* submap_id) const {
+  const SubmapTimeline* submap_timeline_ptr =
+      getSubmapTimelineForRobot(robot_name);
+  return submap_timeline_ptr &&
+         submap_timeline_ptr->getPreviousSubmapId(submap_id);
+}
+
+bool VoxgraphSubmapCollection::getFirstSubmapId(const std::string& robot_name,
+                                                SubmapID* submap_id) const {
+  const SubmapTimeline* submap_timeline_ptr =
+      getSubmapTimelineForRobot(robot_name);
+  return submap_timeline_ptr &&
+         submap_timeline_ptr->getFirstSubmapId(submap_id);
+}
+
+bool VoxgraphSubmapCollection::getLastSubmapId(const std::string& robot_name,
+                                               SubmapID* submap_id) const {
+  const SubmapTimeline* submap_timeline_ptr =
+      getSubmapTimelineForRobot(robot_name);
+  return submap_timeline_ptr && submap_timeline_ptr->getLastSubmapId(submap_id);
+}
+
+bool VoxgraphSubmapCollection::getFirstSubmapId(SubmapID* submap_id) const {
+  bool success = false;
+  ros::Time first_submap_start_time;
+  for (const auto& robot_timeline : multi_robot_submap_timeline_) {
+    SubmapID robot_first_submap_id;
+    if (robot_timeline.second.getFirstSubmapId(&robot_first_submap_id)) {
+      ros::Time robot_first_submap_start_time =
+          getSubmap(robot_first_submap_id).getStartTime();
+      if (!success || robot_first_submap_start_time < first_submap_start_time) {
+        first_submap_start_time = robot_first_submap_start_time;
+        *submap_id = robot_first_submap_id;
+        success = true;
+      }
+    }
+  }
+  return success;
+}
+
+bool VoxgraphSubmapCollection::getLastSubmapId(SubmapID* submap_id) const {
+  bool success = false;
+  ros::Time last_submap_start_time;
+  for (const auto& robot_timeline : multi_robot_submap_timeline_) {
+    SubmapID robot_last_submap_id;
+    if (robot_timeline.second.getLastSubmapId(&robot_last_submap_id)) {
+      ros::Time robot_last_submap_start_time =
+          getSubmap(robot_last_submap_id).getStartTime();
+      if (!success || last_submap_start_time < robot_last_submap_start_time) {
+        last_submap_start_time = robot_last_submap_start_time;
+        *submap_id = robot_last_submap_id;
+        success = true;
+      }
+    }
+  }
+  return success;
+}
+
 bool VoxgraphSubmapCollection::lookupActiveSubmapByTime(
-    const ros::Time& timestamp, SubmapID* submap_id) {
-  if (submap_timeline_.lookupActiveSubmapByTime(timestamp, submap_id)) {
-    return getSubmap(*submap_id).getStartTime() <= timestamp;
+    const ros::Time& timestamp, const std::string& robot_name,
+    SubmapID* submap_id) {
+  const SubmapTimeline* robot_submap_timeline_ptr =
+      getSubmapTimelineForRobot(robot_name);
+  if (robot_submap_timeline_ptr) {
+    if (robot_submap_timeline_ptr->lookupActiveSubmapByTime(timestamp,
+                                                            submap_id)) {
+      return getSubmap(*submap_id).getStartTime() <= timestamp;
+    }
   }
   return false;
 }
@@ -179,5 +247,15 @@ Transformation VoxgraphSubmapCollection::gravityAlignPose(
   // Return the gravity aligned pose as a translation + quaternion,
   // using the exponential map
   return Transformation::exp(T_vec);
+}
+
+const SubmapTimeline* VoxgraphSubmapCollection::getSubmapTimelineForRobot(
+    const std::string& robot_name) const {
+  const auto submap_timeline_it = multi_robot_submap_timeline_.find(robot_name);
+  if (submap_timeline_it != multi_robot_submap_timeline_.end()) {
+    return &submap_timeline_it->second;
+  } else {
+    return nullptr;
+  }
 }
 }  // namespace voxgraph

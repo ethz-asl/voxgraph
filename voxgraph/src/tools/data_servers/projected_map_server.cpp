@@ -54,13 +54,13 @@ cblox_msgs::MapHeader ProjectedMapServer::generateMapHeaderMsg(
   map_header.is_submap = false;
 
   // Set the map's start and end time
-  if (!submap_collection.empty()) {
+  SubmapID first_submap_id, last_submap_id;
+  if (submap_collection.getFirstSubmapId(&first_submap_id) &&
+      submap_collection.getLastSubmapId(&last_submap_id)) {
     map_header.start_time =
-        submap_collection.getSubmap(submap_collection.getFirstSubmapId())
-            .getStartTime();
+        submap_collection.getSubmap(first_submap_id).getStartTime();
     map_header.end_time =
-        submap_collection.getSubmap(submap_collection.getLastSubmapId())
-            .getEndTime();
+        submap_collection.getSubmap(last_submap_id).getEndTime();
   } else {
     map_header.start_time = ros::Time(0.0);
     map_header.end_time = ros::Time(0.0);

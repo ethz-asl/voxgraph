@@ -11,12 +11,14 @@ namespace voxgraph {
 VoxgraphSubmap::VoxgraphSubmap(const voxblox::Transformation& T_O_S,
                                const cblox::SubmapID& submap_id,
                                const voxgraph::VoxgraphSubmap::Config& config)
-    : cblox::TsdfEsdfSubmap(T_O_S, submap_id, config), config_(config) {}
+    : cblox::TsdfEsdfSubmap(T_O_S, submap_id, config),
+      config_(config),
+      T_O_S_initial_(T_O_S) {}
 
 VoxgraphSubmap::VoxgraphSubmap(
     const voxblox::Transformation& T_O_S, const cblox::SubmapID& submap_id,
     const voxblox::Layer<voxblox::TsdfVoxel>& tsdf_layer)
-    : cblox::TsdfEsdfSubmap(T_O_S, submap_id, Config()) {
+    : cblox::TsdfEsdfSubmap(T_O_S, submap_id, Config()), T_O_S_initial_(T_O_S) {
   // Update the inherited TsdfEsdfSubmap config
   config_.tsdf_voxel_size = tsdf_layer.voxel_size();
   config_.tsdf_voxels_per_side = tsdf_layer.voxels_per_side();
@@ -48,6 +50,7 @@ void VoxgraphSubmap::transformSubmap(const voxblox::Transformation& T_new_old) {
 
   // Transform the submap pose
   setPose(getPose() * T_new_old.inverse());
+  T_O_S_initial_ = T_O_S_initial_ * T_new_old.inverse();
 
   // Regenerate all cached values
   finishSubmap();

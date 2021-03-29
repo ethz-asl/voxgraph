@@ -39,7 +39,8 @@ class VoxgraphSubmapCollection
   // Voxgraph compatible submap creation methods
   // NOTE: These methods properly add the submaps to the timeline
   void createNewSubmap(const Transformation& T_odom_base,
-                       const ros::Time& submap_start_time);
+                       const ros::Time& submap_end_time,
+                       const std::string& robot_name);
   void addSubmap(const VoxgraphSubmap& submap) override;
   void addSubmap(VoxgraphSubmap&& submap) override;
   void addSubmap(const typename VoxgraphSubmap::Ptr submap) override;
@@ -51,17 +52,17 @@ class VoxgraphSubmapCollection
                        const SubmapID submap_id) override;
   SubmapID createNewSubmap(const Transformation& T_O_S) override;
 
-  SubmapID getPreviousSubmapId() const {
-    return submap_timeline_.getPreviousSubmapId();
-  }
-  SubmapID getFirstSubmapId() const {
-    return submap_timeline_.getFirstSubmapId();
-  }
-  SubmapID getLastSubmapId() const {
-    return submap_timeline_.getLastSubmapId();
-  }
+  bool getPreviousSubmapId(const std::string& robot_name,
+                           SubmapID* submap_id) const;
+  bool getFirstSubmapId(const std::string& robot_name,
+                        SubmapID* submap_id) const;
+  bool getLastSubmapId(const std::string& robot_name,
+                       SubmapID* submap_id) const;
+  bool getFirstSubmapId(SubmapID* submap_id) const;
+  bool getLastSubmapId(SubmapID* submap_id) const;
 
   bool lookupActiveSubmapByTime(const ros::Time& timestamp,
+                                const std::string& robot_name,
                                 SubmapID* submap_id);
 
   PoseStampedVector getPoseHistory() const;
@@ -78,7 +79,9 @@ class VoxgraphSubmapCollection
   ros::Duration submap_creation_interval_;  // In seconds
 
   // Timeline to enable lookups of submaps by time
-  SubmapTimeline submap_timeline_;
+  std::map<std::string, SubmapTimeline> multi_robot_submap_timeline_;
+  const SubmapTimeline* getSubmapTimelineForRobot(
+      const std::string& robot_name) const;
 };
 }  // namespace voxgraph
 

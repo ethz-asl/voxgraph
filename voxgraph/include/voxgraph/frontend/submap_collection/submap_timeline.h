@@ -8,6 +8,8 @@
 #include <cblox/core/common.h>
 #include <ros/time.h>
 
+#include "voxgraph/common.h"
+
 namespace voxgraph {
 class SubmapTimeline {
  public:
@@ -17,11 +19,11 @@ class SubmapTimeline {
                      const cblox::SubmapID& submap_id);
 
   bool lookupActiveSubmapByTime(const ros::Time& timestamp,
-                                cblox::SubmapID* submap_id);
+                                cblox::SubmapID* submap_id) const;
 
-  cblox::SubmapID getPreviousSubmapId() const;
-  cblox::SubmapID getFirstSubmapId() const;
-  cblox::SubmapID getLastSubmapId() const;
+  bool getPreviousSubmapId(SubmapID* submap_id) const;
+  bool getFirstSubmapId(SubmapID* submap_id) const;
+  bool getLastSubmapId(SubmapID* submap_id) const;
 
  private:
   // Map from each time interval's end time to the corresponding active submap

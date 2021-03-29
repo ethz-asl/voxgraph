@@ -52,17 +52,17 @@ void PoseGraphManager::addSubmap(SubmapID submap_id) {
   if (submap_collection_ptr_->size() == 1u) {
     // Use the first submap as the inertial frame origin,
     // and fix its pose in the optimization
-    node_config.T_I_node_initial = Transformation();
     node_config.set_constant = true;
-  } else {
+  }
+  const VoxgraphSubmap& submap = submap_collection_ptr_->getSubmap(submap_id);
+  SubmapID previous_submap_id;
+  if (submap_collection_ptr_->getPreviousSubmapId(submap.getRobotName(),
+                                                  &previous_submap_id)) {
     // Get the transformation from the current to the previous submap
-    SubmapID previous_submap_id = submap_collection_ptr_->getPreviousSubmapId();
-    Transformation T_O_previous_submap;
-    CHECK(submap_collection_ptr_->getSubmapPose(previous_submap_id,
-                                                &T_O_previous_submap));
-    Transformation T_O_current_submap;
-    CHECK(
-        submap_collection_ptr_->getSubmapPose(submap_id, &T_O_current_submap));
+    const VoxgraphSubmap& previous_submap =
+        submap_collection_ptr_->getSubmap(previous_submap_id);
+    Transformation T_O_previous_submap = previous_submap.getInitialPose();
+    Transformation T_O_current_submap = submap.getInitialPose();
     const Transformation T_previous_current_submap =
         T_O_previous_submap.inverse() * T_O_current_submap;
 
@@ -81,6 +81,8 @@ void PoseGraphManager::addSubmap(SubmapID submap_id) {
     if (kOnlyOptimizeNewestSubmapInSlidingPoseGraph) {
       sliding_pose_graph_.setSubmapNodeConstant(previous_submap_id, true);
     }
+  } else {
+    node_config.T_I_node_initial = submap.getInitialPose();
   }
   sliding_pose_graph_.addSubmapNode(node_config);
 
@@ -225,20 +227,23 @@ void PoseGraphManager::optimizeSlidingPoseGraph() {
 
   // Publish debug visuals
   if (pose_graph_pub_.getNumSubscribers() > 0) {
-    SubmapID last_submap_id = submap_collection_ptr_->getLastSubmapId();
-    Transformation T_I_last_submap, T_O_last_submap;
-    if (sliding_pose_graph_.getSubmapPose(last_submap_id, &T_I_last_submap) &&
-        submap_collection_ptr_->getSubmapPose(last_submap_id,
-                                              &T_O_last_submap)) {
-      const Transformation T_O_I = T_O_last_submap * T_I_last_submap.inverse();
-      pose_graph_vis_.publishPoseGraph(sliding_pose_graph_, T_O_I,
-                                       visualization_odom_frame_,
-                                       "sliding_pose_graph", pose_graph_pub_);
-    } else {
-      ROS_WARN_STREAM(
-          "Could not get the optimized or original pose of "
-          "submap ID "
-          << last_submap_id << " for pose graph visualization");
+    SubmapID last_submap_id;
+    if (submap_collection_ptr_->getLastSubmapId(&last_submap_id)) {
+      Transformation T_I_last_submap, T_O_last_submap;
+      if (sliding_pose_graph_.getSubmapPose(last_submap_id, &T_I_last_submap) &&
+          submap_collection_ptr_->getSubmapPose(last_submap_id,
+                                                &T_O_last_submap)) {
+        const Transformation T_O_I =
+            T_O_last_submap * T_I_last_submap.inverse();
+        pose_graph_vis_.publishPoseGraph(sliding_pose_graph_, T_O_I,
+                                         visualization_odom_frame_,
+                                         "sliding_pose_graph", pose_graph_pub_);
+      } else {
+        ROS_WARN_STREAM(
+            "Could not get the optimized or original pose of "
+            "submap ID "
+            << last_submap_id << " for pose graph visualization");
+      }
     }
   }
 }
@@ -249,20 +254,23 @@ void PoseGraphManager::optimizeFullPoseGraph() {
 
   // Publish debug visuals
   if (pose_graph_pub_.getNumSubscribers() > 0) {
-    SubmapID last_submap_id = submap_collection_ptr_->getLastSubmapId();
-    Transformation T_I_last_submap, T_O_last_submap;
-    if (sliding_pose_graph_.getSubmapPose(last_submap_id, &T_I_last_submap) &&
-        submap_collection_ptr_->getSubmapPose(last_submap_id,
-                                              &T_O_last_submap)) {
-      const Transformation T_O_I = T_O_last_submap * T_I_last_submap.inverse();
-      pose_graph_vis_.publishPoseGraph(full_pose_graph_, T_O_I,
-                                       visualization_odom_frame_,
-                                       "full_pose_graph", pose_graph_pub_);
-    } else {
-      ROS_WARN_STREAM(
-          "Could not get the optimized or original pose of "
-          "submap ID "
-          << last_submap_id << " for pose graph visualization");
+    SubmapID last_submap_id;
+    if (submap_collection_ptr_->getLastSubmapId(&last_submap_id)) {
+      Transformation T_I_last_submap, T_O_last_submap;
+      if (sliding_pose_graph_.getSubmapPose(last_submap_id, &T_I_last_submap) &&
+          submap_collection_ptr_->getSubmapPose(last_submap_id,
+                                                &T_O_last_submap)) {
+        const Transformation T_O_I =
+            T_O_last_submap * T_I_last_submap.inverse();
+        pose_graph_vis_.publishPoseGraph(full_pose_graph_, T_O_I,
+                                         visualization_odom_frame_,
+                                         "full_pose_graph", pose_graph_pub_);
+      } else {
+        ROS_WARN_STREAM(
+            "Could not get the optimized or original pose of "
+            "submap ID "
+            << last_submap_id << " for pose graph visualization");
+      }
     }
   }
 
