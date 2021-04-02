@@ -23,8 +23,5 @@ use_weight_dropoff: false
 # publish_slices: true
 # update_mesh_every_n_sec: 1.0
 
-pointcloud_deintegration_queue_length: 100
-
-publish_tsdf_map: true
-publish_map_every_n_sec: 6.0
-publish_map_with_trajectory: true
+pointcloud_deintegration_queue_length: 120
+publish_submap_every_n_sec: 6.0

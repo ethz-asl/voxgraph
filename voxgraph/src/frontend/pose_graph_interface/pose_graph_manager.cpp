@@ -48,9 +48,8 @@ void PoseGraphManager::addSubmap(SubmapID submap_id) {
   // Configure the submap node and add it to the pose graph
   SubmapNode::Config node_config = node_templates_.submap;
   node_config.submap_id = submap_id;
-  // Although the submap collection is in robocentric frame, the pose graph
-  // optimization is run in an inertial frame to avoid moving all submaps to
-  // follow the drift on the new submap
+  // The pose graph optimization is run in an inertial (non-robocentric) frame
+  // to avoid moving all submaps to follow the drift on the new submap
   if (submap_collection_ptr_->size() == 1u) {
     // Use the first submap as the inertial frame origin,
     // and fix its pose in the optimization
@@ -60,7 +59,7 @@ void PoseGraphManager::addSubmap(SubmapID submap_id) {
   SubmapID previous_submap_id;
   if (submap_collection_ptr_->getPreviousSubmapId(submap.getRobotName(),
                                                   &previous_submap_id)) {
-    // Get the transformation from the current to the previous submap
+    // Get the odometry transformation from the current to the previous submap
     const VoxgraphSubmap& previous_submap =
         submap_collection_ptr_->getSubmap(previous_submap_id);
     Transformation T_O_previous_submap = previous_submap.getInitialPose();
@@ -84,6 +83,8 @@ void PoseGraphManager::addSubmap(SubmapID submap_id) {
       sliding_pose_graph_.setSubmapNodeConstant(previous_submap_id, true);
     }
   } else {
+    // Since this is the first submap from this robot, we take its odometry
+    // pose as the initial pose
     node_config.T_I_node_initial = submap.getInitialPose();
   }
   sliding_pose_graph_.addSubmapNode(node_config);
@@ -229,24 +230,9 @@ void PoseGraphManager::optimizeSlidingPoseGraph() {
 
   // Publish debug visuals
   if (pose_graph_pub_.getNumSubscribers() > 0) {
-    SubmapID last_submap_id;
-    if (submap_collection_ptr_->getLastSubmapId(&last_submap_id)) {
-      Transformation T_I_last_submap, T_O_last_submap;
-      if (sliding_pose_graph_.getSubmapPose(last_submap_id, &T_I_last_submap) &&
-          submap_collection_ptr_->getSubmapPose(last_submap_id,
-                                                &T_O_last_submap)) {
-        const Transformation T_O_I =
-            T_O_last_submap * T_I_last_submap.inverse();
-        pose_graph_vis_.publishPoseGraph(sliding_pose_graph_, T_O_I,
-                                         visualization_odom_frame_,
-                                         "sliding_pose_graph", pose_graph_pub_);
-      } else {
-        ROS_WARN_STREAM(
-            "Could not get the optimized or original pose of "
-            "submap ID "
-            << last_submap_id << " for pose graph visualization");
-      }
-    }
+    pose_graph_vis_.publishPoseGraph(sliding_pose_graph_, Transformation(),
+                                     visualization_odom_frame_,
+                                     "sliding_pose_graph", pose_graph_pub_);
   }
 }
 
@@ -256,24 +242,9 @@ void PoseGraphManager::optimizeFullPoseGraph() {
 
   // Publish debug visuals
   if (pose_graph_pub_.getNumSubscribers() > 0) {
-    SubmapID last_submap_id;
-    if (submap_collection_ptr_->getLastSubmapId(&last_submap_id)) {
-      Transformation T_I_last_submap, T_O_last_submap;
-      if (sliding_pose_graph_.getSubmapPose(last_submap_id, &T_I_last_submap) &&
-          submap_collection_ptr_->getSubmapPose(last_submap_id,
-                                                &T_O_last_submap)) {
-        const Transformation T_O_I =
-            T_O_last_submap * T_I_last_submap.inverse();
-        pose_graph_vis_.publishPoseGraph(full_pose_graph_, T_O_I,
-                                         visualization_odom_frame_,
-                                         "full_pose_graph", pose_graph_pub_);
-      } else {
-        ROS_WARN_STREAM(
-            "Could not get the optimized or original pose of "
-            "submap ID "
-            << last_submap_id << " for pose graph visualization");
-      }
-    }
+    pose_graph_vis_.publishPoseGraph(full_pose_graph_, Transformation(),
+                                     visualization_odom_frame_,
+                                     "full_pose_graph", pose_graph_pub_);
   }
 
   // Update the sliding pose graph and reoptimize the submaps that were added
@@ -398,24 +369,10 @@ void PoseGraphManager::optimizeFullPoseGraph() {
 //}
 
 void PoseGraphManager::updateSubmapCollectionPosesBasedOnSlidingPoseGraph() {
-  // Convert the poses from inertial to robocentric frame
-  SubmapID last_submap_id =
-      sliding_pose_graph_.getSubmapPoses().rbegin()->first;
-  Transformation T_I_last_submap, T_O_last_submap;
-  if (sliding_pose_graph_.getSubmapPose(last_submap_id, &T_I_last_submap) &&
-      submap_collection_ptr_->getSubmapPose(last_submap_id, &T_O_last_submap)) {
-    const Transformation T_O_I = T_O_last_submap * T_I_last_submap.inverse();
-    for (const auto& submap_pose_kv : sliding_pose_graph_.getSubmapPoses()) {
-      // Write back the updated pose,
-      // after transforming them back into robocentric frame
-      Transformation T_O_submap = T_O_I * submap_pose_kv.second;
-      submap_collection_ptr_->setSubmapPose(submap_pose_kv.first, T_O_submap);
-    }
-  } else {
-    ROS_WARN_STREAM(
-        "Could not get the optimized or original pose for "
-        "submap ID: "
-        << last_submap_id);
+  // TODO(victorr): Track and publish per-robot robocentric frames
+  for (const auto& submap_pose_kv : sliding_pose_graph_.getSubmapPoses()) {
+    submap_collection_ptr_->setSubmapPose(submap_pose_kv.first,
+                                          submap_pose_kv.second);
   }
 }
 
