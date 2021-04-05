@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/filesystem.hpp>
 #include <cblox/core/submap_collection.h>
 #include <cblox/io/submap_io.h>
 #include <cblox/utils/quat_transformation_protobuf_utils.h>
@@ -11,7 +12,6 @@
 #include <voxblox/io/layer_io.h>
 #include <voxblox_ros/ptcloud_vis.h>
 #include <voxblox_ros/ros_params.h>
-#include <boost/filesystem.hpp>
 
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 #include "voxgraph/tools/submap_registration_helper.h"

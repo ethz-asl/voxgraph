@@ -6,6 +6,7 @@
 
 #include <minkindr_conversions/kindr_msg.h>
 #include <nav_msgs/Odometry.h>
+#include <ros/ros.h>
 
 #include "voxgraph/common.h"
 

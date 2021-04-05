@@ -21,8 +21,6 @@ struct FrameNames {
   //   - T_S_B corresponds to the pose of the robot in the current submap
   //   - T_B_C stores the transform from the pointcloud sensor
   //           to the base_link frame
-  // TODO(victorr): Update this documentation once Voxgraph's ICP has been
-  //                reimplemented to work with the new frame convention
 
   // Input frame names
   std::string input_odom_frame = "odom";

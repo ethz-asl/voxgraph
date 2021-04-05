@@ -7,9 +7,9 @@
 namespace voxgraph {
 OdometrySimulator::OdometrySimulator(const ros::NodeHandle& nh,
                                      const ros::NodeHandle& nh_private)
-    : nh_(nh),
+    : debug_(false),
+      nh_(nh),
       nh_private_(nh_private),
-      debug_(false),
       subscriber_queue_length_(100),
       subscribe_to_odom_topic_("odometry"),
       published_mission_frame_("mission"),

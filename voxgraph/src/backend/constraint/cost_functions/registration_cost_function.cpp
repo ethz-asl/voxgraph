@@ -13,14 +13,14 @@ RegistrationCostFunction::RegistrationCostFunction(
     VoxgraphSubmap::ConstPtr reference_submap_ptr,
     VoxgraphSubmap::ConstPtr reading_submap_ptr,
     const RegistrationCostFunction::Config& config)
-    : reading_submap_ptr_(reading_submap_ptr),
+    : config_(config),
+      reading_submap_ptr_(reading_submap_ptr),
       reading_tsdf_layer_(reading_submap_ptr->getTsdfMap().getTsdfLayer()),
       reading_esdf_layer_(reading_submap_ptr->getEsdfMap().getEsdfLayer()),
-      tsdf_interpolator_(&reading_submap_ptr->getTsdfMap().getTsdfLayer()),
-      esdf_interpolator_(&reading_submap_ptr->getEsdfMap().getEsdfLayer()),
       registration_points_(reference_submap_ptr->getRegistrationPoints(
           config.registration_point_type)),
-      config_(config) {
+      tsdf_interpolator_(&reading_submap_ptr->getTsdfMap().getTsdfLayer()),
+      esdf_interpolator_(&reading_submap_ptr->getEsdfMap().getEsdfLayer()) {
   // Ensure that the reference and reading submaps have gravity aligned Z-axes
   voxblox::Transformation::Vector6 T_vec_reference =
       reference_submap_ptr->getPose().log();

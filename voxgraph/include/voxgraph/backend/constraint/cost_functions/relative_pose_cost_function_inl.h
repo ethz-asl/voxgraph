@@ -70,7 +70,7 @@ bool RelativePoseCostFunction::operator()(const T* const pose_A,
 }
 
 template <typename T>
-const Eigen::Matrix<T, 3, 3> RelativePoseCostFunction::rotationMatrixFromYaw(
+Eigen::Matrix<T, 3, 3> RelativePoseCostFunction::rotationMatrixFromYaw(
     T yaw_radians) const {
   const T cos_yaw = ceres::cos(yaw_radians);
   const T sin_yaw = ceres::sin(yaw_radians);

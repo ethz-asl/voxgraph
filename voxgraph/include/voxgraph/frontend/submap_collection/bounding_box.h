@@ -1,8 +1,8 @@
 #ifndef VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_BOUNDING_BOX_H_
 #define VOXGRAPH_FRONTEND_SUBMAP_COLLECTION_BOUNDING_BOX_H_
 
-#include <voxblox/core/common.h>
 #include <Eigen/Dense>
+#include <voxblox/core/common.h>
 
 namespace voxgraph {
 typedef Eigen::Matrix<voxblox::FloatingPoint, 3, 8> BoxCornerMatrix;
