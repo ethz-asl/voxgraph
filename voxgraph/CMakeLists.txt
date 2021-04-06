@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(voxgraph)
 
-add_definitions(-std=c++14 -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare -fPIC -DEIGEN_INITIALIZE_MATRICES_BY_NAN -fdiagnostics-color=auto)
+add_definitions(-std=c++14 -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-deprecated-copy -fPIC -DEIGEN_INITIALIZE_MATRICES_BY_NAN -fdiagnostics-color=auto)
 
 find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)

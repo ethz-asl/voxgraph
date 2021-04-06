@@ -35,6 +35,11 @@ class PoseGraphManager {
     return registration_constraints_enabled_;
   }
 
+  void setRobocentricRobotName(const std::string& robot_name) {
+    robocentric_robot_name_ = robot_name;
+  }
+  std::string getRobocentricRobotName() { return robocentric_robot_name_; }
+
   void addSubmap(SubmapID submap_id);
 
   // NOTE: The pose graph optimization works in 4D. Therefore the
@@ -105,6 +110,11 @@ class PoseGraphManager {
 
   // Optimize
   void optimizeSlidingPoseGraphImpl();
+
+  // Inertial to robocentric conversion for a given robot
+  std::string robocentric_robot_name_;
+  bool getInertialToRobotOdomTransform(const std::string& robot_name,
+                                       Transformation* T_O_robot_I);
 };
 }  // namespace voxgraph
 

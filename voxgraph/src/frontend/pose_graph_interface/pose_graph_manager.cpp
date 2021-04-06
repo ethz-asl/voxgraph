@@ -230,7 +230,13 @@ void PoseGraphManager::optimizeSlidingPoseGraph() {
 
   // Publish debug visuals
   if (pose_graph_pub_.getNumSubscribers() > 0) {
-    pose_graph_vis_.publishPoseGraph(sliding_pose_graph_, Transformation(),
+    Transformation T_vis_I, T_O_robot_I;
+    if (!robocentric_robot_name_.empty() &&
+        getInertialToRobotOdomTransform(robocentric_robot_name_,
+                                        &T_O_robot_I)) {
+      T_vis_I = T_O_robot_I;
+    }
+    pose_graph_vis_.publishPoseGraph(sliding_pose_graph_, T_vis_I,
                                      visualization_odom_frame_,
                                      "sliding_pose_graph", pose_graph_pub_);
   }
@@ -242,7 +248,13 @@ void PoseGraphManager::optimizeFullPoseGraph() {
 
   // Publish debug visuals
   if (pose_graph_pub_.getNumSubscribers() > 0) {
-    pose_graph_vis_.publishPoseGraph(full_pose_graph_, Transformation(),
+    Transformation T_vis_I, T_O_robot_I;
+    if (!robocentric_robot_name_.empty() &&
+        getInertialToRobotOdomTransform(robocentric_robot_name_,
+                                        &T_O_robot_I)) {
+      T_vis_I = T_O_robot_I;
+    }
+    pose_graph_vis_.publishPoseGraph(full_pose_graph_, T_vis_I,
                                      visualization_odom_frame_,
                                      "full_pose_graph", pose_graph_pub_);
   }
@@ -369,7 +381,27 @@ void PoseGraphManager::optimizeFullPoseGraph() {
 //}
 
 void PoseGraphManager::updateSubmapCollectionPosesBasedOnSlidingPoseGraph() {
-  // TODO(victorr): Track and publish per-robot robocentric frames
+  // Convert the poses from inertial to robocentric frame if appropriate
+  if (!robocentric_robot_name_.empty()) {
+    Transformation T_O_robot_I;
+    if (getInertialToRobotOdomTransform(robocentric_robot_name_,
+                                        &T_O_robot_I)) {
+      for (const auto& submap_pose_kv : sliding_pose_graph_.getSubmapPoses()) {
+        Transformation T_O_robot_submap = T_O_robot_I * submap_pose_kv.second;
+        submap_collection_ptr_->setSubmapPose(submap_pose_kv.first,
+                                              T_O_robot_submap);
+      }
+    } else {
+      ROS_WARN_STREAM(
+          "Specified to set the submap poses in robocentric frame for robot "
+          "named '"
+          << robocentric_robot_name_
+          << "'. However, no submaps are available for this robot. Will set "
+             "the submap poses in inertial frame instead.");
+    }
+  }
+
+  // Save the submap poses in inertial frame instead
   for (const auto& submap_pose_kv : sliding_pose_graph_.getSubmapPoses()) {
     submap_collection_ptr_->setSubmapPose(submap_pose_kv.first,
                                           submap_pose_kv.second);
@@ -467,5 +499,23 @@ void PoseGraphManager::optimizeSlidingPoseGraphImpl() {
 
   // Update the submap poses
   updateSubmapCollectionPosesBasedOnSlidingPoseGraph();
+}
+
+bool PoseGraphManager::getInertialToRobotOdomTransform(
+    const std::string& robot_name, Transformation* T_O_robot_I) {
+  CHECK_NOTNULL(T_O_robot_I);
+  SubmapID submap_id;
+  if (submap_collection_ptr_->getLastSubmapId(robot_name, &submap_id)) {
+    const VoxgraphSubmap& latest_robot_submap =
+        submap_collection_ptr_->getSubmap(submap_id);
+    Transformation T_I_S_latest;
+    if (sliding_pose_graph_.getSubmapPose(submap_id, &T_I_S_latest)) {
+      const Transformation T_O_robot_S_latest =
+          latest_robot_submap.getInitialPose();
+      *T_O_robot_I = T_O_robot_S_latest * T_I_S_latest.inverse();
+      return true;
+    }
+  }
+  return false;
 }
 }  // namespace voxgraph

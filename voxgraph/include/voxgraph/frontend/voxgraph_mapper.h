@@ -36,7 +36,7 @@ class VoxgraphMapper {
 
   // ROS topic callbacks
   void loopClosureCallback(const voxgraph_msgs::LoopClosure& loop_closure_msg);
-  virtual bool submapCallback(const voxblox_msgs::Submap& submap_msg);
+  virtual SubmapID submapCallback(const voxblox_msgs::Submap& submap_msg);
 
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
@@ -169,6 +169,7 @@ class VoxgraphMapper {
 
   // Class handling all frame names used to interface with ROS
   FrameNames frame_names_;
+  std::string robocentric_robot_name_;
 };
 }  // namespace voxgraph
 

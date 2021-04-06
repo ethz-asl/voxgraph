@@ -58,7 +58,8 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
           FrameNames::fromRosParams(nh_private).output_odom_frame),
       projected_map_server_(nh_private),
       submap_server_(nh_private),
-      frame_names_(FrameNames::fromRosParams(nh_private)) {
+      frame_names_(FrameNames::fromRosParams(nh_private)),
+      robocentric_robot_name_("") {
   // Setup interaction with ROS
   getParametersFromRos();
   subscribeToTopics();
@@ -66,9 +67,11 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
   advertiseServices();
 
   // Setup timers
-  submap_pose_tf_publishing_timer_ = nh_private.createTimer(
-      ros::Duration(submap_pose_tf_publishing_period_s_),
-      std::bind(&VoxgraphMapper::publishSubmapPoseTFs, this));
+  if (0.0 < submap_pose_tf_publishing_period_s_) {
+    submap_pose_tf_publishing_timer_ = nh_private.createTimer(
+        ros::Duration(submap_pose_tf_publishing_period_s_),
+        std::bind(&VoxgraphMapper::publishSubmapPoseTFs, this));
+  }
   if (0.0 < full_pose_graph_optimization_period_s_) {
     full_pose_graph_optimization_timer_ = nh_private.createTimer(
         ros::Duration(full_pose_graph_optimization_period_s_),
@@ -91,6 +94,14 @@ void VoxgraphMapper::getParametersFromRos() {
                     submap_topic_queue_length_);
   nh_private_.param("publisher_queue_length", publisher_queue_length_,
                     publisher_queue_length_);
+
+  // Check whether to set the submap collection poses inertial frame,
+  // or in the robocentric frame for a specific robot
+  {
+    nh_private_.param("robocentric_robot_name", robocentric_robot_name_,
+                      robocentric_robot_name_);
+    pose_graph_manager_.setRobocentricRobotName(robocentric_robot_name_);
+  }
 
   // Get the submap creation interval as a ros::Duration
   double interval_temp;
@@ -279,7 +290,8 @@ void VoxgraphMapper::loopClosureCallback(
   //                                loop_closure_axes_pub_);
 }
 
-bool VoxgraphMapper::submapCallback(const voxblox_msgs::Submap& submap_msg) {
+SubmapID VoxgraphMapper::submapCallback(
+    const voxblox_msgs::Submap& submap_msg) {
   // Create the new submap draft
   VoxgraphSubmap new_submap = submap_collection_ptr_->draftNewSubmap();
 
@@ -287,7 +299,7 @@ bool VoxgraphMapper::submapCallback(const voxblox_msgs::Submap& submap_msg) {
   std::string mismatched_odom_frame;
   if (submap_msg.trajectory.poses.empty()) {
     ROS_WARN("Received submap with empty trajectory. Skipping submap.");
-    return false;
+    return kInvalidSubmapId;
   }
   for (const geometry_msgs::PoseStamped& pose_stamped :
        submap_msg.trajectory.poses) {
@@ -310,7 +322,7 @@ bool VoxgraphMapper::submapCallback(const voxblox_msgs::Submap& submap_msg) {
   if (!voxblox::deserializeMsgToLayer(
           submap_msg.layer, new_submap.getTsdfMapPtr()->getTsdfLayerPtr())) {
     ROS_WARN("Received a submap msg with an invalid TSDF. Skipping submap.");
-    return false;
+    return kInvalidSubmapId;
   }
 
   // Set the robot name
@@ -386,7 +398,7 @@ bool VoxgraphMapper::submapCallback(const voxblox_msgs::Submap& submap_msg) {
   publishSubmapPoseTFs();
 
   // Signal that the new submap was successfully added
-  return true;
+  return active_submap_id;
 }
 
 bool VoxgraphMapper::publishSeparatedMeshCallback(
@@ -589,7 +601,8 @@ void VoxgraphMapper::publishMaps(const ros::Time& current_timestamp) {
       const SubmapID active_submap_id =
           submap_collection_ptr_->getActiveSubmapID();
       submap_vis_.publishMesh(*submap_collection_ptr_, active_submap_id,
-                              "submap_" + std::to_string(active_submap_id),
+                              robocentric_robot_name_ + "_submap_" +
+                                  std::to_string(active_submap_id),
                               submap_mesh_pub_);
     }
   }
@@ -619,7 +632,8 @@ void VoxgraphMapper::publishSubmapPoseTFs() {
        submap_collection_ptr_->getSubmapConstPtrs()) {
     TfHelper::publishTransform(submap_ptr->getPose(),
                                frame_names_.output_odom_frame,
-                               "submap_" + std::to_string(submap_ptr->getID()),
+                               robocentric_robot_name_ + "_submap_" +
+                                   std::to_string(submap_ptr->getID()),
                                false, current_timestamp);
   }
   SubmapID first_submap_id;
@@ -631,9 +645,9 @@ void VoxgraphMapper::publishSubmapPoseTFs() {
       const Transformation T_odom_initial_pose =
           first_submap.getPose() *
           first_submap.getPoseHistory().begin()->second;
-      TfHelper::publishTransform(T_odom_initial_pose,
-                                 frame_names_.output_odom_frame, "initial_pose",
-                                 false, current_timestamp);
+      TfHelper::publishTransform(
+          T_odom_initial_pose, frame_names_.output_odom_frame,
+          robocentric_robot_name_ + "_initial_pose", false, current_timestamp);
     }
   }
 }
