@@ -92,6 +92,18 @@ class VoxgraphSubmap : public cblox::TsdfEsdfSubmap {
   const BoxCornerMatrix getOdomFrameSurfaceAabbCorners() const;
   const BoxCornerMatrix getOdomFrameSubmapAabbCorners() const;
 
+  // Query individual voxels in the submap
+  // NOTE: These methods return nullptrs if no voxel is defined
+  //       at the requested position
+  const voxblox::TsdfVoxel* getTsdfVoxelPtrByLocalCoordinates(
+      const Transformation::Position& t_S_point) const {
+    return tsdf_map_->getTsdfLayer().getVoxelPtrByCoordinates(t_S_point);
+  }
+  const voxblox::EsdfVoxel* getEsdfVoxelPtrByLocalCoordinates(
+      const Transformation::Position& t_S_point) const {
+    return esdf_map_->getEsdfLayer().getVoxelPtrByCoordinates(t_S_point);
+  }
+
   // Load a submap from stream.
   // Note: Returns a nullptr if load is unsuccessful.
   static VoxgraphSubmap::Ptr LoadFromStream(const Config& config,
