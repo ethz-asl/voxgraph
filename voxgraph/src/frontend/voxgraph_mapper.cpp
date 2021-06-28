@@ -38,7 +38,7 @@ VoxgraphMapper::VoxgraphMapper(const ros::NodeHandle& nh,
       verbose_(false),
       auto_pause_rosbag_(false),
       rosbag_helper_(nh),
-      submap_pose_tf_publishing_period_s_(0.1),
+      submap_pose_tf_publishing_period_s_(0.5),
       loop_closure_topic_("loop_closure_input"),
       submap_topic_("submap_input"),
       loop_closure_topic_queue_length_(1000),
@@ -650,5 +650,9 @@ void VoxgraphMapper::publishSubmapPoseTFs() {
           robocentric_robot_name_ + "_initial_pose", false, current_timestamp);
     }
   }
+
+  // Restart the timer to avoid queued calls executing at same ROS time
+  submap_pose_tf_publishing_timer_.stop();
+  submap_pose_tf_publishing_timer_.start();
 }
 }  // namespace voxgraph
