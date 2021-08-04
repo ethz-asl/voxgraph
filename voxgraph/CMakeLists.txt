@@ -76,6 +76,11 @@ cs_add_executable(registration_test_bench
     src/tools/test_benches/registration_test_bench.cpp)
 target_link_libraries(registration_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES})
 
+cs_add_executable(submap_republisher
+    src/tools/submap_republisher.cpp
+    src/tools/submap_republisher_node.cpp)
+target_link_libraries(submap_republisher ${PROJECT_NAME} ${PROTO_LIBRARIES})
+
 ##########
 # EXPORT #
 ##########

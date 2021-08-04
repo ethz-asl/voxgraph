@@ -24,5 +24,7 @@
   <depend>voxblox_msgs</depend>
   <depend>cblox_msgs</depend>
   <depend>voxgraph_msgs</depend>
+
+  <depend>transfolder_msgs</depend>
 </package>
 
