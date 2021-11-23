@@ -91,9 +91,12 @@ void VoxgraphMapper::getParametersFromRos() {
         ros::Duration(update_mesh_every_n_sec),
         std::bind(&VoxgraphMapper::publishActiveSubmapMeshCallback, this));
   }
-  float mesh_opacity = 1.0;
-  nh_private_.param("mesh_opacity", mesh_opacity, mesh_opacity);
-  submap_vis_.setMeshOpacity(mesh_opacity);
+  submap_vis_.setMeshOpacity(nh_private_.param("mesh_opacity", 1.0));
+  submap_vis_.setSubmapMeshColorMode(
+      voxblox::getColorModeFromString(nh_private_.param<std::string>(
+          "submap_mesh_color_mode", "lambert_color")));
+  submap_vis_.setCombinedMeshColorMode(voxblox::getColorModeFromString(
+      nh_private_.param<std::string>("combined_mesh_color_mode", "normals")));
 
   // Read whether or not to auto pause the rosbag during graph optimization
   nh_private_.param("auto_pause_rosbag", auto_pause_rosbag_,
@@ -349,11 +352,10 @@ void VoxgraphMapper::publishActiveSubmapMeshCallback() {
   if (active_mesh_pub_.getNumSubscribers() > 0) {
     cblox::SubmapID active_submap_id =
         submap_collection_ptr_->getActiveSubmapID();
+    const voxblox::ExponentialOffsetColorMap submap_id_color_map;
     submap_vis_.publishMesh(
         *submap_collection_ptr_, active_submap_id,
-        voxblox::rainbowColorMap(
-            static_cast<double>(active_submap_id) /
-            static_cast<double>(cblox::kDefaultColorCycleLength)),
+        submap_id_color_map.colorLookup(active_submap_id),
         map_tracker_.getFrameNames().output_active_submap_frame,
         active_mesh_pub_);
   }
