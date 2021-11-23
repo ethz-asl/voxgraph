@@ -27,11 +27,11 @@ class VoxgraphSubmapCollection
   explicit VoxgraphSubmapCollection(VoxgraphSubmap::Config submap_config,
                                     bool verbose = false)
       : SubmapCollection(submap_config),
-        submap_creation_interval_(20),
-        verbose_(verbose) {}
+        verbose_(verbose),
+        submap_creation_interval_(20) {}
 
   void setSubmapCreationInterval(ros::Duration submap_creation_interval) {
-    submap_creation_interval_ = std::move(submap_creation_interval);
+    submap_creation_interval_ = submap_creation_interval;
   }
 
   bool shouldCreateNewSubmap(const ros::Time& current_time);
