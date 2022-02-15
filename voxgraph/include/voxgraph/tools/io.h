@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 
 #include <rosbag/bag.h>
 
@@ -24,6 +25,20 @@ bool savePoseHistoryToFile(
   bag.close();
   return true;  // Zero error checking here!
 }
+
+template <typename T, typename MsgT>
+bool saveMapToFile(
+  const std::string& filepath,
+  const std::map<T, MsgT> & map_with_messages) {
+  rosbag::Bag bag;
+  bag.open(filepath, rosbag::bagmode::Write);
+  for (auto it = map_with_messages.begin(); it != map_with_messages.end(); it++) {
+    bag.write("pose_history", it->first, it->second);
+  }
+  bag.close();
+  return true; // Zero error checking here also!
+} 
+
 
 template <typename T>
 bool saveVectorToFile(const std::string& filepath, const std::vector<T> vec) {

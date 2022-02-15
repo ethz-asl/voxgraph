@@ -89,7 +89,7 @@ class VoxgraphMapper {
 
   // Verbosity and debug mode
   bool verbose_;
-
+  std::map<ros::Time, geometry_msgs::PoseStamped> poses_received_;
   // Flag and helper to automatically pause rosbags during graph optimization
   // NOTE: This is useful when playing bags faster than real-time or when
   //       experimenting with optimization settings
@@ -119,7 +119,7 @@ class VoxgraphMapper {
   ros::Subscriber loop_closure_subscriber_;
   ros::Subscriber submap_subscriber_;
   // TODO(victorr): Add support for absolute pose measurements
-
+  std::vector<geometry_msgs::PoseStamped> all_poses_history_;
   // ROS topic publishers
   ros::Publisher submap_mesh_pub_;
   ros::Publisher combined_mesh_pub_;
