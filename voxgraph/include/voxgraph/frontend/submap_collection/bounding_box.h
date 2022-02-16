@@ -9,7 +9,7 @@ typedef Eigen::Matrix<voxblox::FloatingPoint, 3, 8> BoxCornerMatrix;
 class BoundingBox {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
+  virtual ~BoundingBox() {}
   voxblox::Point min = {INFINITY, INFINITY, INFINITY};
   voxblox::Point max = {-INFINITY, -INFINITY, -INFINITY};
 
