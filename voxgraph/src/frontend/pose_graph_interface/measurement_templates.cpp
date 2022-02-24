@@ -8,6 +8,7 @@ MeasurementTemplates::MeasurementTemplates(bool verbose)
       loop_closure(loop_closure_),
       gps(gps_),
       height(height_),
+      planes(planes_),
       registration(registration_),
       verbose_(verbose) {
   // Initialize the default odometry measurement config
@@ -27,6 +28,9 @@ MeasurementTemplates::MeasurementTemplates(bool verbose)
   height_.information_matrix.setZero();
   height_.reference_frame_id = NodeTemplates::kOdomFrame;
   height_.allow_semi_definite_information_matrix = true;
+
+  // Initialize the default planes config
+  planes_.information_matrix.setZero();
 
   // Initialize the default registration config
   registration_.information_matrix.setZero();
@@ -76,6 +80,15 @@ void MeasurementTemplates::setFromRosParams(
     ROS_INFO_STREAM_COND(verbose_,
                          "Setting height measurement information matrix to:\n"
                              << height.information_matrix);
+  }
+
+  if (node_handle.hasParam("planes")) {
+    // Set the information matrix
+    setInformationMatrixFromRosParams(
+        ros::NodeHandle(node_handle, "planes/information_matrix"),
+        &planes_.information_matrix);
+    ROS_INFO_STREAM_COND(verbose_, "Setting planes information matrix to:\n"
+                                       << planes.information_matrix);
   }
 
   if (node_handle.hasParam("submap_registration")) {

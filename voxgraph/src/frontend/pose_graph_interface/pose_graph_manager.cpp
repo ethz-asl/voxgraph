@@ -158,6 +158,29 @@ void PoseGraphManager::addHeightMeasurement(const SubmapID& submap_id,
   sliding_pose_graph_.addAbsolutePoseConstraint(constraint_config);
 }
 
+void PoseGraphManager::addPlanesMeasurement(const SubmapID& submap_id,
+                          const std::vector<int> submap_ids,
+                          const std::map<int, int> matched_planes, // origin(submap_id planes)-destination (previous submaps planes)
+                          const std::map<int, std::shared_ptr<PlaneType>>& all_planes) {
+  LOG(INFO) << "PoseGraphManager::addPlanesMeasurement";
+  size_t idx = 0;
+  for (const auto & matched_pair : matched_planes) {
+    const PlaneType * first_plane = all_planes.at(matched_pair.first).get();
+    const PlaneType * second_plane = all_planes.at(matched_pair.second).get();
+    PlanesConstraint::Config constraint_config = measurement_templates_.planes;
+    // add origin plane info
+    constraint_config.origin_submap_id = submap_id;
+    constraint_config.origin_plane = first_plane;
+    constraint_config.T_M_R_origin = submap_collection_ptr_->getSubmap(submap_id).getInitialPose();
+    // add destination plane info
+    constraint_config.destination_submap_id = submap_ids[idx];
+    constraint_config.destination_plane = second_plane;
+    constraint_config.T_M_R_destination = submap_collection_ptr_->getSubmap(submap_ids[idx]).getInitialPose();
+    sliding_pose_graph_.addPlanesConstraint(constraint_config);
+    ++idx;
+  }
+}
+
 void PoseGraphManager::updateSlidingPoseGraphRegistrationConstraints() {
   if (registration_constraints_enabled_) {
     updateRegistrationConstraintsForOverlappingSubmapPairs(

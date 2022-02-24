@@ -10,8 +10,10 @@
 #include "voxgraph/frontend/pose_graph_interface/measurement_templates.h"
 #include "voxgraph/frontend/pose_graph_interface/node_templates.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+#include "voxgraph/frontend/plane_collection/plane_type.h"
 #include "voxgraph/tools/visualization/pose_graph_visuals.h"
 #include "voxgraph/tools/visualization/submap_visuals.h"
+
 
 namespace voxgraph {
 class PoseGraphManager {
@@ -53,7 +55,10 @@ class PoseGraphManager {
                                  const Transformation& transform);
   void addGpsMeasurement() {}
   void addHeightMeasurement(const SubmapID& submap_id, const double& height);
-
+  void addPlanesMeasurement(const SubmapID& submap_id,
+                            const std::vector<int> submap_ids,
+                            const std::map<int, int> matched_planes,
+                            const std::map<int, std::shared_ptr<PlaneType>>& all_planes);
   // Method to recalculate which submaps overlap and update their
   // registration constraints accordingly
   void updateSlidingPoseGraphRegistrationConstraints();
