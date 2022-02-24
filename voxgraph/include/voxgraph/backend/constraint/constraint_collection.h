@@ -4,6 +4,7 @@
 #include <list>
 
 #include "voxgraph/backend/constraint/absolute_pose_constraint.h"
+#include "voxgraph/backend/constraint/planes_constraint.h"
 #include "voxgraph/backend/constraint/registration_constraint.h"
 #include "voxgraph/backend/constraint/relative_pose_constraint.h"
 
@@ -13,7 +14,7 @@ class ConstraintCollection {
   typedef std::list<AbsolutePoseConstraint> AbsolutePoseConstraintList;
   typedef std::list<RelativePoseConstraint> RelativePoseConstraintList;
   typedef std::list<RegistrationConstraint> RegistrationConstraintList;
-
+  typedef std::list<PlanesConstraint> PlanesConstraintList;
   // Absolute pose constraints
   void addAbsolutePoseConstraint(const AbsolutePoseConstraint::Config& config) {
     absolute_pose_constraints_.emplace_back(newConstraintId(), config);
@@ -41,6 +42,14 @@ class ConstraintCollection {
   }
   void resetRegistrationConstraints() { registration_constraints_.clear(); }
 
+  // Planes constraints
+  void addPlanesConstraint(const PlanesConstraint::Config& config) {
+    planes_constraints_.emplace_back(newConstraintId(), config);
+  }
+  const PlanesConstraintList& getPlanesConstraints() {
+    return planes_constraints_;
+  }
+
   void addConstraintsToProblem(const NodeCollection& node_collection,
                                ceres::Problem* problem_ptr,
                                bool ignore_if_endpoints_constant = true);
@@ -54,6 +63,7 @@ class ConstraintCollection {
   AbsolutePoseConstraintList absolute_pose_constraints_;
   RelativePoseConstraintList relative_pose_constraints_;
   RegistrationConstraintList registration_constraints_;
+  PlanesConstraintList planes_constraints_;
 };
 }  // namespace voxgraph
 

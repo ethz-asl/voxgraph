@@ -19,5 +19,9 @@ void ConstraintCollection::addConstraintsToProblem(
     registration_constraint.addToProblem(node_collection, problem_ptr,
                                          ignore_if_endpoints_constant);
   }
+  for (Constraint& planes_constraint : planes_constraints_) {
+    planes_constraint.addToProblem(node_collection, problem_ptr,
+                                   ignore_if_endpoints_constant);
+  }
 }
 }  // namespace voxgraph
