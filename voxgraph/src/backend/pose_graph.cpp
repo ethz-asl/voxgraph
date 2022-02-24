@@ -114,6 +114,11 @@ void PoseGraph::addRegistrationConstraint(
   constraints_collection_.addRegistrationConstraint(config);
 }
 
+void PoseGraph::addPlanesConstraint(const PlanesConstraint::Config& config) {
+    // Add to the constraint set
+  constraints_collection_.addPlanesConstraint(config);
+}
+
 void PoseGraph::optimize() {
   // Initialize the problem
   problem_ptr_ = std::make_shared<ceres::Problem>(problem_options_);

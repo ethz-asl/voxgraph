@@ -83,6 +83,13 @@ class PoseGraph {
   void resetRegistrationConstraints() {
     constraints_collection_.resetRegistrationConstraints();
   }
+  // Planes constraint getters and setters
+  void addPlanesConstraint(const PlanesConstraint::Config& config);
+  const ConstraintCollection::PlanesConstraintList&
+  getPlanesConstraints() {
+    return constraints_collection_.getPlanesConstraints();
+  }
+  void resetPlanesConstraints() {}
 
   void optimize();
 
