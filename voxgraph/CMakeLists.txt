@@ -35,6 +35,9 @@ cs_add_library(${PROJECT_NAME}
     src/frontend/submap_collection/submap_timeline.cpp
     src/frontend/submap_collection/voxgraph_submap.cpp
     src/frontend/submap_collection/voxgraph_submap_collection.cpp
+    src/frontend/plane_collection/plane_type.cpp
+    src/frontend/plane_collection/bounding_box_extended.cpp
+    src/frontend/plane_collection/submap_stitcher.cpp
     src/backend/pose_graph.cpp
     src/backend/node/node.cpp
     src/backend/node/node_collection.cpp
@@ -45,7 +48,9 @@ cs_add_library(${PROJECT_NAME}
     src/backend/constraint/relative_pose_constraint.cpp
     src/backend/constraint/absolute_pose_constraint.cpp
     src/backend/constraint/registration_constraint.cpp
+    src/backend/constraint/planes_constraint.cpp
     src/backend/constraint/cost_functions/registration_cost_function.cpp
+    src/backend/constraint/cost_functions/planes_cost_function.cpp
     src/tools/rosbag_helper.cpp
     src/tools/tf_helper.cpp
     src/tools/submap_registration_helper.cpp

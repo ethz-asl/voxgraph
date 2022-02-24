@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 
+#include <panoptic_mapping_msgs/SubmapWithPlanes.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_srvs/Empty.h>
@@ -18,6 +19,7 @@
 #include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_manager.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
+#include "voxgraph/frontend/plane_collection/submap_stitcher.h"
 #include "voxgraph/tools/data_servers/projected_map_server.h"
 #include "voxgraph/tools/data_servers/submap_server.h"
 #include "voxgraph/tools/rosbag_helper.h"
@@ -37,7 +39,8 @@ class VoxgraphMapper {
   // ROS topic callbacks
   void loopClosureCallback(const voxgraph_msgs::LoopClosure& loop_closure_msg);
   virtual SubmapID submapCallback(const voxblox_msgs::Submap& submap_msg);
-
+  virtual SubmapID submapWithPlanesCallback(
+      const panoptic_mapping_msgs::SubmapWithPlanes& submap_planes_msg);
   // ROS service callbacks
   bool publishSeparatedMeshCallback(
       std_srvs::Empty::Request& request,     // NOLINT
@@ -114,10 +117,12 @@ class VoxgraphMapper {
   // ROS topic subscribers
   std::string loop_closure_topic_;
   std::string submap_topic_;
+  std::string submap_with_planes_topic_;
   int loop_closure_topic_queue_length_;
   int submap_topic_queue_length_;
   ros::Subscriber loop_closure_subscriber_;
   ros::Subscriber submap_subscriber_;
+  ros::Subscriber submap_with_planes_subscriber_;
   // TODO(victorr): Add support for absolute pose measurements
   std::vector<geometry_msgs::PoseStamped> all_poses_history_;
   // ROS topic publishers
@@ -145,6 +150,7 @@ class VoxgraphMapper {
   // Constraints to be used
   bool odometry_constraints_enabled_;
   bool height_constraints_enabled_;
+  bool plane_constraints_enabled_;
   bool pause_sliding_optimization_;
   bool pause_full_optimization_;
 
@@ -162,7 +168,7 @@ class VoxgraphMapper {
   int optimizeSlidingPoseGraph();
   int optimizeFullPoseGraph(bool skip_if_busy);
   PoseGraphManager pose_graph_manager_;
-
+  SubmapStitcher submap_stitcher_;
   // Map servers, used to share the projected map and submaps with ROS nodes
   ProjectedMapServer projected_map_server_;
   SubmapServer submap_server_;
