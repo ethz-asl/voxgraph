@@ -24,5 +24,6 @@
   <depend>voxblox_msgs</depend>
   <depend>cblox_msgs</depend>
   <depend>voxgraph_msgs</depend>
+  <depend>panoptic_mapping_msgs</depend>
 </package>
 
