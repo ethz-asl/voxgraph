@@ -4,6 +4,7 @@
 #include "voxgraph/backend/constraint/absolute_pose_constraint.h"
 #include "voxgraph/backend/constraint/registration_constraint.h"
 #include "voxgraph/backend/constraint/relative_pose_constraint.h"
+#include "voxgraph/backend/constraint/planes_constraint.h"
 #include "voxgraph/frontend/pose_graph_interface/node_templates.h"
 
 namespace voxgraph {
@@ -17,6 +18,7 @@ class MeasurementTemplates {
   const RelativePoseConstraint::Config& loop_closure;
   const AbsolutePoseConstraint::Config& gps;
   const AbsolutePoseConstraint::Config& height;
+  const PlanesConstraint::Config& planes;
   const RegistrationConstraint::Config& registration;
 
  private:
@@ -30,6 +32,7 @@ class MeasurementTemplates {
   RelativePoseConstraint::Config loop_closure_;
   AbsolutePoseConstraint::Config gps_;
   AbsolutePoseConstraint::Config height_;
+  PlanesConstraint::Config planes_;
   RegistrationConstraint::Config registration_;
 };
 }  // namespace voxgraph
