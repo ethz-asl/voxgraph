@@ -103,7 +103,7 @@ void CostFunctionVisuals::scaleAndPublish(const double factor) {
 void CostFunctionVisuals::reset() {
   // Reset the residual pointcloud
   residual_ptcloud_.clear();
-  residual_ptcloud_.header.frame_id = "odom";
+  residual_ptcloud_.header.frame_id = "world";
   // Reset variables used to visualize the Jacobians
   jacobian_marker_array_.markers.clear();
   jacobian_origins_.points.clear();
