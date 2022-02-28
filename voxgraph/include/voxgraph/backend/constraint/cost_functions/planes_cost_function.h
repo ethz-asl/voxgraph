@@ -10,7 +10,7 @@
 #include "voxgraph/tools/visualization/cost_function_visuals.h"
 
 namespace voxgraph {
-class PlanesCostFunction : public ceres::CostFunction{
+class PlanesCostFunction {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -20,14 +20,11 @@ class PlanesCostFunction : public ceres::CostFunction{
     // What method to use to calculate the Jacobians
     JacobianEvaluationMethod jacobian_evaluation_method =
         JacobianEvaluationMethod::kAnalytic;
-    // Cost to assign for voxels that can't be interpolated
-    // i.e. that don't exist in the other submap
-    double no_correspondence_cost = 0;
 
     // Visuals for debugging purposes
-    bool visualize_residuals = false;
-    bool visualize_gradients = false;
-    bool visualize_transforms_ = false;
+    bool visualize_residuals = true;
+    bool visualize_gradients = true;
+    bool visualize_transforms_ = true;
   };
 
   PlanesCostFunction(
@@ -55,11 +52,11 @@ class PlanesCostFunction : public ceres::CostFunction{
    * @return true
    * @return false
    */
-  bool Evaluate(double const* const* parameters, double* residuals,
-                double** jacobians) const;
-  // template <typename T>
-  // bool operator()(const T* const pose_A, const T* const pose_B,
-  //                 T* residuals) const;
+  // bool Evaluate(double const* const* parameters, double* residuals,
+  //               double** jacobians) const;
+  template <typename T>
+  bool operator()(const T* const pose_A, const T* const pose_B,
+                  T* residuals) const;
 
  protected:
   Config config_;
@@ -70,6 +67,8 @@ class PlanesCostFunction : public ceres::CostFunction{
   Transformation T_P_R_destination_;
   PlaneType::ConstPtr origin_plane_;
   PlaneType::ConstPtr destination_plane_;
+  // Used for residual and Jacobian visualization
+  mutable CostFunctionVisuals cost_function_visuals_;
 };
 }  // namespace voxgraph
 
