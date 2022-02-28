@@ -34,12 +34,16 @@ class SubmapStitcher {
   std::map<int, std::shared_ptr<PlaneType>> getAllPlanes() const {
     return all_planes_;
   }
+  void visualizeVector(const Eigen::Vector3f vec,
+                       const Eigen::Vector3f point) const;
 
  private:
   std::shared_ptr<std::map<int, classToPlanesType>>
       submap_id_to_class_to_planes_;
   std::map<int, std::shared_ptr<PlaneType>> all_planes_;
   Config config_;
+  ros::Publisher vec_pub_;
+  ros::NodeHandle nh_;
 };
 
 }  // namespace voxgraph
