@@ -80,6 +80,16 @@ cs_add_executable(registration_test_bench
 target_link_libraries(registration_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES})
 
 ##########
+# Tests #
+##########
+
+if (CATKIN_ENABLE_TESTING)
+    catkin_add_gtest(planeTypeTests-test test/planeTypeTests.cpp)
+    target_link_libraries(planeTypeTests-test ${catkin_LIBRARIES} ${PROJECT_NAME})
+endif()
+
+
+##########
 # EXPORT #
 ##########
 cs_install()
