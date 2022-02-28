@@ -51,25 +51,28 @@ class PlaneType {
                               const double threshold_belongs);
   void createPlaneSegmentAaBb(const std::vector<const Point*>& points,
                               const double threshold_belongs);
+  void fixNormal(const std::vector<const Point*>& points,
+                 const std::vector<const Point*>& normals);
+  void reverseNormal();
   void setplaneSegmentAaBb(const BoundingBoxType& bbox);
 
   static float distFunc2(const Point& p1, const Point& n1, const Point& p2,
                          const Point& n2);
   panoptic_mapping_msgs::PlaneType toPlaneTypeMsg() const;
   static PlaneType fromMsg(const panoptic_mapping_msgs::PlaneType& msg);
-
+  size_t getNumPoints() const { return num_points_; }
  private:
   PlaneID plane_id_;
   static PlaneID getNextPlaneID() {
     static int next_plane_id = 0;
     return next_plane_id++;
   }
-  int class_id_;
+  int class_id_ = -2;
   Transformation T_M_P_;
   Transformation T_M_P_init_;
   Point point_;
   Eigen::Hyperplane<float, 3> plane_;
-  size_t num_points_;
+  size_t num_points_ = 0u;
   BoundingBoxType planeSegmentAaBb_;
 };
 

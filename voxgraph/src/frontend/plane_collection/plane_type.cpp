@@ -10,12 +10,10 @@ namespace voxgraph {
 
 PlaneType::PlaneType(const Eigen::Vector3f& normal, const Point& point,
                      const int class_id)
-    : plane_(normal, normal.dot(point)),
+    : plane_(normal.stableNormalized(), normal.stableNormalized().dot(point)),
       point_(point),
       class_id_(class_id),
       plane_id_(getNextPlaneID()) {
-  assert(normal.squaredNorm() - 1 < 1.000001 &&
-         1 - normal.squaredNorm() > 0.9999);
   buildPlaneOrientation();
   T_M_P_init_ = T_M_P_;
   num_points_ = 0;
@@ -34,20 +32,23 @@ PlaneType::PlaneType(const Eigen::Hyperplane<float, 3>& plane,
                      const Transformation& T_M_P, int class_id)
     : plane_(plane), class_id_(class_id), plane_id_(getNextPlaneID()) {
   const auto& n = plane.normal();
-  point_ = plane.offset() * n;
+  point_ = T_M_P.getPosition();
   T_M_P_ = T_M_P;
   T_M_P_init_ = T_M_P;
   num_points_ = 0;
 }
+
 PlaneType::PlaneType(const Eigen::Vector3f& normal, const Point& point,
                      const Transformation& T_M_P, int class_id)
-    : PlaneType(Eigen::Hyperplane<float, 3>(normal, point), T_M_P, class_id) {
-  assert(normal.squaredNorm() - 1 < 1.000001 &&
-         1 - normal.squaredNorm() > 0.9999);
+    : PlaneType(Eigen::Hyperplane<float, 3>(normal.stableNormalized(), point), T_M_P, class_id) {
+  // CHECK(normal.squaredNorm() - 1 < 1.01 &&
+  //       1 - normal.squaredNorm() > 0.999);
+  // normal check to be removed 
 }
+
 // getters
 Eigen::Vector3f PlaneType::getPlaneNormal() const {
-  return plane_.normal().normalized();
+  return T_M_P_.getRotationMatrix().col(2);
 }
 Point PlaneType::getPointInit() const { return point_; }
 Transformation PlaneType::getPlaneTransformation() const { return T_M_P_; }
@@ -85,10 +86,10 @@ float PlaneType::dist(const PlaneType& other) const {
 }
 void PlaneType::buildPlaneOrientation() {
   Eigen::Matrix3f matRotation;
-  const auto n = plane_.normal().normalized();
-  const float& x = n.x();
-  const float& y = n.y();
-  const float& z = n.z();
+  const auto n = plane_.normal().stableNormalized();
+  // const float& x = n.x();
+  // const float& y = n.y();
+  // const float& z = n.z();
   // float sqrt_nx_ny = sqrt(x * x + y * y);
   // if (sqrt_nx_ny > 1e-14) {
   // matRotation << y / sqrt_nx_ny, -x / sqrt_nx_ny, 0.0, x * z / sqrt_nx_ny,
@@ -100,20 +101,24 @@ void PlaneType::buildPlaneOrientation() {
   if (p2_on_plane == p1_on_plane) {
     p2_on_plane = plane_.projection(Point(0.0, 0.0, 1.0));
   }
-  Point plane_vec1 = (p1_on_plane - p2_on_plane).normalized();
-  Point plane_vec2 = n.cross(plane_vec1).normalized();
-  plane_vec1 = plane_vec2.cross(n).normalized();
-  matRotation << plane_vec1, plane_vec2, n;
-  if (matRotation.determinant() < 0) {
-    matRotation.row(1)[0] *= -1;
-    matRotation.row(1)[1] *= -1;
-    matRotation.row(1)[2] *= -1;
-  }
+  Point plane_vec1 = (p1_on_plane - p2_on_plane).stableNormalized();
+  Point plane_vec2 = n.cross(plane_vec1).stableNormalized();
+  plane_vec1 = plane_vec2.cross(n).stableNormalized();
+  // matRotation << plane_vec1, plane_vec2, n;
+  matRotation.block<3,1>(0,0) = plane_vec1;
+  matRotation.block<3,1>(0,1) = plane_vec2;
+  matRotation.block<3,1>(0,2) = n;
+  // if (matRotation.determinant() < 0) {
+  //   matRotation.row(1)[0] *= -1;
+  //   matRotation.row(1)[1] *= -1;
+  //   matRotation.row(1)[2] *= -1;
+  // }
   // } else {
   //   matRotation << 1, 0, 0, 0, 1, 0, 0, 0, 1;
   // }
 
   T_M_P_ = Transformation(point_, Transformation::Rotation(matRotation));
+  LOG(INFO) << "T_M_P:\n" << T_M_P_;
 }
 void PlaneType::createPlaneSegmentAaBb(const std::vector<Point>& points,
                                        const double threshold_belongs) {
@@ -146,6 +151,29 @@ void PlaneType::createPlaneSegmentAaBb(const std::vector<const Point*>& points,
   }
   LOG(INFO) << "plane segment aabb created with " << num_points_
             << " points inside";
+}
+
+void PlaneType::fixNormal(const std::vector<const Point*>& points,
+                const std::vector<const Point*>& normals) {
+  Eigen::Vector3f normal_vector = Eigen::Vector3f::Zero();
+  for (const auto n : normals) {
+    normal_vector += *n;
+  }
+  normal_vector /= normals.size();
+  double d = 0;
+  for (const auto p : points) {
+    d += p->dot(normal_vector);
+  }
+  plane_ = Eigen::Hyperplane<float, 3>(normal_vector, static_cast<float>(d/points.size()));
+  buildPlaneOrientation();
+  T_M_P_init_ = T_M_P_;
+}
+
+void PlaneType::reverseNormal() {
+  plane_.normal() = - plane_.normal();
+  plane_.offset() = - plane_.offset();
+  buildPlaneOrientation();
+  T_M_P_init_ = T_M_P_;
 }
 
 void PlaneType::setplaneSegmentAaBb(const BoundingBoxType& bbox) {
@@ -183,7 +211,8 @@ PlaneType PlaneType::fromMsg(const panoptic_mapping_msgs::PlaneType& msg) {
   kindr::minimal::QuatTransformationTemplate<double> tf_received;
   tf::poseMsgToKindr(msg.T_M_P, &tf_received);
   const Transformation T_M_P = tf_received.cast<float>();
-  const PlaneType ret(n, p, T_M_P, class_id);
+  PlaneType ret(n, p, T_M_P, class_id);
+  ret.num_points_ = num_points;
   return ret;
 }
 
