@@ -18,14 +18,18 @@ PlanesCostFunction::PlanesCostFunction(
       sqrt_information_matrix_(sqrt_information_matrix),
       origin_plane_(origin_plane),
       destination_plane_(destination_plane),
-      config_(config) {
+      config_(config),
+      verbose_(true) {
   CHECK(origin_plane);
   CHECK(destination_plane);
+  CHECK_NE(origin_plane->getPlaneID(), destination_plane_->getPlaneID());
+  CHECK_NE((T_M_R_destination_init_.getPosition() - T_M_R_origin_init_.getPosition()).squaredNorm(), 0.0);
   Transformation T_M_P_origin_ = origin_plane->getPlaneTransformation();
   T_P_R_origin_ = T_M_P_origin_.inverse() * T_M_R_origin_init_;
   Transformation T_M_P_destination_ =
       destination_plane->getPlaneTransformation();
   T_P_R_destination_ = T_M_P_destination_.inverse() * T_M_R_destination_init_;
+  CHECK_NE((T_M_P_destination_.getPosition() - T_M_P_origin_.getPosition()).squaredNorm(), 0.0);
   // Set number of parameters: namely 2 poses, each having 4 params
   // (X,Y,Z,Yaw)
   // mutable_parameter_block_sizes()->clear();
@@ -326,18 +330,18 @@ bool PlanesCostFunction::operator()(const T* const pose_A,
   T kB = (nB.transpose() * (T_M_P_B_hat.block(0, 3, 3, 1)))(0, 0);
   // compute normals residual (n1-n2)**2
   Eigen::Matrix<T, 3, 1> n_diff = nB - nA;
-  residuals[0] = (n_diff.transpose() * n_diff)(0, 0);
-  // // compute offsets residual (k1-k2)**2
+  residuals[0] = 0.001 * (n_diff.transpose() * n_diff)(0, 0);
+  // compute offsets residual (k1-k2)**2
   T kdiff = kB - kA;
-  residuals[1] = kdiff * kdiff;
+  residuals[1] = 0.001 * kdiff * kdiff;
 
   // constraints
   const auto T_M_PA_init = (T_M_R_origin_init_ * T_P_R_origin_.inverse());
-  const auto T_M_PB_init = (T_M_R_origin_init_ * T_P_R_origin_.inverse());
+  const auto T_M_PB_init = (T_M_R_destination_init_ * T_P_R_destination_.inverse());
   const auto nA_init_pre_casted =
-      T_M_PA_init.getRotationMatrix().col(2).normalized();
+      T_M_PA_init.getRotationMatrix().col(2).stableNormalized();
   const auto nB_init_pre_casted =
-      T_M_PB_init.getRotationMatrix().col(2).normalized();
+      T_M_PB_init.getRotationMatrix().col(2).stableNormalized();
   Eigen::Matrix<T, 3, 1> nA_init = nA_init_pre_casted.cast<T>();
   Eigen::Matrix<T, 3, 1> nB_init = nB_init_pre_casted.cast<T>();
   // Eigen::Vector3f pA_init = T_M_PA_init.getPosition();
@@ -350,9 +354,31 @@ bool PlanesCostFunction::operator()(const T* const pose_A,
       (diff_positionA - nA_init * (nA_init.transpose() * diff_positionA));
   const auto dvecB =
       (diff_positionB - nB_init * (nB_init.transpose() * diff_positionB));
-  residuals[3] = (dvecB.transpose() * dvecB)(0, 0);
-  residuals[2] = (dvecA.transpose() * dvecA)(0, 0);
+  residuals[2] = 0.001 * (dvecA.transpose() * dvecA)(0, 0);
+  residuals[3] = 0.001 * (dvecB.transpose() * dvecB)(0, 0);
 
+  if (verbose_) {
+    std::cout << "t_odom_A_init: " << T_M_PA_init.getPosition()(0) << ", " << T_M_PA_init.getPosition()(1) << ", " << T_M_PA_init.getPosition()(2) << "\n"
+              << "t_odom_B_init: " << T_M_PB_init.getPosition()(0) << ", " << T_M_PB_init.getPosition()(1) << ", " << T_M_PB_init.getPosition()(2) << "\n"
+              << "t_odom_A: " << t_odom_A(0) << ", " << t_odom_A(1) << ", "
+              << t_odom_A(2) << "\n"
+              << "t_odom_B: " << t_odom_B(0) << ", " << t_odom_B(1) << ", "
+              << t_odom_B(2) << "\n"
+              << "RA:\n" << RA << "\n"
+              << "RB:\n" << RB << "\n"
+              << "nA_init:\n" << nA_init << "\n"
+              << "nB_init:\n" << nB_init << "\n"
+              << "nA:\n" << nA << "\n"
+              << "nB:\n" << nA << "\n"
+              << "residuals[0]=" << residuals[0] << "\n"
+              << "T_M_P_A_hat:\n" << T_M_P_A_hat << "\n"
+              << "T_M_P_B_hat:\n" << T_M_P_B_hat << "\n"
+              << "kA=" << kA << "\n"
+              << "kB=" << kB << "\n"
+              << "residuals[1]=" << residuals[1] << "\n"
+              << "residuals[2]=" << residuals[2] << "\n"
+              << "residuals[3]=" << residuals[3] << "\n";
+  }
   return true;
 
   // CHECK_NEAR(yaw_odom_A, static_cast<T>(0.0), static_cast<T>(M_PI));

@@ -59,6 +59,7 @@ class PlanesCostFunction {
                   T* residuals) const;
 
  protected:
+  bool verbose_;
   Config config_;
   const Constraint::InformationMatrix sqrt_information_matrix_;
   Transformation T_M_R_origin_init_;
