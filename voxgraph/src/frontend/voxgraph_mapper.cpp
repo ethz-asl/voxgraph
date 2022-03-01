@@ -521,9 +521,9 @@ SubmapID VoxgraphMapper::submapWithPlanesCallback(
     for (const auto& plane_msg : submap_planes_msg.planes) {
       const PlaneType plane = PlaneType::fromMsg(plane_msg);
       int class_id = plane_msg.class_id;
-      LOG(ERROR) << "Adding plane with class_id:" << class_id
-                 << "at point:\n" << plane.getPointInit() << "\nnormal:\n"
-                 << plane.getPlaneNormal();
+      // LOG(ERROR) << "Adding plane with class_id:" << class_id
+      //            << "at point:\n" << plane.getPointInit() << "\nnormal:\n"
+      //            << plane.getPlaneNormal();
       if (classes_to_planes.find(class_id) != classes_to_planes.end()) {
         classes_to_planes.at(class_id).push_back(plane);
       } else {
@@ -532,6 +532,7 @@ SubmapID VoxgraphMapper::submapWithPlanesCallback(
     }
     // find all planes of the current submap that match with previously sent
     // planes of submaps
+    static std::vector<std::pair<int, int>> all_matched_planes;
     std::map<int, int> matched_planes;
     std::vector<int> submap_ids;
     submap_stitcher_.addSubmapPlanes(new_submap.getID(), classes_to_planes);
@@ -543,7 +544,20 @@ SubmapID VoxgraphMapper::submapWithPlanesCallback(
     pose_graph_manager_.addPlanesMeasurement(new_submap.getID(), submap_ids,
                                              matched_planes,
                                              submap_stitcher_.getAllPlanes());
-    LOG(ERROR) << "plane constraint constructed!";
+    // check that no pair (A,A) exists
+    // check that no two pairs (A,B) & (B,A) exist
+    for (const auto& p : matched_planes) {
+      all_matched_planes.emplace_back(p.first, p.second);
+      CHECK_NE(p.first, p.second);
+    }
+    for (const auto pair : all_matched_planes) {
+      for (const auto pair2 : all_matched_planes) {
+        if (pair2.first == pair.second) {
+          CHECK_NE(pair2.second, pair.first);
+        }
+      }
+    }
+    // LOG(ERROR) << "plane constraint constructed!";
   } else {
     LOG(ERROR) << "plane_constraints_NOT_enabled_ Bouhouhou!!!";
   }
