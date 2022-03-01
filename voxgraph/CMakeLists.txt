@@ -85,7 +85,9 @@ target_link_libraries(registration_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES}
 
 if (CATKIN_ENABLE_TESTING)
     catkin_add_gtest(planeTypeTests-test test/planeTypeTests.cpp)
+    catkin_add_gtest(submapStitcherTests-test test/submapStitcherTests.cpp)
     target_link_libraries(planeTypeTests-test ${catkin_LIBRARIES} ${PROJECT_NAME})
+    target_link_libraries(submapStitcherTests-test ${catkin_LIBRARIES} ${PROJECT_NAME})
 endif()
 
 
