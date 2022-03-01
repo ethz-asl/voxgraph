@@ -16,6 +16,7 @@ void PlanesConstraint::addToProblem(const NodeCollection& node_collection,
       node_collection.getSubmapNodePtrById(config_.origin_submap_id);
   SubmapNode::Ptr destination_submap_node_ptr =
       node_collection.getSubmapNodePtrById(config_.destination_submap_id);
+  CHECK_NE(config_.origin_submap_id, config_.destination_submap_id);
   CHECK(origin_submap_node_ptr)
       << "Could not get pose graph submap node ptr for submap ID "
       << config_.origin_submap_id;
