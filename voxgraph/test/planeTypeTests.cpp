@@ -18,7 +18,7 @@ namespace test {
 
 typedef Eigen::Hyperplane<float, 3> EigenPlane;
 
-PlaneType createAPlane(Point p=Point(0,0,0), Point n=Point(0,0,1)) {
+PlaneType createAPlane(const Point p=Point(0,0,0), const Point n=Point(0,0,1)) {
   return PlaneType(EigenPlane(n,p),0);
 }
 
@@ -31,7 +31,7 @@ TEST(planeCreation, planeTypeTests) {
 }
 
 TEST(plane, planeTypeTests) {
-  
+
 }
 
 TEST(planeFromFunction, planeTypeTests) {
