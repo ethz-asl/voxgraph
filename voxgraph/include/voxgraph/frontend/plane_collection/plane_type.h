@@ -34,6 +34,7 @@ class PlaneType {
   PlaneID getPlaneID() const;
   const voxgraph::BoundingBox* getBoundingBox() const;
   visualization_msgs::Marker getVisualizationMsg() const;
+  visualization_msgs::Marker getNormalVisualizationMsg() const;
   // transformation accessors
   /**
    * @brief Plane orientation is based on the world frame so a transformation
@@ -46,6 +47,7 @@ class PlaneType {
   void transformPlane(const Transformation& Tnew_old);
   float distSquared(const PlaneType& other) const;
   float dist(const PlaneType& other) const;
+  float dist(const Point& p) const { return plane_.absDistance(p);}
   void buildPlaneOrientation();
   void createPlaneSegmentAaBb(const std::vector<Point>& points,
                               const double threshold_belongs);
@@ -61,6 +63,7 @@ class PlaneType {
   panoptic_mapping_msgs::PlaneType toPlaneTypeMsg() const;
   static PlaneType fromMsg(const panoptic_mapping_msgs::PlaneType& msg);
   size_t getNumPoints() const { return num_points_; }
+
  private:
   PlaneID plane_id_;
   static PlaneID getNextPlaneID() {

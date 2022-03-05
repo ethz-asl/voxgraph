@@ -59,6 +59,30 @@ const voxgraph::BoundingBox* PlaneType::getBoundingBox() const {
 visualization_msgs::Marker PlaneType::getVisualizationMsg() const {
   return planeSegmentAaBb_.getVisualizationMsg();
 }
+visualization_msgs::Marker PlaneType::getNormalVisualizationMsg() const {
+  static int marker_id = 10000;
+  visualization_msgs::Marker msg;
+  msg.header.frame_id = "world";
+  msg.type = visualization_msgs::Marker::LINE_LIST;
+  msg.action = visualization_msgs::Marker::ADD;
+  geometry_msgs::Point point_msg;
+  geometry_msgs::Point vec_end_msg;
+  tf::pointEigenToMsg(point_.cast<double>(), point_msg);
+  tf::pointEigenToMsg((point_ + getPlaneNormal() * 1.0).cast<double>(), vec_end_msg);
+  msg.points.push_back(point_msg);
+  msg.points.push_back(vec_end_msg);
+  msg.scale.x = 0.10;
+  msg.scale.y = 0.10;
+  msg.scale.z = 0.10;
+  msg.color.r = 0.0;
+  msg.color.g = 0.0;
+  msg.color.b = 0.0;
+  msg.color.a = 1.0;
+  msg.id = marker_id++;
+  msg.ns = "vector";
+  msg.header.stamp = ros::Time::now();
+  return msg;
+}
 // transformation accessors
 /**
  * @brief Plane orientation is based on the world frame so a transformation
@@ -76,6 +100,7 @@ void PlaneType::transformPlane(const Transformation& Tnew_old) {
   plane_.transform(T_M_P_.getRotationMatrix(),
                    Eigen::TransformTraits::Isometry);
   plane_.offset() = plane_.normal().dot(T_M_P_.getPosition());
+  point_ = T_M_P_.getPosition();
 }
 float PlaneType::distSquared(const PlaneType& other) const {
   return distFunc2(plane_.normal(), point_, other.plane_.normal(),
@@ -118,7 +143,6 @@ void PlaneType::buildPlaneOrientation() {
   // }
 
   T_M_P_ = Transformation(point_, Transformation::Rotation(matRotation));
-  LOG(INFO) << "T_M_P:\n" << T_M_P_;
 }
 void PlaneType::createPlaneSegmentAaBb(const std::vector<Point>& points,
                                        const double threshold_belongs) {
@@ -133,6 +157,8 @@ void PlaneType::createPlaneSegmentAaBb(const std::vector<Point>& points,
   }
   if (num_points_ > 0) {
     point_ = plane_.projection(mean_point / num_points_);
+    buildPlaneOrientation();
+    T_M_P_init_ = T_M_P_;
   }
 }
 void PlaneType::createPlaneSegmentAaBb(const std::vector<const Point*>& points,
@@ -148,9 +174,13 @@ void PlaneType::createPlaneSegmentAaBb(const std::vector<const Point*>& points,
   }
   if (num_points_ > 0) {
     point_ = plane_.projection(mean_point / num_points_);
+    // Eigen::Vector3f n = getPlaneNormal();
+    // plane_.offset() = point_.dot(n);
+    buildPlaneOrientation();
+    T_M_P_init_ = T_M_P_;
   }
-  LOG(INFO) << "plane segment aabb created with " << num_points_
-            << " points inside";
+
+
 }
 
 void PlaneType::fixNormal(const std::vector<const Point*>& points,
