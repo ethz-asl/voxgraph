@@ -19,6 +19,7 @@ using Point = voxblox::Point;
 typedef panoptic_mapping_msgs::BoundingBox BoundingBoxMsg;
 class BoundingBoxExtended : public voxgraph::BoundingBox {
  public:
+  typedef const BoundingBoxExtended * ConstPtr;
   BoundingBoxExtended() = default;
   ~BoundingBoxExtended() = default;
   void updateBoundingBoxLimits(const Point& p);
