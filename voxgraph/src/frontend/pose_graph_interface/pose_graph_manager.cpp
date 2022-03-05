@@ -187,6 +187,7 @@ void PoseGraphManager::addPlanesMeasurement(
     CHECK(!(constraint_config.T_M_R_origin ==
             constraint_config.T_M_R_destination));
     sliding_pose_graph_.addPlanesConstraint(constraint_config);
+    full_pose_graph_.addPlanesConstraint(constraint_config);
     ++idx;
   }
   size_t new_count = sliding_pose_graph_.getPlanesConstraints().size() - count;
