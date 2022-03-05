@@ -5,6 +5,7 @@ add_definitions(-std=c++14 -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare
 
 find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
+find_package(rviz_visual_tools REQUIRED)
 
 ############
 # PROTOBUF #
@@ -86,8 +87,10 @@ target_link_libraries(registration_test_bench ${PROJECT_NAME} ${PROTO_LIBRARIES}
 if (CATKIN_ENABLE_TESTING)
     catkin_add_gtest(planeTypeTests-test test/planeTypeTests.cpp)
     catkin_add_gtest(submapStitcherTests-test test/submapStitcherTests.cpp)
+    catkin_add_gtest(planes_cost_function-test test/planes_cost_function_test.cpp)
     target_link_libraries(planeTypeTests-test ${catkin_LIBRARIES} ${PROJECT_NAME})
     target_link_libraries(submapStitcherTests-test ${catkin_LIBRARIES} ${PROJECT_NAME})
+    target_link_libraries(planes_cost_function-test ${catkin_LIBRARIES} ${PROJECT_NAME})
 endif()
 
 

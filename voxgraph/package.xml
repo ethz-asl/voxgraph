@@ -25,5 +25,7 @@
   <depend>cblox_msgs</depend>
   <depend>voxgraph_msgs</depend>
   <depend>panoptic_mapping_msgs</depend>
+  <depend>rviz_visual_tools</depend>
+  <depend>eigen_stl_containers</depend>
 </package>
 
