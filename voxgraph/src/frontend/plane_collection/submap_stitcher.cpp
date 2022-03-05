@@ -3,17 +3,22 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <cmath>
+
+#include <rviz_visual_tools/rviz_visual_tools.h>
 
 #include "voxgraph/frontend/plane_collection/plane_type.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 
 namespace voxgraph {
 
-SubmapStitcher::SubmapStitcher():nh_("") {
+SubmapStitcher::SubmapStitcher():nh_("")
+  {
+  visual_tools_ = std::make_shared<rviz_visual_tools::RvizVisualTools>("world", "/voxgraph_mapper/submap_stitcher", nh_);
   submap_id_to_class_to_planes_ =
       std::make_shared<std::map<int, classToPlanesType>>();
-  vec_pub_ = nh_.advertise<visualization_msgs::Marker>(
-      "/voxgraph_mapper/cost_function_vecs", 100);
+  // vec_pub_ = nh_.advertise<visualization_msgs::Marker>(
+  //     "/voxgraph_mapper/cost_function_vecs", 100);
 }
 
 void SubmapStitcher::addSubmapPlanes(const int submap_id,
@@ -51,23 +56,37 @@ void SubmapStitcher::matchArrayOfPlanes(const classToPlanesType& planeSeriesA,
     if (planeSeriesB.find(class_id) != planeSeriesB.end()) {
       // get the closest planes for each of the maps
       for (const PlaneType& planeA : pairA.second) {
-        float dist2_min = +INFINITY;
-        int closest_plane_id = -1;
         for (const PlaneType& planeB : planeSeriesB.at(class_id)) {
-          float dist2_current = planeB.distSquared(planeA);
-          if (dist2_current < dist2_min) {
-            dist2_min = dist2_current;
-            closest_plane_id = planeB.getPlaneID();
+          float normals_cosine = planeA.getPlaneNormal().dot(planeB.getPlaneNormal());
+          float distance_along_normalA = planeA.dist(planeB.getPointInit());
+          int id_B = planeB.getPlaneID();
+          if (matched_planes->find(id_B) != matched_planes->end()) {
+            if (matched_planes->at(id_B) == planeA.getPlaneID()) {
+              continue;
+            }
           }
-        }
-        if (dist2_min < config_.threshold_dist) {
-          matched_planes->insert({planeA.getPlaneID(), closest_plane_id});
-          const PlaneType * planeB = all_planes_.at(closest_plane_id).get(); 
-          visualizeVector(planeB->getPointInit() - planeA.getPointInit(), planeA.getPointInit());
+          const float sin_threshold = std::sin(config_.threshold_normal_radians);
+          const float sin_threshold_squared = sin_threshold * sin_threshold;
+          if (1.0 - normals_cosine*normals_cosine < sin_threshold_squared) {
+            if (normals_cosine < 0.0) {
+              if (distance_along_normalA < config_.threshold_normal_reversed_distance) {
+                // add plane pair
+                matched_planes->insert({planeA.getPlaneID(), id_B});
+                const PlaneType * planeB = all_planes_.at(id_B).get(); 
+                visualizeVector(planeB->getPointInit() - planeA.getPointInit(), planeA.getPointInit());
+              }
+            } else if (distance_along_normalA < config_.threshold_normal_distance) {
+              // add plane pair
+              matched_planes->insert({planeA.getPlaneID(), id_B});
+              const PlaneType * planeB = all_planes_.at(id_B).get(); 
+              visualizeVector(planeB->getPointInit() - planeA.getPointInit(), planeA.getPointInit());
+            }
+          }
         }
       }
     }
   }
+  visual_tools_->trigger();
 }
 
 void SubmapStitcher::findAllPlaneMatchesForSubmap(
@@ -111,28 +130,15 @@ int SubmapStitcher::findNeighboorsToSubmap(
 
 void SubmapStitcher::visualizeVector(const Eigen::Vector3f vec,
                                          const Eigen::Vector3f point) const {
+  CHECK(visual_tools_);
   static int marker_id = 10000;
-  visualization_msgs::Marker msg;
-  msg.header.frame_id = "world";
-  msg.type = visualization_msgs::Marker::LINE_LIST;
-  msg.action = visualization_msgs::Marker::ADD;
   geometry_msgs::Point point_msg;
   geometry_msgs::Point vec_end_msg;
   tf::pointEigenToMsg(point.cast<double>(), point_msg);
-  tf::pointEigenToMsg((point + vec * 1.0).cast<double>(), vec_end_msg);
-  msg.points.push_back(point_msg);
-  msg.points.push_back(vec_end_msg);
-  msg.scale.x = 0.10;
-  msg.scale.y = 0.10;
-  msg.scale.z = 0.10;
-  msg.color.r = 0.0;
-  msg.color.g = 0.0;
-  msg.color.b = 0.0;
-  msg.color.a = 1.0;
-  msg.id = marker_id++;
-  msg.ns = "vector";
-  msg.header.stamp = ros::Time::now();
-  vec_pub_.publish(msg);
+  tf::pointEigenToMsg((point + vec).cast<double>(), vec_end_msg);
+  visual_tools_->publishArrow(
+      point_msg, vec_end_msg, rviz_visual_tools::BLACK,
+      rviz_visual_tools::MEDIUM, marker_id++);
 }
 
 }  // namespace voxgraph

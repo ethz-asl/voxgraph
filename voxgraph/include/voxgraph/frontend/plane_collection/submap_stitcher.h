@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include <rviz_visual_tools/rviz_visual_tools.h>
 #include "voxgraph/frontend/plane_collection/plane_type.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap.h"
 
@@ -15,6 +16,9 @@ class SubmapStitcher {
   typedef const SubmapStitcher* ConstPtr;
   struct Config {
     float threshold_dist = 1.5;
+    float threshold_normal_radians = 10.0 * M_PI / 180.0f;
+    float threshold_normal_distance = 0.30;
+    float threshold_normal_reversed_distance = 0.15;
   };
   SubmapStitcher();
   void addSubmapPlanes(const int submap_id, const classToPlanesType& c_t_p);
@@ -44,6 +48,7 @@ class SubmapStitcher {
   Config config_;
   ros::Publisher vec_pub_;
   ros::NodeHandle nh_;
+  rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
 };
 
 }  // namespace voxgraph
