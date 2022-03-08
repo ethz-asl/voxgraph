@@ -515,7 +515,6 @@ SubmapID VoxgraphMapper::submapWithPlanesCallback(
   }
 
   if (plane_constraints_enabled_) {
-    LOG(ERROR) << "plane_constraints_enabled_ youhou!!!";
     // get classes to planes from message
     classToPlanesType classes_to_planes;
     for (const auto& plane_msg : submap_planes_msg.planes) {
@@ -557,9 +556,6 @@ SubmapID VoxgraphMapper::submapWithPlanesCallback(
         }
       }
     }
-    // LOG(ERROR) << "plane constraint constructed!";
-  } else {
-    LOG(ERROR) << "plane_constraints_NOT_enabled_ Bouhouhou!!!";
   }
   // NOTE: Registration constraints are managed in the graph optimization calls
 
