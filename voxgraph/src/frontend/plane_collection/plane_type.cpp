@@ -5,6 +5,7 @@
 
 #include <minkindr_conversions/kindr_msg.h>
 #include <panoptic_mapping_msgs/PlaneType.h>
+#include <rviz_visual_tools/rviz_visual_tools.h>
 
 namespace voxgraph {
 
@@ -40,10 +41,11 @@ PlaneType::PlaneType(const Eigen::Hyperplane<float, 3>& plane,
 
 PlaneType::PlaneType(const Eigen::Vector3f& normal, const Point& point,
                      const Transformation& T_M_P, int class_id)
-    : PlaneType(Eigen::Hyperplane<float, 3>(normal.stableNormalized(), point), T_M_P, class_id) {
+    : PlaneType(Eigen::Hyperplane<float, 3>(normal.stableNormalized(), point),
+                T_M_P, class_id) {
   // CHECK(normal.squaredNorm() - 1 < 1.01 &&
   //       1 - normal.squaredNorm() > 0.999);
-  // normal check to be removed 
+  // normal check to be removed
 }
 
 // getters
@@ -56,9 +58,11 @@ PlaneType::PlaneID PlaneType::getPlaneID() const { return plane_id_; }
 const voxgraph::BoundingBox* PlaneType::getBoundingBox() const {
   return &planeSegmentAaBb_;
 }
+
 visualization_msgs::Marker PlaneType::getVisualizationMsg() const {
   return planeSegmentAaBb_.getVisualizationMsg();
 }
+
 visualization_msgs::Marker PlaneType::getNormalVisualizationMsg() const {
   static int marker_id = 10000;
   visualization_msgs::Marker msg;
@@ -68,7 +72,8 @@ visualization_msgs::Marker PlaneType::getNormalVisualizationMsg() const {
   geometry_msgs::Point point_msg;
   geometry_msgs::Point vec_end_msg;
   tf::pointEigenToMsg(point_.cast<double>(), point_msg);
-  tf::pointEigenToMsg((point_ + getPlaneNormal() * 1.0).cast<double>(), vec_end_msg);
+  tf::pointEigenToMsg((point_ + getPlaneNormal() * 1.0).cast<double>(),
+                      vec_end_msg);
   msg.points.push_back(point_msg);
   msg.points.push_back(vec_end_msg);
   msg.scale.x = 0.10;
@@ -82,6 +87,41 @@ visualization_msgs::Marker PlaneType::getNormalVisualizationMsg() const {
   msg.ns = "vector";
   msg.header.stamp = ros::Time::now();
   return msg;
+}
+
+void PlaneType::publishPlaneVisualization(
+    rviz_visual_tools::RvizVisualToolsPtr& visual_tools_publisher,
+    const rviz_visual_tools::colors& plane_color, const int id) const {
+  // publish plane face
+  geometry_msgs::Pose pose_msg;
+  tf::poseKindrToMsg(getPlaneTransformation().cast<double>(), &pose_msg);
+  // auto projected_max = plane_.projection(planeSegmentAaBb_.max);
+  // auto projected_min = plane_.projection(planeSegmentAaBb_.min);
+  // Point dwh = getPlaneTransformation().transform(projected_max -
+  // projected_min); Point dwh = Point(1.0, 2.0, 0.1);  // depth_width_height
+  Point diff = planeSegmentAaBb_.max - planeSegmentAaBb_.min;
+  Point dwh = getPlaneTransformation().getRotation().inverseRotate(diff);
+  geometry_msgs::Vector3 dwh_msg;
+  if (std::abs(getPlaneNormal().dot(Point(0, 0, 1))) > 0.9) {
+    // n = (1 0 0)
+    dwh_msg.x = diff.x();
+    dwh_msg.y = diff.y();
+    dwh_msg.z = 0.1;
+  } else {
+    dwh_msg.x = std::abs(dwh.x());
+    dwh_msg.y = std::abs(dwh.y());
+    dwh_msg.z = 0.1;  // std::abs(dwh.z());
+  }
+  visual_tools_publisher->publishCuboid(pose_msg, dwh_msg, plane_color);
+  // publish normal
+  geometry_msgs::Point point_msg;
+  geometry_msgs::Point vec_end_msg;
+  tf::pointEigenToMsg(point_.cast<double>(), point_msg);
+  tf::pointEigenToMsg((point_ + getPlaneNormal() * 1.0).cast<double>(),
+                      vec_end_msg);
+  visual_tools_publisher->publishArrow(point_msg, vec_end_msg,
+                                       rviz_visual_tools::ORANGE,
+                                       rviz_visual_tools::LARGE, 2 * id + 1);
 }
 // transformation accessors
 /**
@@ -130,9 +170,9 @@ void PlaneType::buildPlaneOrientation() {
   Point plane_vec2 = n.cross(plane_vec1).stableNormalized();
   plane_vec1 = plane_vec2.cross(n).stableNormalized();
   // matRotation << plane_vec1, plane_vec2, n;
-  matRotation.block<3,1>(0,0) = plane_vec1;
-  matRotation.block<3,1>(0,1) = plane_vec2;
-  matRotation.block<3,1>(0,2) = n;
+  matRotation.block<3, 1>(0, 0) = plane_vec1;
+  matRotation.block<3, 1>(0, 1) = plane_vec2;
+  matRotation.block<3, 1>(0, 2) = n;
   // if (matRotation.determinant() < 0) {
   //   matRotation.row(1)[0] *= -1;
   //   matRotation.row(1)[1] *= -1;
@@ -179,12 +219,10 @@ void PlaneType::createPlaneSegmentAaBb(const std::vector<const Point*>& points,
     buildPlaneOrientation();
     T_M_P_init_ = T_M_P_;
   }
-
-
 }
 
 void PlaneType::fixNormal(const std::vector<const Point*>& points,
-                const std::vector<const Point*>& normals) {
+                          const std::vector<const Point*>& normals) {
   Eigen::Vector3f normal_vector = Eigen::Vector3f::Zero();
   for (const auto n : normals) {
     normal_vector += *n;
@@ -194,14 +232,15 @@ void PlaneType::fixNormal(const std::vector<const Point*>& points,
   for (const auto p : points) {
     d += p->dot(normal_vector);
   }
-  plane_ = Eigen::Hyperplane<float, 3>(normal_vector, static_cast<float>(d/points.size()));
+  plane_ = Eigen::Hyperplane<float, 3>(normal_vector,
+                                       static_cast<float>(d / points.size()));
   buildPlaneOrientation();
   T_M_P_init_ = T_M_P_;
 }
 
 void PlaneType::reverseNormal() {
-  plane_.normal() = - plane_.normal();
-  plane_.offset() = - plane_.offset();
+  plane_.normal() = -plane_.normal();
+  plane_.offset() = -plane_.offset();
   buildPlaneOrientation();
   T_M_P_init_ = T_M_P_;
 }

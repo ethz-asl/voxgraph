@@ -6,6 +6,7 @@
 
 #include <minkindr_conversions/kindr_msg.h>
 #include <panoptic_mapping_msgs/PlaneType.h>
+#include <rviz_visual_tools/rviz_visual_tools.h>
 #include <voxblox/core/common.h>
 
 #include "voxgraph/common.h"
@@ -35,6 +36,9 @@ class PlaneType {
   const voxgraph::BoundingBox* getBoundingBox() const;
   visualization_msgs::Marker getVisualizationMsg() const;
   visualization_msgs::Marker getNormalVisualizationMsg() const;
+  void publishPlaneVisualization(
+      rviz_visual_tools::RvizVisualToolsPtr& visual_tools_publisher,
+      const rviz_visual_tools::colors& plane_color, const int id) const;
   // transformation accessors
   /**
    * @brief Plane orientation is based on the world frame so a transformation
@@ -47,7 +51,7 @@ class PlaneType {
   void transformPlane(const Transformation& Tnew_old);
   float distSquared(const PlaneType& other) const;
   float dist(const PlaneType& other) const;
-  float dist(const Point& p) const { return plane_.absDistance(p);}
+  float dist(const Point& p) const { return plane_.absDistance(p); }
   void buildPlaneOrientation();
   void createPlaneSegmentAaBb(const std::vector<Point>& points,
                               const double threshold_belongs);
