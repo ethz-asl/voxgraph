@@ -17,9 +17,9 @@
 #include "voxgraph/frontend/frame_names.h"
 #include "voxgraph/frontend/measurement_processors/gps_processor.h"
 #include "voxgraph/frontend/measurement_processors/pointcloud_integrator.h"
+#include "voxgraph/frontend/plane_collection/submap_stitcher.h"
 #include "voxgraph/frontend/pose_graph_interface/pose_graph_manager.h"
 #include "voxgraph/frontend/submap_collection/voxgraph_submap_collection.h"
-#include "voxgraph/frontend/plane_collection/submap_stitcher.h"
 #include "voxgraph/tools/data_servers/projected_map_server.h"
 #include "voxgraph/tools/data_servers/submap_server.h"
 #include "voxgraph/tools/rosbag_helper.h"
@@ -50,8 +50,11 @@ class VoxgraphMapper {
       std_srvs::Empty::Response& response);                         // NOLINT
   bool optimizeGraphCallback(std_srvs::Empty::Request& request,     // NOLINT
                              std_srvs::Empty::Response& response);  // NOLINT
-  bool finishMapCallback(std_srvs::Empty::Request& request,         // NOLINT
-                         std_srvs::Empty::Response& response);      // NOLINT
+  bool optimizeSlidingPoseGraphCallback(
+      std_srvs::Empty::Request& request,                        // NOLINT
+      std_srvs::Empty::Response& response);                     // NOLINT
+  bool finishMapCallback(std_srvs::Empty::Request& request,     // NOLINT
+                         std_srvs::Empty::Response& response);  // NOLINT
   bool saveToFileCallback(
       voxblox_msgs::FilePath::Request& request,     // NOLINT
       voxblox_msgs::FilePath::Response& response);  // NOLINT
@@ -137,6 +140,7 @@ class VoxgraphMapper {
   ros::ServiceServer publish_separated_mesh_srv_;
   ros::ServiceServer publish_combined_mesh_srv_;
   ros::ServiceServer optimize_graph_srv_;
+  ros::ServiceServer optimize_sliding_graph_srv_;
   ros::ServiceServer finish_map_srv_;
   ros::ServiceServer save_to_file_srv_;
   ros::ServiceServer save_pose_history_to_file_srv_;
