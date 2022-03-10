@@ -7,3 +7,6 @@
 - git:
     local-name: cblox
     uri: git@github.com:ethz-asl/cblox.git
+- git:
+    local-name: rviz_visual_tools
+    uri: git@github.com:PickNikRobotics/rviz_visual_tools.git
