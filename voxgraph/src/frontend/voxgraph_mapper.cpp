@@ -211,6 +211,8 @@ void VoxgraphMapper::advertiseServices() {
       this);
   optimize_graph_srv_ = nh_private_.advertiseService(
       "optimize_pose_graph", &VoxgraphMapper::optimizeGraphCallback, this);
+  optimize_sliding_graph_srv_ = nh_private_.advertiseService(
+      "optimize_sliding_pose_graph", &VoxgraphMapper::optimizeSlidingPoseGraphCallback, this);      
   finish_map_srv_ = nh_private_.advertiseService(
       "finish_map", &VoxgraphMapper::finishMapCallback, this);
   save_to_file_srv_ = nh_private_.advertiseService(
@@ -624,6 +626,11 @@ bool VoxgraphMapper::optimizeGraphCallback(
   return true;
 }
 
+bool VoxgraphMapper::optimizeSlidingPoseGraphCallback(
+    std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
+  optimizeSlidingPoseGraph();
+  return true;
+}
 bool VoxgraphMapper::saveToFileCallback(
     voxblox_msgs::FilePath::Request& request,
     voxblox_msgs::FilePath::Response& response) {
