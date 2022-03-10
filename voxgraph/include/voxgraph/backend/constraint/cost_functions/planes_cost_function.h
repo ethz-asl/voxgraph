@@ -10,7 +10,7 @@
 #include "voxgraph/tools/visualization/cost_function_visuals.h"
 
 namespace voxgraph {
-class PlanesCostFunction {
+class PlanesCostFunction {  //: public ceres::CostFunction{
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -53,7 +53,7 @@ class PlanesCostFunction {
    * @return false
    */
   // bool Evaluate(double const* const* parameters, double* residuals,
-  //               double** jacobians) const;
+  //               double** jacobians) const override;
   template <typename T>
   bool operator()(const T* const pose_A, const T* const pose_B,
                   T* residuals) const;
@@ -62,6 +62,9 @@ class PlanesCostFunction {
   bool verbose_;
   Config config_;
   const Constraint::InformationMatrix sqrt_information_matrix_;
+  Transformation T_origin_desination_;
+  Transformation T_M_P_origin_;
+  Transformation T_M_P_destination_;
   Transformation T_M_R_origin_init_;
   Transformation T_M_R_destination_init_;
   Transformation T_P_R_origin_;
