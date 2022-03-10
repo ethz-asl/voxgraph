@@ -15,9 +15,8 @@ class SubmapStitcher {
  public:
   typedef const SubmapStitcher* ConstPtr;
   struct Config {
-    float threshold_dist = 1.5;
     float threshold_normal_radians = 10.0 * M_PI / 180.0f;
-    float threshold_normal_distance = 0.30;
+    float threshold_normal_distance = 0.50;
     float threshold_normal_reversed_distance = 0.15;
   };
   SubmapStitcher();
