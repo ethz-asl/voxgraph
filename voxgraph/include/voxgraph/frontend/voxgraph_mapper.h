@@ -127,7 +127,6 @@ class VoxgraphMapper {
   ros::Subscriber submap_subscriber_;
   ros::Subscriber submap_with_planes_subscriber_;
   // TODO(victorr): Add support for absolute pose measurements
-  std::vector<geometry_msgs::PoseStamped> all_poses_history_;
   // ROS topic publishers
   ros::Publisher submap_mesh_pub_;
   ros::Publisher combined_mesh_pub_;

@@ -332,7 +332,6 @@ SubmapID VoxgraphMapper::submapCallback(
     new_submap.addPoseToHistory(
         pose_stamped.header.stamp,
         T_odom_base_link.cast<voxblox::FloatingPoint>());
-    all_poses_history_.push_back(pose_stamped);
   }
   ROS_WARN_STREAM_COND(!mismatched_odom_frame.empty(),
                        "All submap trajectory poses are expected in frame "
@@ -445,7 +444,6 @@ SubmapID VoxgraphMapper::submapWithPlanesCallback(
     new_submap.addPoseToHistory(
         pose_stamped.header.stamp,
         T_odom_base_link.cast<voxblox::FloatingPoint>());
-    all_poses_history_.push_back(pose_stamped);
   }
   ROS_WARN_STREAM_COND(!mismatched_odom_frame.empty(),
                        "All submap trajectory poses are expected in frame "
@@ -614,8 +612,6 @@ bool VoxgraphMapper::finishMapCallback(std_srvs::Empty::Request& request,
   // Publishing the finished submap
   submap_server_.publishActiveSubmap(submap_collection_ptr_, ros::Time::now());
   publishMaps(ros::Time::now());
-  io::savePoseHistoryToFile("/home/ioannis/datasets/vox_input.bag",
-                            all_poses_history_);
   ROS_INFO("The map is now finished and ready to be saved");
   return true;
 }
