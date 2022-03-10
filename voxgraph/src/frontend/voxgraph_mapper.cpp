@@ -212,7 +212,8 @@ void VoxgraphMapper::advertiseServices() {
   optimize_graph_srv_ = nh_private_.advertiseService(
       "optimize_pose_graph", &VoxgraphMapper::optimizeGraphCallback, this);
   optimize_sliding_graph_srv_ = nh_private_.advertiseService(
-      "optimize_sliding_pose_graph", &VoxgraphMapper::optimizeSlidingPoseGraphCallback, this);      
+      "optimize_sliding_pose_graph",
+      &VoxgraphMapper::optimizeSynchronouslySlidingPoseGraphCallback, this);
   finish_map_srv_ = nh_private_.advertiseService(
       "finish_map", &VoxgraphMapper::finishMapCallback, this);
   save_to_file_srv_ = nh_private_.advertiseService(
@@ -520,9 +521,6 @@ SubmapID VoxgraphMapper::submapWithPlanesCallback(
     for (const auto& plane_msg : submap_planes_msg.planes) {
       const PlaneType plane = PlaneType::fromMsg(plane_msg);
       int class_id = plane_msg.class_id;
-      // LOG(ERROR) << "Adding plane with class_id:" << class_id
-      //            << "at point:\n" << plane.getPointInit() << "\nnormal:\n"
-      //            << plane.getPlaneNormal();
       if (classes_to_planes.find(class_id) != classes_to_planes.end()) {
         classes_to_planes.at(class_id).push_back(plane);
       } else {
@@ -539,7 +537,6 @@ SubmapID VoxgraphMapper::submapWithPlanesCallback(
         new_submap, submap_collection_ptr_->getSubmapConstPtrs(),
         &matched_planes, &submap_ids);
     // construct constraint
-    LOG(ERROR) << "Added " << matched_planes.size() << " plane matches";
     pose_graph_manager_.addPlanesMeasurement(new_submap.getID(), submap_ids,
                                              matched_planes,
                                              submap_stitcher_.getAllPlanes());
@@ -622,11 +619,22 @@ bool VoxgraphMapper::optimizeGraphCallback(
   return true;
 }
 
-bool VoxgraphMapper::optimizeSlidingPoseGraphCallback(
+bool VoxgraphMapper::optimizeSynchronouslySlidingPoseGraphCallback(
     std_srvs::Empty::Request& request, std_srvs::Empty::Response& response) {
-  optimizeSlidingPoseGraph();
+  if (optimization_async_handle_.valid() &&
+      optimization_async_handle_.wait_for(std::chrono::milliseconds(10)) !=
+          std::future_status::ready) {
+    ROS_WARN(
+        "Previous full pose graph optimization or synchronous sliding pose "
+        "graph optimization not yet complete. Waiting...");
+    optimization_async_handle_.wait();
+  }
+  // Optimize the sliding pose graph
+  optimization_async_handle_ =
+      std::async(std::launch::async, [this]() { optimizeSlidingPoseGraph(); });
   return true;
 }
+
 bool VoxgraphMapper::saveToFileCallback(
     voxblox_msgs::FilePath::Request& request,
     voxblox_msgs::FilePath::Response& response) {

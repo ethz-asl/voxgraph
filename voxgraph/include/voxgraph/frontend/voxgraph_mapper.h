@@ -50,7 +50,7 @@ class VoxgraphMapper {
       std_srvs::Empty::Response& response);                         // NOLINT
   bool optimizeGraphCallback(std_srvs::Empty::Request& request,     // NOLINT
                              std_srvs::Empty::Response& response);  // NOLINT
-  bool optimizeSlidingPoseGraphCallback(
+  bool optimizeSynchronouslySlidingPoseGraphCallback(
       std_srvs::Empty::Request& request,                        // NOLINT
       std_srvs::Empty::Response& response);                     // NOLINT
   bool finishMapCallback(std_srvs::Empty::Request& request,     // NOLINT
