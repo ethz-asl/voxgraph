@@ -27,7 +27,6 @@ PlanesCostFunction::PlanesCostFunction(
   CHECK_NE(origin_plane->getPlaneID(), destination_plane_->getPlaneID());
   T_M_P_origin_ = origin_plane->getPlaneTransformation();
   T_P_R_origin_ = T_M_P_origin_.inverse() * T_M_R_origin_init_;
-
   T_M_P_destination_ = destination_plane->getPlaneTransformation();
   T_P_R_destination_ = T_M_P_destination_.inverse() * T_M_R_destination_init_;
   T_origin_desination_ = T_M_R_origin.inverse() * T_M_R_destination;
@@ -60,15 +59,11 @@ bool PlanesCostFunction::operator()(const T* const pose_A,
       T_P_R_origin_.getTransformationMatrix().cast<T>();
   const Eigen::Matrix<T, 3, 3> RA = rotationMatrixFromYaw(yaw_odom_A);
   Eigen::Matrix<T, 4, 4> T_M_R_A_hat = Eigen::Matrix<T, 4, 4>::Zero();
-  T_M_R_A_hat.block(0, 0, 3, 3) = RA;
-  T_M_R_A_hat.block(0, 3, 3, 1) = t_odom_A;
-  T_M_R_A_hat(3, 3) = static_cast<T>(1.0);
+                         T_M_R_A_hat.block(0, 0, 3, 3) = RA;        // NOLINT
+                         T_M_R_A_hat.block(0, 3, 3, 1) = t_odom_A;  // NOLINT
+                         T_M_R_A_hat(3, 3) = static_cast<T>(1.0);   // NOLINT
   Eigen::Matrix<T, 4, 4> T_M_P_A_hat =
       T_M_R_A_hat * T_P_R_origin_casted.inverse();
-  Eigen::Matrix<T, 4, 1> unitX = Eigen::Vector4d::UnitX().cast<T>();
-  unitX(3) = static_cast<T>(1.0);
-  Eigen::Matrix<T, 4, 1> unitY = Eigen::Vector4d::UnitY().cast<T>();
-  unitY(3) = static_cast<T>(1.0);
   // computa nA, kA
   Eigen::Matrix<T, 3, 1> nA = T_M_P_A_hat.block(0, 2, 3, 1);
   Eigen::Matrix<T, 3, 1> pA = T_M_P_A_hat.block(0, 3, 3, 1);
@@ -77,9 +72,9 @@ bool PlanesCostFunction::operator()(const T* const pose_A,
       T_P_R_destination_.getTransformationMatrix().cast<T>();
   const Eigen::Matrix<T, 3, 3> RB = rotationMatrixFromYaw(yaw_odom_B);
   Eigen::Matrix<T, 4, 4> T_M_R_B_hat = Eigen::Matrix<T, 4, 4>::Zero();
-  T_M_R_B_hat.block(0, 0, 3, 3) = RB;
-  T_M_R_B_hat.block(0, 3, 3, 1) = t_odom_B;
-  T_M_R_B_hat(3, 3) = static_cast<T>(1.0);
+                         T_M_R_B_hat.block(0, 0, 3, 3) = RB;        // NOLINT
+                         T_M_R_B_hat.block(0, 3, 3, 1) = t_odom_B;  // NOLINT
+                         T_M_R_B_hat(3, 3) = static_cast<T>(1.0);   // NOLINT
   Eigen::Matrix<T, 4, 4> T_M_P_B_hat =
       T_M_R_B_hat * T_P_R_destination_casted.inverse();
   // compute nB, kB
@@ -91,15 +86,9 @@ bool PlanesCostFunction::operator()(const T* const pose_A,
   Eigen::Matrix<T, 3, 1> vec_dist1 = nA.cwiseProduct(dpApB);
   Eigen::Matrix<T, 3, 1> vec_dist2 = nB.cwiseProduct(dpBpA);
 
-  // T cosineAB = (nA(0,0) * nB(0,0)  + nA(1,0) * nB(1,0));
   T cosineAB = (nA.transpose() * nB)(0, 0);
-  // T l = nA(2,0);
-  // T r = nB(2,0);
-  // T sinAB_squared = static_cast<T>(1.0) - r*r - l*l + l*l*r*r - (cosineAB *
-  // cosineAB);
   T sinAB_squared = static_cast<T>(1.0) - (cosineAB * cosineAB);
 
-  // T exp_sinAB_squared = exp(-sinAB_squared / static_cast<T>(0.000010));
   if (sinAB_squared < 0.2) {
     residuals[0] = static_cast<T>(sqrt_information_matrix_(0, 0)) *
                    (vec_dist1(0) * vec_dist1(0) + vec_dist2(0) * vec_dist2(0));
@@ -112,33 +101,9 @@ bool PlanesCostFunction::operator()(const T* const pose_A,
     residuals[1] = static_cast<T>(sqrt_information_matrix_(1, 1));
     residuals[2] = static_cast<T>(sqrt_information_matrix_(2, 2));
   }
-  // residuals[0] = static_cast<T>(100.0) * dpApB(2,0) * dpApB(2,0);
-  // residuals[1] = static_cast<T>(100.0);// * dpApB(2,0) * dpApB(2,0);
   residuals[3] = static_cast<T>(sqrt_information_matrix_(3, 3)) * sinAB_squared;
-  // Eigen::Matrix<T,3,1> ddppA = T_M_P_origin_.getPosition().cast<T>() - pA;
-  // Eigen::Matrix<T,3,1> ddppB = T_M_P_destination_.getPosition().cast<T>() -
-  // pB; Eigen::Vector3f nA_init = T_M_P_origin_.getRotationMatrix().col(2);
-  // Eigen::Vector3f nB_init = T_M_P_destination_.getRotationMatrix().col(2);
-  // Eigen::Vector3f mean_normal_init;
-  // if (nA_init.dot(nB_init) < 0.0) {
-  //   mean_normal_init = 0.5*(nA_init - nB_init);
-  // } else {
-  //   mean_normal_init = 0.5*(nA_init + nB_init);
-  // }
-
-  // T radius = static_cast<T>(
-  //   (T_M_P_origin_.getPosition() -
-  //   T_M_P_destination_.getPosition()).dot(mean_normal_init));
-  // T sq_radius = radius * radius;
-  // T dcircleA = (ddppA.transpose() * ddppA)(0,0) - sq_radius;
-  // T dcircleB = (ddppB.transpose() * ddppB)(0,0) - sq_radius;
-  // residuals[3] = static_cast<T>(100.0) * dcircleA * dcircleA;
-  // residuals[4] = static_cast<T>(100.0) * dcircleB * dcircleB;
-  // T new_cost = static_cast<T>(0.5) * ((nA.transpose() + nB.transpose()) *
-  // dpApB)(0,0); residuals[3] =  static_cast<T>(0.0); // new_cost * new_cost;
   if (verbose_) {
     Eigen::Matrix<T, 4, 4> T_PA_PB = T_M_P_A_hat.inverse() * T_M_P_B_hat;
-    Eigen::Matrix<T, 4, 4> T_PB_PA = T_M_P_B_hat.inverse() * T_M_P_A_hat;
     std::cout << "t_odom_A_init: " << T_M_R_origin_init_.getPosition()(0)
               << ", " << T_M_R_origin_init_.getPosition()(1) << ", "
               << T_M_R_origin_init_.getPosition()(2) << "\n"
@@ -185,10 +150,6 @@ ceres::CostFunction* PlanesCostFunction::Create(
       new PlanesCostFunction(T_M_R_origin, origin_plane, T_M_R_destination,
                              destination_plane, sqrt_information_matrix,
                              planes_cost_config)));
-  // return new PlanesCostFunction(T_M_R_origin, origin_plane,
-  // T_M_R_destination,
-  //                               destination_plane, sqrt_information_matrix,
-  //                               planes_cost_config);
 }
 
 }  // namespace voxgraph
