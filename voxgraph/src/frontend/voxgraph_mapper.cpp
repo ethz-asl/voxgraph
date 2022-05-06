@@ -522,7 +522,7 @@ SubmapID VoxgraphMapper::submapWithPlanesCallback(
       const PlaneType plane = PlaneType::fromMsg(plane_msg);
       int class_id = plane_msg.class_id;
       if (classes_to_planes.find(class_id) != classes_to_planes.end()) {
-        classes_to_planes.at(class_id).push_back(plane);
+        classes_to_planes.at(class_id).emplace_back(plane);
       } else {
         classes_to_planes.insert({class_id, std::vector<PlaneType>{plane}});
       }

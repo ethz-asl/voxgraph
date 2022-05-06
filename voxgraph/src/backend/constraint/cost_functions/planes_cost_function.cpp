@@ -89,18 +89,18 @@ bool PlanesCostFunction::operator()(const T* const pose_A,
   T cosineAB = (nA.transpose() * nB)(0, 0);
   T sinAB_squared = static_cast<T>(1.0) - (cosineAB * cosineAB);
 
-  if (sinAB_squared < 0.2) {
+  // if (sinAB_squared < 0.2) {
     residuals[0] = static_cast<T>(sqrt_information_matrix_(0, 0)) *
                    (vec_dist1(0) * vec_dist1(0) + vec_dist2(0) * vec_dist2(0));
     residuals[1] = static_cast<T>(sqrt_information_matrix_(1, 1)) *
                    (vec_dist1(1) * vec_dist1(1) + vec_dist2(1) * vec_dist2(1));
     residuals[2] = static_cast<T>(sqrt_information_matrix_(2, 2)) *
                    (vec_dist1(2) * vec_dist1(2) + vec_dist2(2) * vec_dist2(2));
-  } else {
-    residuals[0] = static_cast<T>(sqrt_information_matrix_(0, 0));
-    residuals[1] = static_cast<T>(sqrt_information_matrix_(1, 1));
-    residuals[2] = static_cast<T>(sqrt_information_matrix_(2, 2));
-  }
+  // } else {
+  //   residuals[0] = static_cast<T>(sqrt_information_matrix_(0, 0));
+  //   residuals[1] = static_cast<T>(sqrt_information_matrix_(1, 1));
+  //   residuals[2] = static_cast<T>(sqrt_information_matrix_(2, 2));
+  // }
   residuals[3] = static_cast<T>(sqrt_information_matrix_(3, 3)) * sinAB_squared;
   if (verbose_) {
     Eigen::Matrix<T, 4, 4> T_PA_PB = T_M_P_A_hat.inverse() * T_M_P_B_hat;

@@ -70,7 +70,7 @@ TEST(addSubmapPlanes, submapStitcherTests) {
         return std::make_pair(Point(0, 0, 10.0 * i), Point(0, 0, 1.0));
       },
       1000);
-  ss.addSubmapPlanes(0, cctp);
+  // ss.addSubmapPlanes(0, cctp);
 }
 
 TEST(oppositePlanes, submapStitcherTests) { SubmapStitcher ss(); }
