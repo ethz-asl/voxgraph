@@ -11,12 +11,20 @@
 
 namespace voxgraph {
 
+/**
+ * @brief This class aims in finding if two planes are close enough to create a constraint
+ * based on them.
+ */
 class SubmapStitcher {
  public:
   typedef const SubmapStitcher* ConstPtr;
   struct Config {
+    // threshold of the anglie between the planes
     float threshold_normal_radians = 10.0 * M_PI / 180.0f;
+    // threshold of the distance over their normals between the planes
     float threshold_normal_distance = 0.50;
+    // threshold of the distance over their normals between the planes,
+    // if their normal vectors are in reverse order
     float threshold_normal_reversed_distance = 0.15;
   };
   SubmapStitcher();
